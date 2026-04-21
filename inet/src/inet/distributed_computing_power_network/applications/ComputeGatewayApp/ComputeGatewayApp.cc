@@ -126,7 +126,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
 
-    EV_INFO << "CIB has been updated.\n";
+    EV_INFO << "CIB has been updated: computingType:" << cib.computingType << std::endl;
 
     delete packet;
 }
@@ -147,6 +147,11 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     }
 
     // 算力组查询
+    if(cibInfoMap.find(requestInfo->getComputingType()) == cibInfoMap.end()){
+        EV_INFO << "ComputeGateway" << computeGatewayId << " has no cib entry for computingType: " << requestInfo->getComputingType() << std::endl;
+        return;
+    }
+
     const auto& groupMap = cibInfoMap.at(requestInfo->getComputingType());
 
     // 算力节点选择算法
@@ -154,7 +159,7 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     CIB destNodeInfo;
     if(groupMap.find(selectedNodeId)==groupMap.end())
-        destNodeInfo = groupMap.at(3);   // test，暂时硬编码
+        destNodeInfo = groupMap.at(4);   // test，暂时硬编码
     else
         destNodeInfo = groupMap.at(selectedNodeId);   // test，暂时硬编码
 

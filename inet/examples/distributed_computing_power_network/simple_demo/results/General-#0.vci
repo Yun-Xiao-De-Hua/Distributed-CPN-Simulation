@@ -1,0 +1,1510 @@
+file 346565 1776774741                                          
+version 3
+run General-0-20260421-20:24:58-9496
+attr configname General
+attr datetime 20260421-20:24:58
+attr datetimef 20260421-202458
+attr experiment General
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network inet.examples.distributed_computing_power_network.simple_demo.Network
+attr processid 9496
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+config image-path ../../../images
+config network inet.examples.distributed_computing_power_network.simple_demo.Network
+config **.configurator.config "xmldoc(\"config.xml\")"
+config **.configurator.assignDisjunctSubnetAddresses false
+config **.configurator.assignAddresses true
+config **.configurator.assignRoutes false
+config **.configurator.addStaticRoutes false
+config **.configurator.addSubnetRoutes true
+config **.configurator.addDefaultRoutes false
+config **.ospf.ospfConfig "xmldoc(\"ospf.xml\")"
+config **.multicastForwarding true
+config **.forwarding true
+config **.user1.app[0].userNodeId 1
+config **.user1.app[0].localAddress "\"10.0.0.1\""
+config **.user1.app[0].localPort 5000
+config **.user1.app[0].userGatewayAddress "\"10.0.0.2\""
+config **.user1.app[0].userGatewayPort 5000
+config **.userGateway1.app[0].localAddress "\"10.0.1.1\""
+config **.userGateway1.app[0].userGatewayId 1
+config **.userGateway1.app[0].localPort 5000
+config **.userGateway1.app[0].userNodePort 5000
+config **.userGateway1.app[0].computeGatewayPort 5000
+config **.userGateway1.app[0].computeNodePort 5000
+config **.userGateway1.app[0].cpuMulticastGroup "\"225.0.1.1\""
+config **.userGateway1.app[0].gpuMulticastGroup "\"225.0.1.2\""
+config **.userGateway1.app[0].multicastRoutes "\"225.0.1.1 ppp1;225.0.1.2 ppp1\""
+config **.computeGateway1.app[0].computeGatewayId 1
+config **.computeGateway1.app[0].localAddress "\"10.0.2.2\""
+config **.computeGateway1.app[0].localPort 5000
+config **.computeGateway1.app[0].userGatewayPort 5000
+config **.computeGateway1.app[0].computeNodePort 5000
+config **.computeGateway1.app[0].cibUpdateInterval 0.5
+config **.computeGateway1.app[0].multicastGroups "\"225.0.1.1 225.0.1.2\""
+config **.computeGateway2.app[0].computeGatewayId 2
+config **.computeGateway2.app[0].localAddress "\"10.0.3.2\""
+config **.computeGateway2.app[0].localPort 5000
+config **.computeGateway2.app[0].userGatewayPort 5000
+config **.computeGateway2.app[0].computeNodePort 5000
+config **.computeGateway2.app[0].cibUpdateInterval 0.5
+config **.computeGateway2.app[0].multicastGroups "\"225.0.1.1 225.0.1.2\""
+config *.computeNode1.app[0].computeNodeId 1
+config *.computeNode1.app[0].computeGatewayId 1
+config *.computeNode1.app[0].localAddress "\"10.0.4.2\""
+config *.computeNode1.app[0].localPort 5000
+config *.computeNode1.app[0].computeGatewayAddress "\"10.0.2.2\""
+config *.computeNode1.app[0].computeGatewayPort 5000
+config *.computeNode1.app[0].computingType 0
+config *.computeNode1.app[0].computingCapacity 1e10
+config *.computeNode1.app[0].storageCapacity 1000
+config *.computeNode1.app[0].multicastAddress "\"225.0.1.1\""
+config *.computeNode2.app[0].computeNodeId 2
+config *.computeNode2.app[0].computeGatewayId 1
+config *.computeNode2.app[0].localAddress "\"10.0.6.2\""
+config *.computeNode2.app[0].localPort 5000
+config *.computeNode2.app[0].computeGatewayAddress "\"10.0.2.2\""
+config *.computeNode2.app[0].computeGatewayPort 5000
+config *.computeNode2.app[0].computingType 1
+config *.computeNode2.app[0].computingCapacity 5e10
+config *.computeNode2.app[0].storageCapacity 2000
+config *.computeNode2.app[0].multicastAddress "\"225.0.1.2\""
+config *.computeNode3.app[0].computeNodeId 3
+config *.computeNode3.app[0].computeGatewayId 2
+config *.computeNode3.app[0].localAddress "\"10.0.5.2\""
+config *.computeNode3.app[0].localPort 5000
+config *.computeNode3.app[0].computeGatewayAddress "\"10.0.3.2\""
+config *.computeNode3.app[0].computeGatewayPort 5000
+config *.computeNode3.app[0].computingType 1
+config *.computeNode3.app[0].computingCapacity 1e10
+config *.computeNode3.app[0].storageCapacity 1000
+config *.computeNode3.app[0].multicastAddress "\"225.0.1.2\""
+config *.computeNode4.app[0].computeNodeId 4
+config *.computeNode4.app[0].computeGatewayId 2
+config *.computeNode4.app[0].localAddress "\"10.0.7.2\""
+config *.computeNode4.app[0].localPort 5000
+config *.computeNode4.app[0].computeGatewayAddress "\"10.0.3.2\""
+config *.computeNode4.app[0].computeGatewayPort 5000
+config *.computeNode4.app[0].computingType 0
+config *.computeNode4.app[0].computingCapacity 5e10
+config *.computeNode4.app[0].storageCapacity 2000
+config *.computeNode4.app[0].multicastAddress "\"225.0.1.1\""
+
+vector 0 Network.user1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 1 Network.user1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 2 Network.user1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 3 Network.user1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 4 Network.user1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 5 Network.user1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 6 Network.userGateway1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 7 Network.userGateway1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 8 Network.userGateway1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 9 Network.userGateway1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 10 Network.userGateway1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 11 Network.userGateway1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 12 Network.userGateway1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 13 Network.userGateway1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 14 Network.userGateway1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 15 Network.router1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 16 Network.router1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 17 Network.router1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 18 Network.router1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 19 Network.router1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 20 Network.router1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 21 Network.router1.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 22 Network.router1.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 23 Network.router1.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 24 Network.computeGateway1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 25 Network.computeGateway1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 26 Network.computeGateway1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 27 Network.computeGateway1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 28 Network.computeGateway1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 29 Network.computeGateway1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 30 Network.computeGateway1.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 31 Network.computeGateway1.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 32 Network.computeGateway1.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 33 Network.computeGateway1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 34 Network.computeGateway1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 35 Network.computeGateway1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 36 Network.computeGateway2.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 37 Network.computeGateway2.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 38 Network.computeGateway2.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 39 Network.computeGateway2.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 40 Network.computeGateway2.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 41 Network.computeGateway2.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 42 Network.computeGateway2.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 43 Network.computeGateway2.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 44 Network.computeGateway2.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 45 Network.computeGateway2.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 46 Network.computeGateway2.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 47 Network.computeGateway2.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 48 Network.computeNode1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 49 Network.computeNode1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 50 Network.computeNode1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 51 Network.computeNode1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 52 Network.computeNode1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 53 Network.computeNode1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 54 Network.computeNode2.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 55 Network.computeNode2.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 56 Network.computeNode2.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 57 Network.computeNode2.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 58 Network.computeNode2.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 59 Network.computeNode2.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 60 Network.computeNode3.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 61 Network.computeNode3.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 62 Network.computeNode3.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 63 Network.computeNode3.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 64 Network.computeNode3.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 65 Network.computeNode3.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 66 Network.computeNode4.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 67 Network.computeNode4.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 68 Network.computeNode4.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 69 Network.computeNode4.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 70 Network.computeNode4.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 71 Network.computeNode4.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 72 Network.user1.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 73 Network.user1.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 74 Network.user1.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 75 Network.user1.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 76 Network.user1.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 77 Network.userGateway1.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 78 Network.userGateway1.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 79 Network.userGateway1.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 80 Network.userGateway1.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 81 Network.userGateway1.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 82 Network.userGateway1.ppp[1].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 83 Network.userGateway1.ppp[1].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 84 Network.userGateway1.ppp[1].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 85 Network.userGateway1.ppp[1].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 86 Network.userGateway1.ppp[1].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 87 Network.router1.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 88 Network.router1.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 89 Network.router1.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 90 Network.router1.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 91 Network.router1.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 92 Network.router1.ppp[1].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 93 Network.router1.ppp[1].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 94 Network.router1.ppp[1].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 95 Network.router1.ppp[1].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 96 Network.router1.ppp[1].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 97 Network.router1.ppp[2].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 98 Network.router1.ppp[2].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 99 Network.router1.ppp[2].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 100 Network.router1.ppp[2].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 101 Network.router1.ppp[2].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 102 Network.computeGateway1.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 103 Network.computeGateway1.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 104 Network.computeGateway1.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 105 Network.computeGateway1.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 106 Network.computeGateway1.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 107 Network.computeGateway1.ppp[1].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 108 Network.computeGateway1.ppp[1].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 109 Network.computeGateway1.ppp[1].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 110 Network.computeGateway1.ppp[1].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 111 Network.computeGateway1.ppp[1].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 112 Network.computeGateway1.ppp[2].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 113 Network.computeGateway1.ppp[2].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 114 Network.computeGateway1.ppp[2].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 115 Network.computeGateway1.ppp[2].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 116 Network.computeGateway1.ppp[2].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 117 Network.computeGateway2.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 118 Network.computeGateway2.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 119 Network.computeGateway2.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 120 Network.computeGateway2.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 121 Network.computeGateway2.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 122 Network.computeGateway2.ppp[1].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 123 Network.computeGateway2.ppp[1].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 124 Network.computeGateway2.ppp[1].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 125 Network.computeGateway2.ppp[1].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 126 Network.computeGateway2.ppp[1].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 127 Network.computeGateway2.ppp[2].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 128 Network.computeGateway2.ppp[2].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 129 Network.computeGateway2.ppp[2].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 130 Network.computeGateway2.ppp[2].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 131 Network.computeGateway2.ppp[2].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 132 Network.computeNode1.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 133 Network.computeNode1.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 134 Network.computeNode1.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 135 Network.computeNode1.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 136 Network.computeNode1.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 137 Network.computeNode2.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 138 Network.computeNode2.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 139 Network.computeNode2.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 140 Network.computeNode2.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 141 Network.computeNode2.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 142 Network.computeNode3.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 143 Network.computeNode3.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 144 Network.computeNode3.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 145 Network.computeNode3.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 146 Network.computeNode3.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 147 Network.computeNode4.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 148 Network.computeNode4.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 149 Network.computeNode4.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 150 Network.computeNode4.ppp[0].ppp rcvdPkFromHl:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceivedFromUpper
+attr title "packets received from higher layer, packetBytes"
+vector 151 Network.computeNode4.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 152 Network.computeGateway1.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 153 Network.computeGateway2.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 154 Network.userGateway1.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 155 Network.userGateway1.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 156 Network.user1.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 157 Network.user1.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 158 Network.router1.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 159 Network.router1.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 160 Network.userGateway1.ppp[1].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 161 Network.userGateway1.ppp[1].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 162 Network.computeGateway1.ppp[1].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 163 Network.computeGateway1.ppp[1].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 164 Network.computeGateway2.ppp[1].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 165 Network.computeGateway2.ppp[1].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 166 Network.computeNode1.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 167 Network.computeNode1.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 168 Network.router1.ppp[1].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 169 Network.router1.ppp[1].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 170 Network.computeNode2.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 171 Network.computeNode2.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 172 Network.computeNode3.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 173 Network.computeNode3.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 174 Network.router1.ppp[2].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 175 Network.router1.ppp[2].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 176 Network.computeNode4.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 177 Network.computeNode4.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 178 Network.computeGateway1.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 179 Network.computeGateway1.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 180 Network.computeGateway1.ppp[2].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 181 Network.computeGateway1.ppp[2].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 182 Network.computeGateway2.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 183 Network.computeGateway2.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 184 Network.computeGateway2.ppp[2].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 185 Network.computeGateway2.ppp[2].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 186 Network.computeNode3.ipv4.ip packetDropNoRouteFound:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetDropReasonIsNoRouteFound(packetDropped)
+attr title "packet drop: no route found, packetBytes"
+vector 187 Network.computeNode1.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 188 Network.computeNode1.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 189 Network.computeNode1.ipv4.ip packetDropNoRouteFound:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetDropReasonIsNoRouteFound(packetDropped)
+attr title "packet drop: no route found, packetBytes"
+vector 190 Network.computeNode3.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 191 Network.computeNode3.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 192 Network.computeGateway1.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 193 Network.computeGateway2.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 194 Network.computeNode4.ipv4.ip packetDropNoRouteFound:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetDropReasonIsNoRouteFound(packetDropped)
+attr title "packet drop: no route found, packetBytes"
+vector 195 Network.computeGateway1.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 196 Network.computeGateway1.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 197 Network.computeGateway2.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 198 Network.computeGateway2.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 199 Network.computeGateway2.ppp[2].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 200 Network.computeGateway2.ppp[2].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 201 Network.computeNode1.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 202 Network.computeNode1.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 203 Network.computeNode3.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 204 Network.computeNode3.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 205 Network.user1.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 206 Network.userGateway1.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 207 Network.userGateway1.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+0	56260 84 0 6943 0 50 8 0 0 0 0
+1	56344 84 0 6943 0 50 8 0 0 0 0
+2	56428 107 0 6952 0 50.0000632 7 0 1 3 3
+3	56535 9 0 0 0 0 1 0 0 0 0
+4	56544 9 0 0 0 0 1 0 0 0 0
+5	56553 9 0 0 0 0 1 0 0 0 0
+6	56562 183 0 5766 0 40.096346980613 11 0 0 0 0
+7	56745 183 0 5766 0 40.096346980613 11 0 0 0 0
+8	56928 293 0 5767 0 40.096403780613 13 0 1 6 6
+9	57221 524 0 6977 0 50.0100632 26 0 1 3 3
+10	57745 556 0 6977 0 50.0100632 26 0 576 1536 794624
+11	58301 878 0 6980 0 50.0101264 37 0 1 18 18
+12	59179 32 0 6973 0 50.0100632 2 0 1 1 1
+13	59211 10 0 0 0 0 1 0 0 0 0
+14	59221 10 0 0 0 0 1 0 0 0 0
+15	59231 559 0 5793 0 40.106744704792 26 0 1 3 3
+16	59790 567 0 5793 0 40.106744704792 26 0 1152 2656 2642944
+17	60357 894 0 5794 0 40.106804704792 37 0 1 18 18
+18	61251 643 0 6992 0 50.0201264 30 0 1 4 4
+19	61894 652 0 6992 0 50.0201264 30 0 1152 2752 2191360
+20	62546 1016 0 6995 0 50.0201896 43 0 1 21 21
+21	63562 736 0 6993 0 50.0201264 33 0 3 16 34
+22	64298 758 0 6993 0 50.0201264 33 0 1920 9440 11793408
+23	65056 1094 0 6996 0 50.0201896 45 0 1 22 22
+24	66150 5484 0 6948 0 50.0000288 321 0 4 116 144
+25	71634 5698 0 6948 0 50.0000288 321 0 944 26976 7818880
+26	77332 8552 0 6950 0 50.0000576 425 0 1 212 212
+27	85884 629 0 5777 0 40.097996321822 30 0 2 6 8
+28	86513 639 0 5777 0 40.097996321822 30 0 512 1920 808960
+29	87152 1039 0 5778 0 40.098056321822 43 0 1 21 21
+30	88191 299 0 5770 0 40.097450692058 17 0 2 4 6
+31	88490 305 0 5770 0 40.097450692058 17 0 480 960 346112
+32	88795 477 0 5771 0 40.097507492058 21 0 1 10 10
+33	89272 2199 0 6983 0 50.020076 102 0 101 5151 348551
+34	91471 10 0 0 0 0 1 0 0 0 0
+35	91481 10 0 0 0 0 1 0 0 0 0
+36	91491 5485 0 6949 0 50.0000288 321 0 4 116 144
+37	96976 5699 0 6949 0 50.0000288 321 0 944 26976 7818880
+38	102675 8552 0 6951 0 50.0000576 425 0 1 212 212
+39	111227 628 0 5815 0 40.118226617754 30 0 2 7 9
+40	111855 640 0 5815 0 40.118226617754 30 0 768 2688 1398784
+41	112495 987 0 5816 0 40.118286617754 41 0 1 20 20
+42	113482 2519 0 6988 0 50.0201048 119 0 2 4 6
+43	116001 2525 0 6988 0 50.0201048 119 0 480 960 346112
+44	118526 4817 0 6994 0 50.020152 225 0 1 112 112
+45	123343 2299 0 6987 0 50.0201048 102 0 101 5151 348551
+46	125642 10 0 0 0 0 1 0 0 0 0
+47	125652 10 0 0 0 0 1 0 0 0 0
+48	125662 2339 0 6961 0 50.0100288 111 0 1 1 1
+49	128001 2341 0 6961 0 50.0100288 111 0 224 224 50176
+50	130342 4475 0 6978 0 50.010076 211 0 1 105 105
+51	134817 2298 0 6957 0 50.0100288 102 0 101 5151 348551
+52	137115 10 0 0 0 0 1 0 0 0 0
+53	137125 10 0 0 0 0 1 0 0 0 0
+54	137135 145 0 5374 0 37.080225912399 10 0 1 1 1
+55	137280 147 0 5374 0 37.080225912399 10 0 224 224 50176
+56	137427 187 0 5375 0 37.080257112399 9 0 1 4 4
+57	137614 10 0 0 0 0 1 0 0 0 0
+58	137624 10 0 0 0 0 1 0 0 0 0
+59	137634 10 0 0 0 0 1 0 0 0 0
+60	137644 2338 0 6970 0 50.0100576 111 0 1 1 1
+61	139982 2340 0 6970 0 50.0100576 111 0 224 224 50176
+62	142322 4574 0 6979 0 50.0101048 211 0 1 105 105
+63	146896 2297 0 6966 0 50.0100576 102 0 101 5151 348551
+64	149193 10 0 0 0 0 1 0 0 0 0
+65	149203 10 0 0 0 0 1 0 0 0 0
+66	149213 119 0 5302 0 36.633760282314 9 0 1 1 1
+67	149332 121 0 5302 0 36.633760282314 9 0 224 224 50176
+68	149453 135 0 5303 0 36.633791482314 7 0 1 3 3
+69	149588 10 0 0 0 0 1 0 0 0 0
+70	149598 10 0 0 0 0 1 0 0 0 0
+71	149608 10 0 0 0 0 1 0 0 0 0
+72	149618 48 59 6943 0 50 3 224 576 1024 432128
+73	149666 42 59 6943 0 50 3 0 0 0 0
+74	149708 48 59 6943 0 50 3 224 576 1024 432128
+75	149756 45 59 6943 0 50 3 28 72 128 6752
+76	149801 45 59 6943 0 50 3 35 79 149 8691
+77	149846 156 60 5766 0 40.096346980613 6 224 512 2784 1360896
+78	150002 144 60 5766 0 40.096346980613 6 0 0 0 0
+79	150146 156 60 5766 0 40.096346980613 6 224 512 2784 1360896
+80	150302 150 60 5766 0 40.096346980613 6 28 64 348 21264
+81	150452 150 60 5766 0 40.096346980613 6 35 71 390 26430
+82	150602 460 61 6977 0 50.0100632 18 224 768 9376 5243904
+83	151062 445 61 6977 0 50.0100632 18 0 5.68e-05 0.0001512 7.68192e-09
+84	151507 460 61 6977 0 50.0100632 18 224 768 9376 5243904
+85	151967 442 61 6977 0 50.0100632 18 28 96 1172 81936
+86	152409 444 61 6977 0 50.0100632 18 35 103 1298 99226
+87	152853 473 62 5793 0 40.106744704792 18 224 1728 12480 10690560
+88	153326 455 62 5793 0 40.106744704792 18 0 8.24e-05 0.0002088 1.477824e-08
+89	153781 473 62 5793 0 40.106744704792 18 224 1728 12480 10690560
+90	154254 456 62 5793 0 40.106744704792 18 28 216 1560 167040
+91	154710 458 62 5793 0 40.106744704792 18 35 223 1686 189762
+92	155168 538 63 6992 0 50.0201264 21 224 1728 13664 11211776
+93	155706 522 63 6992 0 50.0201264 21 0 0.0001016 0.0002784 2.1568e-08
+94	156228 538 63 6992 0 50.0201264 21 224 1728 13664 11211776
+95	156766 518 63 6992 0 50.0201264 21 28 216 1708 175184
+96	157284 520 63 6992 0 50.0201264 21 35 223 1855 200125
+97	157804 584 64 6993 0 50.0201264 22 224 1536 14528 11700224
+98	158388 598 64 6993 0 50.0201264 22 0 0.000152104068 0.000660312204 8.1438718487246e-08
+99	158986 584 64 6993 0 50.0201264 22 224 1536 14528 11700224
+100	159570 585 64 6993 0 50.0201264 22 28 192 1816 182816
+101	160155 587 64 6993 0 50.0201264 22 35 199 1970 209318
+102	160742 3816 65 6945 0 50 212 224 512 50640 12480128
+103	164558 4856 65 6948 0 50.0000288 212 0 0.0001192 0.0031832 1.10192e-07
+104	169414 4551 65 6948 0 50.0000288 212 224 512 50640 12480128
+105	173965 4339 65 6948 0 50.0000288 212 28 64 6330 195002
+106	178304 4339 65 6948 0 50.0000288 212 35 71 7814 294010
+107	182643 551 67 5777 0 40.097996321822 21 224 768 9728 5115904
+108	183194 555 67 5777 0 40.097996321822 21 0 6.32e-05 0.0002136 1.208768e-08
+109	183749 569 67 5777 0 40.097996321822 21 224 768 9728 5115904
+110	184318 548 67 5777 0 40.097996321822 21 28 96 1216 79936
+111	184866 550 67 5777 0 40.097996321822 21 35 103 1363 97989
+112	185416 239 69 5770 0 40.097450692058 10 224 512 3776 1607680
+113	185655 251 69 5770 0 40.097450692058 10 0 6.24e-05 9.36e-05 4.8672e-09
+114	185906 257 69 5770 0 40.097450692058 10 224 512 3776 1607680
+115	186163 247 69 5770 0 40.097450692058 10 28 64 472 25120
+116	186410 247 69 5770 0 40.097450692058 10 35 71 542 32218
+117	186657 3817 74 6947 0 50 212 224 512 50640 12480128
+118	190474 4856 74 6949 0 50.0000288 212 0 0.0001192 0.0031832 1.10192e-07
+119	195330 4551 74 6949 0 50.0000288 212 224 512 50640 12480128
+120	199881 4339 74 6949 0 50.0000288 212 28 64 6330 195002
+121	204220 4339 74 6949 0 50.0000288 212 35 71 7814 294010
+122	208559 522 76 5815 0 40.118226617754 20 224 832 9312 5024768
+123	209081 534 76 5815 0 40.118226617754 20 0 6.32e-05 0.0002456 1.311168e-08
+124	209615 540 76 5815 0 40.118226617754 20 224 832 9312 5024768
+125	210155 521 76 5815 0 40.118226617754 20 28 104 1164 78512
+126	210676 523 76 5815 0 40.118226617754 20 35 111 1304 95788
+127	211199 2765 78 6988 0 50.0201048 112 224 512 46048 19151872
+128	213964 2573 78 6988 0 50.0201048 112 0 6.24e-05 9.36e-05 4.8672e-09
+129	216537 2783 78 6988 0 50.0201048 112 224 512 46048 19151872
+130	219320 2671 78 6988 0 50.0201048 112 28 64 5756 299248
+131	221991 2671 78 6988 0 50.0201048 112 35 71 6540 385320
+132	224662 2584 83 6961 0 50.0100288 105 224 416 43008 17725440
+133	227246 2390 83 6961 0 50.0100288 105 0 3.12e-05 3.12e-05 9.7344e-10
+134	229636 2593 83 6961 0 50.0100288 105 224 416 43008 17725440
+135	232229 2488 83 6961 0 50.0100288 105 28 52 5376 276960
+136	234717 2488 83 6961 0 50.0100288 105 35 59 6111 357369
+137	237205 87 85 5374 0 37.080225912399 4 224 256 992 246784
+138	237292 95 85 5374 0 37.080225912399 4 0 3.12e-05 3.12e-05 9.7344e-10
+139	237387 96 85 5374 0 37.080225912399 4 224 256 992 246784
+140	237483 92 85 5374 0 37.080225912399 4 28 32 124 3856
+141	237575 92 85 5374 0 37.080225912399 4 35 39 152 5788
+142	237667 2583 87 6970 0 50.0100576 105 224 416 43008 17725440
+143	240250 2389 87 6970 0 50.0100576 105 0 3.12e-05 3.12e-05 9.7344e-10
+144	242639 2592 87 6970 0 50.0100576 105 224 416 43008 17725440
+145	245231 2487 87 6970 0 50.0100576 105 28 52 5376 276960
+146	247718 2487 87 6970 0 50.0100576 105 35 59 6111 357369
+147	250205 58 89 5302 0 36.633760282314 3 224 256 736 181248
+148	250263 68 89 5302 0 36.633760282314 3 0 3.12e-05 3.12e-05 9.7344e-10
+149	250331 67 89 5302 0 36.633760282314 3 224 256 736 181248
+150	250398 64 89 5302 0 36.633760282314 3 28 32 92 2832
+151	250462 64 89 5302 0 36.633760282314 3 35 39 113 4267
+152	250526 3172 91 6935 0 50 202 9 9 1818 16362
+153	253698 3172 93 6937 0 50 202 9 9 1818 16362
+154	256870 68 139 6971 0.010028 50.0100632 3 35 79 149 8691
+155	256938 68 139 6971 0.010028 50.0100632 3 28 72 128 6752
+156	257006 164 140 5789 0.010028 40.106403780613 6 35 71 390 26430
+157	257170 164 140 5789 0.010028 40.106403780613 6 28 64 348 21264
+158	257334 482 141 6990 0.010028 50.0201264 18 35 103 1298 99226
+159	257816 480 141 6990 0.010028 50.0201264 18 28 96 1172 81936
+160	258296 492 142 5810 0.010028 40.116804704792 18 35 223 1686 189762
+161	258788 490 142 5810 0.010028 40.116804704792 18 28 216 1560 167040
+162	259278 561 143 6999 0.010028 50.0301896 21 35 223 1855 200125
+163	259839 559 143 6999 0.010028 50.0301896 21 28 216 1708 175184
+164	260398 599 144 7000 0.010028 50.0301896 22 35 199 1970 209318
+165	260997 597 144 7000 0.010028 50.0301896 22 28 192 1816 182816
+166	261594 5051 157 6962 0.0100312 50.0100576 212 35 71 7814 294010
+167	266645 5051 157 6962 0.0100312 50.0100576 212 28 64 6330 195002
+168	271696 567 158 5797 0.0100312 40.108056321822 21 35 103 1363 97989
+169	272263 565 158 5797 0.0100312 40.108056321822 21 28 96 1216 79936
+170	272828 260 159 5795 0.0100312 40.107507492058 10 35 71 542 32218
+171	273088 260 159 5795 0.0100312 40.107507492058 10 28 64 472 25120
+172	273348 5051 160 6963 0.0100312 50.0100576 212 35 71 7814 294010
+173	278399 5051 160 6963 0.0100312 50.0100576 212 28 64 6330 195002
+174	283450 540 161 5821 0.0100312 40.128286617754 20 35 111 1304 95788
+175	283990 538 161 5821 0.0100312 40.128286617754 20 28 104 1164 78512
+176	284528 2584 162 6997 0.0100312 50.030152 112 35 71 6540 385320
+177	287112 2584 162 6997 0.0100312 50.030152 112 28 64 5756 299248
+178	289696 2397 163 6981 0.0100312 50.020076 105 35 59 6111 357369
+179	292093 2397 163 6981 0.0100312 50.020076 105 28 52 5376 276960
+180	294490 101 164 5376 0.0100312 37.090257112399 4 35 39 152 5788
+181	294591 101 164 5376 0.0100312 37.090257112399 4 28 32 124 3856
+182	294692 2498 165 6985 0.0100312 50.0201048 105 35 59 6111 357369
+183	297190 2498 165 6985 0.0100312 50.0201048 105 28 52 5376 276960
+184	299688 73 166 5304 0.0100312 36.643791482314 3 35 39 113 4267
+185	299761 73 166 5304 0.0100312 36.643791482314 3 28 32 92 2832
+186	299834 2396 238 6956 0.0101192 50.0100288 101 29 29 2929 84941
+187	302230 2295 239 6957 0.0101192 50.0100288 101 9 9 909 8181
+188	304525 2396 241 6959 0.0101192 50.0100288 101 32 32 3232 103424
+189	306921 2395 246 6964 0.010148 50.0100576 101 29 29 2929 84941
+190	309316 2294 248 6966 0.010148 50.0100576 101 9 9 909 8181
+191	311610 2395 250 6968 0.010148 50.0100576 101 32 32 3232 103424
+192	314005 2297 257 6983 0.0201664 50.020076 101 32 32 3232 103424
+193	316302 2397 261 6987 0.0201952 50.0201048 101 32 32 3232 103424
+194	318699 2297 266 6998 0.0302424 50.030152 101 52 52 5252 273104
+195	320996 4737 3573 6944 23 50 271 -891.21930126111 5120 259828.78069874 1204691871.8429
+196	325733 4737 3573 6944 23 50 271 -891.21930126111 5120 259828.78069874 1204691871.8429
+197	330470 4731 3575 6946 23 50 271 -891.21930126111 9760 259828.78069874 1299719071.8429
+198	335201 4731 3575 6946 23 50 271 -891.21930126111 9760 259828.78069874 1299719071.8429
+199	339932 1451 6285 6988 44.0201048 50.0201048 61 -6813.1565217827 4160 38946.843478217 236780701.79031
+200	341383 1451 6285 6988 44.0201048 50.0201048 61 -6813.1565217827 4160 38946.843478217 236780701.79031
+201	342834 625 6661 6961 47.5100288 50.0100288 26 -16138.393462929 4160 501.6065370711 329670143.56431
+202	343459 625 6661 6961 47.5100288 50.0100288 26 -16138.393462929 4160 501.6065370711 329670143.56431
+203	344084 624 6670 6970 47.5100576 50.0100576 26 -16138.57673551 4160 501.42326449005 329676059.04794
+204	344708 624 6670 6970 47.5100576 50.0100576 26 -16138.57673551 4160 501.42326449005 329676059.04794
+205	345332 16 6933 6933 50 50 1 52 52 52 2704
+206	345348 24 6973 6973 50.0100632 50.0100632 1 52 52 52 2704
+207	345372 24 6975 6975 50.0100632 50.0100632 1 52 52 52 2704
+24	345396 22 7004 7004 50.0301896 50.0301896 1 0 0 0 0
+25	345418 22 7004 7004 50.0301896 50.0301896 1 0 0 0 0
+26	345440 44 7004 7013 50.0301896 50.0302528 2 0 1 1 1
+27	345484 22 7011 7011 50.0301896 50.0301896 1 0 0 0 0
+28	345506 22 7011 7011 50.0301896 50.0301896 1 0 0 0 0
+29	345528 44 7011 7012 50.0301896 50.0302464 2 0 1 1 1
+33	345572 24 7003 7003 50.0301896 50.0301896 1 102 102 102 10404
+36	345596 22 7006 7006 50.0301896 50.0301896 1 0 0 0 0
+37	345618 22 7006 7006 50.0301896 50.0301896 1 0 0 0 0
+38	345640 44 7006 7014 50.0301896 50.0302528 2 0 1 1 1
+45	345684 24 7005 7005 50.0301896 50.0301896 1 102 102 102 10404
+102	345708 25 7004 7004 50.0301896 50.0301896 1 576 576 576 331776
+103	345733 23 7004 7004 50.0301896 50.0301896 1 0 0 0 0
+104	345756 25 7004 7004 50.0301896 50.0301896 1 576 576 576 331776
+105	345781 24 7004 7004 50.0301896 50.0301896 1 72 72 72 5184
+106	345805 24 7004 7004 50.0301896 50.0301896 1 79 79 79 6241
+107	345829 25 7011 7011 50.0301896 50.0301896 1 512 512 512 262144
+108	345854 23 7011 7011 50.0301896 50.0301896 1 0 0 0 0
+109	345877 25 7011 7011 50.0301896 50.0301896 1 512 512 512 262144
+110	345902 24 7011 7011 50.0301896 50.0301896 1 64 64 64 4096
+111	345926 24 7011 7011 50.0301896 50.0301896 1 71 71 71 5041
+117	345950 25 7006 7006 50.0301896 50.0301896 1 576 576 576 331776
+118	345975 23 7006 7006 50.0301896 50.0301896 1 0 0 0 0
+119	345998 25 7006 7006 50.0301896 50.0301896 1 576 576 576 331776
+120	346023 24 7006 7006 50.0301896 50.0301896 1 72 72 72 5184
+121	346047 24 7006 7006 50.0301896 50.0301896 1 79 79 79 6241
+152	346071 24 7009 7009 50.0301896 50.0301896 1 44 44 44 1936
+192	346095 24 7003 7003 50.0301896 50.0301896 1 52 52 52 2704
+193	346119 24 7005 7005 50.0301896 50.0301896 1 52 52 52 2704
+195	346143 42 7014 7014 50.035752084007 50.035752084007 1 29089.213367153 29089.213367153 29089.213367153 846182334.31975
+196	346185 42 7014 7014 50.035752084007 50.035752084007 1 29089.213367153 29089.213367153 29089.213367153 846182334.31975
+197	346227 42 7014 7014 50.035752084007 50.035752084007 1 29089.213367153 29089.213367153 29089.213367153 846182334.31975
+198	346269 42 7014 7014 50.035752084007 50.035752084007 1 29089.213367153 29089.213367153 29089.213367153 846182334.31975
+199	346311 42 7014 7014 50.035752084007 50.035752084007 1 26586.083553791 26586.083553791 26586.083553791 706819838.72916
+200	346353 42 7014 7014 50.035752084007 50.035752084007 1 26586.083553791 26586.083553791 26586.083553791 706819838.72916
+201	346395 42 7014 7014 50.035752084007 50.035752084007 1 16172.118610003 16172.118610003 16172.118610003 261537420.33601
+202	346437 42 7014 7014 50.035752084007 50.035752084007 1 16172.118610003 16172.118610003 16172.118610003 261537420.33601
+203	346479 42 7014 7014 50.035752084007 50.035752084007 1 16190.245341633 16190.245341633 16190.245341633 262124044.22227
+204	346521 42 7014 7014 50.035752084007 50.035752084007 1 16190.245341633 16190.245341633 16190.245341633 262124044.22227
+
