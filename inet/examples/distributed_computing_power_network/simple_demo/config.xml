@@ -1,0 +1,60 @@
+<config>
+<!-- 1. 接口配置 (IP地址分配) -->
+    <!-- User Domain -->
+    <interface hosts="user1" towards="userGateway1" address="10.0.0.1" netmask="255.255.255.0"/>
+    <interface hosts="userGateway1" towards="user1" address="10.0.0.2" netmask="255.255.255.0"/>
+    <interface hosts="userGateway1" towards="router1" address="10.0.1.1" netmask="255.255.255.0"/>
+    
+    <!-- Core Domain -->
+    <interface hosts="router1" towards="userGateway1" address="10.0.1.2" netmask="255.255.255.0"/>
+    <interface hosts="router1" towards="computeGateway1" address="10.0.2.1" netmask="255.255.255.0"/>
+    <interface hosts="router1" towards="computeGateway2" address="10.0.3.1" netmask="255.255.255.0"/>
+    
+    <!-- Compute Domain 1 (网关1下的两个节点必须在不同子网) -->
+    <!-- 链路1: 网关1 <-> 节点1 (使用 10.0.4.x 网段) -->
+    <interface hosts="computeGateway1" towards="router1" address="10.0.2.2" netmask="255.255.255.0"/>
+    <interface hosts="computeGateway1" towards="computeNode1" address="10.0.4.1" netmask="255.255.255.0"/>
+    <interface hosts="computeNode1" towards="computeGateway1" address="10.0.4.2" netmask="255.255.255.0"/>
+    
+    <!-- 链路2: 网关1 <-> 节点2 (使用 10.0.6.x 网段) -->
+    <interface hosts="computeGateway1" towards="computeNode2" address="10.0.6.1" netmask="255.255.255.0"/>
+    <interface hosts="computeNode2" towards="computeGateway1" address="10.0.6.2" netmask="255.255.255.0"/>
+    
+    <!-- Compute Domain 2 (网关2下的两个节点也必须在不同子网) -->
+    <!-- 链路3: 网关2 <-> 节点3 (使用 10.0.5.x 网段) -->
+    <interface hosts="computeGateway2" towards="router1" address="10.0.3.2" netmask="255.255.255.0"/>
+    <interface hosts="computeGateway2" towards="computeNode3" address="10.0.5.1" netmask="255.255.255.0"/>
+    <interface hosts="computeNode3" towards="computeGateway2" address="10.0.5.2" netmask="255.255.255.0"/>
+    
+    <!-- 链路4: 网关2 <-> 节点4 (使用 10.0.7.x 网段) -->
+    <interface hosts="computeGateway2" towards="computeNode4" address="10.0.7.1" netmask="255.255.255.0"/>
+    <interface hosts="computeNode4" towards="computeGateway2" address="10.0.7.2" netmask="255.255.255.0"/>
+    
+
+    <!-- 2. 组播组定义 -->
+    <multicast-group hosts="computeNode1 computeNode4 computeGateway1 computeGateway2" address="225.0.1.1"/>
+    <multicast-group hosts="computeNode2 computeNode3 computeGateway1 computeGateway2" address="225.0.1.2"/>
+    
+
+    <!-- 3. 静态组播路由配置 -->
+    
+    <!-- 【全局算力请求组播】 225.0.0.1: userGateway1 -> router1 -> computeGateway1 & 2 -->
+    <multicast-route hosts="userGateway1" groups="225.0.1.1" children=">router1"/>
+    <multicast-route hosts="userGateway1" groups="225.0.1.2" children=">router1"/>    
+    <multicast-route hosts="router1" groups="225.0.1.1" children=">computeGateway1 >computeGateway2"/>
+    <multicast-route hosts="router1" groups="225.0.1.2" children=">computeGateway1 >computeGateway2"/>    
+
+    <!-- 【局部组播：网关下发到节点】 单跳路由 -->
+    <multicast-route hosts="computeGateway1" groups="225.0.1.1" children=">computeNode1"/>
+    <multicast-route hosts="computeGateway1" groups="225.0.1.2" children=">computeNode2"/>
+    <multicast-route hosts="computeGateway2" groups="225.0.1.1" children=">computeNode3"/>
+    <multicast-route hosts="computeGateway2" groups="225.0.1.2" children=">computeNode4"/>
+
+    <!-- 【局部组播：节点上报到网关】 单跳路由 (防止节点向组播地址发包时找不到网关) -->
+    <multicast-route hosts="computeNode1" groups="225.0.1.1" children=">computeGateway1"/>
+    <multicast-route hosts="computeNode2" groups="225.0.1.2" children=">computeGateway1"/>
+    <multicast-route hosts="computeNode3" groups="225.0.1.2" children=">computeGateway2"/>
+    <multicast-route hosts="computeNode4" groups="225.0.1.1" children=">computeGateway2"/>
+</config>
+
+

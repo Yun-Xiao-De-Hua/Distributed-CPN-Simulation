@@ -1,0 +1,597 @@
+file 27613 1776700388                                           
+version 3
+run General-0-20260420-23:45:31-19912
+attr configname General
+attr datetime 20260420-23:45:31
+attr datetimef 20260420-234531
+attr experiment General
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network inet.examples.distributed_computing_power_network.simple_demo.Network
+attr processid 19912
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+config image-path ../../../images
+config network inet.examples.distributed_computing_power_network.simple_demo.Network
+config **.configurator.config "xmldoc(\"config.xml\")"
+config **.configurator.assignDisjunctSubnetAddresses false
+config **.configurator.assignAddresses true
+config **.configurator.assignRoutes false
+config **.configurator.addStaticRoutes false
+config **.configurator.addSubnetRoutes true
+config **.configurator.addDefaultRoutes false
+config **.ospf.ospfConfig "xmldoc(\"ospf.xml\")"
+config **.multicastForwarding true
+config **.forwarding true
+config **.user1.app[0].userNodeId 1
+config **.user1.app[0].localAddress "\"10.0.0.1\""
+config **.user1.app[0].localPort 5000
+config **.user1.app[0].userGatewayAddress "\"10.0.0.2\""
+config **.user1.app[0].userGatewayPort 5000
+config **.userGateway1.app[0].localAddress "\"10.0.1.1\""
+config **.userGateway1.app[0].userGatewayId 1
+config **.userGateway1.app[0].localPort 5000
+config **.userGateway1.app[0].userNodePort 5000
+config **.userGateway1.app[0].computeGatewayPort 5000
+config **.userGateway1.app[0].computeNodePort 5000
+config **.userGateway1.app[0].multicastInterfaces "\"ppp1\""
+config **.userGateway1.app[0].cpuMulticastGroups "\"225.0.1.1\""
+config **.userGateway1.app[0].gpuMulticastGroups "\"225.0.1.2\""
+config **.computeGateway1.app[0].computeGatewayId 1
+config **.computeGateway1.app[0].localAddress "\"10.0.2.2\""
+config **.computeGateway1.app[0].localPort 5000
+config **.computeGateway1.app[0].userGatewayPort 5000
+config **.computeGateway1.app[0].computeNodePort 5000
+config **.computeGateway1.app[0].cibUpdateInterval 0.5
+config **.computeGateway1.app[0].multicastGroups "\"225.0.1.1 225.0.1.2\""
+config **.computeGateway2.app[0].computeGatewayId 2
+config **.computeGateway2.app[0].localAddress "\"10.0.3.2\""
+config **.computeGateway2.app[0].localPort 5000
+config **.computeGateway2.app[0].userGatewayPort 5000
+config **.computeGateway2.app[0].computeNodePort 5000
+config **.computeGateway2.app[0].cibUpdateInterval 0.5
+config **.computeGateway2.app[0].multicastGroups "\"225.0.1.1 225.0.1.2\""
+config *.computeNode1.app[0].computeNodeId 1
+config *.computeNode1.app[0].computeGatewayId 1
+config *.computeNode1.app[0].localAddress "\"10.0.4.2\""
+config *.computeNode1.app[0].localPort 5000
+config *.computeNode1.app[0].computeGatewayAddress "\"10.0.2.2\""
+config *.computeNode1.app[0].computeGatewayPort 5000
+config *.computeNode1.app[0].computingType 0
+config *.computeNode1.app[0].computingCapacity 1e10
+config *.computeNode1.app[0].storageCapacity 1000
+config *.computeNode1.app[0].multicastAddress "\"225.0.1.1\""
+config *.computeNode2.app[0].computeNodeId 2
+config *.computeNode2.app[0].computeGatewayId 1
+config *.computeNode2.app[0].localAddress "\"10.0.6.2\""
+config *.computeNode2.app[0].localPort 5000
+config *.computeNode2.app[0].computeGatewayAddress "\"10.0.2.2\""
+config *.computeNode2.app[0].computeGatewayPort 5000
+config *.computeNode2.app[0].computingType 1
+config *.computeNode2.app[0].computingCapacity 5e10
+config *.computeNode2.app[0].storageCapacity 2000
+config *.computeNode2.app[0].multicastAddress "\"225.0.1.2\""
+config *.computeNode3.app[0].computeNodeId 3
+config *.computeNode3.app[0].computeGatewayId 2
+config *.computeNode3.app[0].localAddress "\"10.0.5.2\""
+config *.computeNode3.app[0].localPort 5000
+config *.computeNode3.app[0].computeGatewayAddress "\"10.0.3.2\""
+config *.computeNode3.app[0].computeGatewayPort 5000
+config *.computeNode3.app[0].computingType 1
+config *.computeNode3.app[0].computingCapacity 1e10
+config *.computeNode3.app[0].storageCapacity 1000
+config *.computeNode3.app[0].multicastAddress "\"225.0.1.2\""
+config *.computeNode4.app[0].computeNodeId 4
+config *.computeNode4.app[0].computeGatewayId 2
+config *.computeNode4.app[0].localAddress "\"10.0.7.2\""
+config *.computeNode4.app[0].localPort 5000
+config *.computeNode4.app[0].computeGatewayAddress "\"10.0.3.2\""
+config *.computeNode4.app[0].computeGatewayPort 5000
+config *.computeNode4.app[0].computingType 0
+config *.computeNode4.app[0].computingCapacity 5e10
+config *.computeNode4.app[0].storageCapacity 2000
+config *.computeNode4.app[0].multicastAddress "\"225.0.1.1\""
+
+vector 0 Network.user1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 1 Network.user1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 2 Network.user1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 3 Network.user1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 4 Network.user1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 5 Network.user1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 6 Network.userGateway1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 7 Network.userGateway1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 8 Network.userGateway1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 9 Network.userGateway1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 10 Network.userGateway1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 11 Network.userGateway1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 12 Network.userGateway1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 13 Network.userGateway1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 14 Network.userGateway1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 15 Network.router1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 16 Network.router1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 17 Network.router1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 18 Network.router1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 19 Network.router1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 20 Network.router1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 21 Network.router1.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 22 Network.router1.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 23 Network.router1.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 24 Network.computeGateway1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 25 Network.computeGateway1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 26 Network.computeGateway1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 27 Network.computeGateway1.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 28 Network.computeGateway1.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 29 Network.computeGateway1.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 30 Network.computeGateway1.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 31 Network.computeGateway1.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 32 Network.computeGateway1.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 33 Network.computeGateway1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 34 Network.computeGateway1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 35 Network.computeGateway1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 36 Network.computeGateway2.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 37 Network.computeGateway2.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 38 Network.computeGateway2.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 39 Network.computeGateway2.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 40 Network.computeGateway2.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 41 Network.computeGateway2.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 42 Network.computeGateway2.ppp[2].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 43 Network.computeGateway2.ppp[2].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 44 Network.computeGateway2.ppp[2].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 45 Network.computeGateway2.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 46 Network.computeGateway2.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 47 Network.computeGateway2.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 48 Network.computeNode1.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 49 Network.computeNode1.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 50 Network.computeNode1.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 51 Network.computeNode1.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 52 Network.computeNode1.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 53 Network.computeNode1.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 54 Network.computeNode2.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 55 Network.computeNode2.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 56 Network.computeNode2.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 57 Network.computeNode2.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 58 Network.computeNode2.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 59 Network.computeNode2.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 60 Network.computeNode3.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 61 Network.computeNode3.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 62 Network.computeNode3.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 63 Network.computeNode3.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 64 Network.computeNode3.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 65 Network.computeNode3.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 66 Network.computeNode4.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 67 Network.computeNode4.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 68 Network.computeNode4.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 69 Network.computeNode4.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 70 Network.computeNode4.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 71 Network.computeNode4.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+0	25641 45 0 0 0 0 5 0 0 0 0
+1	25686 45 0 0 0 0 5 0 0 0 0
+2	25731 9 0 0 0 0 1 0 0 0 0
+3	25740 9 0 0 0 0 1 0 0 0 0
+4	25749 9 0 0 0 0 1 0 0 0 0
+5	25758 9 0 0 0 0 1 0 0 0 0
+6	25767 45 0 0 0 0 5 0 0 0 0
+7	25812 45 0 0 0 0 5 0 0 0 0
+8	25857 9 0 0 0 0 1 0 0 0 0
+9	25866 45 0 0 0 0 5 0 0 0 0
+10	25911 50 0 0 0 0 5 0 0 0 0
+11	25961 10 0 0 0 0 1 0 0 0 0
+12	25971 10 0 0 0 0 1 0 0 0 0
+13	25981 10 0 0 0 0 1 0 0 0 0
+14	25991 10 0 0 0 0 1 0 0 0 0
+15	26001 50 0 0 0 0 5 0 0 0 0
+16	26051 50 0 0 0 0 5 0 0 0 0
+17	26101 10 0 0 0 0 1 0 0 0 0
+18	26111 50 0 0 0 0 5 0 0 0 0
+19	26161 50 0 0 0 0 5 0 0 0 0
+20	26211 10 0 0 0 0 1 0 0 0 0
+21	26221 50 0 0 0 0 5 0 0 0 0
+22	26271 50 0 0 0 0 5 0 0 0 0
+23	26321 10 0 0 0 0 1 0 0 0 0
+24	26331 50 0 0 0 0 5 0 0 0 0
+25	26381 50 0 0 0 0 5 0 0 0 0
+26	26431 10 0 0 0 0 1 0 0 0 0
+27	26441 50 0 0 0 0 5 0 0 0 0
+28	26491 50 0 0 0 0 5 0 0 0 0
+29	26541 10 0 0 0 0 1 0 0 0 0
+30	26551 50 0 0 0 0 5 0 0 0 0
+31	26601 50 0 0 0 0 5 0 0 0 0
+32	26651 10 0 0 0 0 1 0 0 0 0
+33	26661 10 0 0 0 0 1 0 0 0 0
+34	26671 10 0 0 0 0 1 0 0 0 0
+35	26681 10 0 0 0 0 1 0 0 0 0
+36	26691 50 0 0 0 0 5 0 0 0 0
+37	26741 50 0 0 0 0 5 0 0 0 0
+38	26791 10 0 0 0 0 1 0 0 0 0
+39	26801 50 0 0 0 0 5 0 0 0 0
+40	26851 50 0 0 0 0 5 0 0 0 0
+41	26901 10 0 0 0 0 1 0 0 0 0
+42	26911 50 0 0 0 0 5 0 0 0 0
+43	26961 50 0 0 0 0 5 0 0 0 0
+44	27011 10 0 0 0 0 1 0 0 0 0
+45	27021 10 0 0 0 0 1 0 0 0 0
+46	27031 10 0 0 0 0 1 0 0 0 0
+47	27041 10 0 0 0 0 1 0 0 0 0
+48	27051 50 0 0 0 0 5 0 0 0 0
+49	27101 50 0 0 0 0 5 0 0 0 0
+50	27151 10 0 0 0 0 1 0 0 0 0
+51	27161 10 0 0 0 0 1 0 0 0 0
+52	27171 10 0 0 0 0 1 0 0 0 0
+53	27181 10 0 0 0 0 1 0 0 0 0
+54	27191 50 0 0 0 0 5 0 0 0 0
+55	27241 50 0 0 0 0 5 0 0 0 0
+56	27291 10 0 0 0 0 1 0 0 0 0
+57	27301 10 0 0 0 0 1 0 0 0 0
+58	27311 10 0 0 0 0 1 0 0 0 0
+59	27321 10 0 0 0 0 1 0 0 0 0
+60	27331 50 0 0 0 0 5 0 0 0 0
+61	27381 50 0 0 0 0 5 0 0 0 0
+62	27431 10 0 0 0 0 1 0 0 0 0
+63	27441 10 0 0 0 0 1 0 0 0 0
+64	27451 10 0 0 0 0 1 0 0 0 0
+65	27461 10 0 0 0 0 1 0 0 0 0
+66	27471 50 0 0 0 0 5 0 0 0 0
+67	27521 50 0 0 0 0 5 0 0 0 0
+68	27571 10 0 0 0 0 1 0 0 0 0
+69	27581 10 0 0 0 0 1 0 0 0 0
+70	27591 10 0 0 0 0 1 0 0 0 0
+71	27601 10 0 0 0 0 1 0 0 0 0
+
