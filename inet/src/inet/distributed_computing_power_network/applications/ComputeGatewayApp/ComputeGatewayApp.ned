@@ -25,11 +25,13 @@ simple ComputeGatewayApp like IApp
         string localAddress = default("");         
     	int userGatewayPort = default(5000);  
     	int computeNodePort = default(5000);  
+    	string interfaceTableModule = default("^.interfaceTable");
     	
     	double cibUpdateInterval = default(0.5);
     	
     	string multicastGroups = default("");
     	string groupAddress = default("");
+    	string multicastRoutes = default("");
 
     gates:
         input socketIn;

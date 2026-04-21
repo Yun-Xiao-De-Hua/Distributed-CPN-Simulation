@@ -1,7 +1,12 @@
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/common/InterfaceTable.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
+#include "inet/transportlayer/common/L4PortTag_m.h"
+#include "inet/linklayer/common/InterfaceTag_m.h"
 #include <string>
+#include <sstream>
 #include "ComputeGatewayApp.h"
 
 Define_Module(inet::ComputeGatewayApp);
@@ -40,6 +45,16 @@ void ComputeGatewayApp::initialize(int stage)
         socket.setCallback(this);   // 将当前应用实例注册为 socket 的回调处理对象
         socket.setMulticastLoop(false);
 
+        parseMulticastRoutes(par("multicastRoutes"));
+
+        for (auto& entry : multicastRoutesMap) {
+            EV_INFO << "Multicast group " << entry.first << " -> interfaceIds: ";
+            for (int ifId : entry.second) {
+                EV_INFO << ifId << " ";
+            }
+            EV_INFO << endl;
+        }
+
         // 加入算力组
         const char *groups = par("multicastGroups").stringValue(); // 获取参数字符串
         cStringTokenizer tokenizer(groups, " "); // 以空格为分隔符
@@ -52,12 +67,6 @@ void ComputeGatewayApp::initialize(int stage)
 
             computingPowerGroup.push_back(multicastGroup);  // 记录算力组 组播地址，用于后续轮询
         }
-
-//        // 加入全局算力请求组
-//        L3Address groupAddress = L3AddressResolver().resolve(par("groupAddress"));
-//        socket.joinMulticastGroup(groupAddress);
-//
-//        EV_INFO << "Joined group: " << groupAddress << endl;
 
         // CIB更新计时器
         scheduleAt(simTime(), SelfCibUpdateEvent);
@@ -89,15 +98,42 @@ void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
     EV_INFO << "Start Sending CGMP_Query for CIB updating..." << std::endl;
 
     for(const auto& cpGroupAddress : computingPowerGroup){
-        auto payload = makeShared<CgmpQueryMsg>();
-
-        std::string messageType = payload->getMsgType();
-        Packet *pkt = new Packet(messageType.c_str());
-        pkt->insertAtBack(payload);
-
-        socket.sendTo(pkt, cpGroupAddress, computeNodePort);
-
-        EV_INFO << "CGMP_Query has been sent\n";
+        auto routeIt = multicastRoutesMap.find(cpGroupAddress);
+        
+        if (routeIt == multicastRoutesMap.end() || routeIt->second.empty()) {
+            EV_WARN << "No forwarding interfaces configured for multicast group " << cpGroupAddress 
+                    << ", using default sendTo" << endl;
+            auto payload = makeShared<CgmpQueryMsg>();
+            std::string messageType = payload->getMsgType();
+            Packet *pkt = new Packet(messageType.c_str());
+            pkt->insertAtBack(payload);
+            socket.sendTo(pkt, cpGroupAddress, computeNodePort);
+            continue;
+        }
+        
+        const std::vector<int>& interfaceIds = routeIt->second;
+        
+        EV_INFO << "Forwarding CGMP_Query to multicast group " << cpGroupAddress 
+                << " via " << interfaceIds.size() << " interface(s)" << endl;
+        
+        for (int interfaceId : interfaceIds) {
+            auto payload = makeShared<CgmpQueryMsg>();
+            std::string messageType = payload->getMsgType();
+            Packet *pkt = new Packet(messageType.c_str());
+            pkt->insertAtBack(payload);
+            
+            auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
+            interfaceReq->setInterfaceId(interfaceId);
+            
+            auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
+            addressReq->setDestAddress(cpGroupAddress);
+            pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeNodePort);
+            
+            socket.sendTo(pkt, cpGroupAddress, computeNodePort);
+            
+            EV_INFO << "CGMP_Query sent to group " << cpGroupAddress 
+                    << " via interfaceId=" << interfaceId << endl;
+        }
     }
 }
 
@@ -231,6 +267,60 @@ void ComputeGatewayApp::handleStopOperation(LifecycleOperation *operation)
 void ComputeGatewayApp::handleCrashOperation(LifecycleOperation *operation)
 {
     socket.destroy();
+}
+
+void ComputeGatewayApp::parseMulticastRoutes(const char *routesStr)
+{
+    if (!routesStr || strlen(routesStr) == 0) {
+        EV_WARN << "No multicast routes configured" << endl;
+        return;
+    }
+    
+    IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+    if (ift == nullptr) {
+        EV_ERROR << "Interface table not found!" << endl;
+        return;
+    }
+    
+    std::string routes(routesStr);
+    std::istringstream routeStream(routes);
+    std::string routeEntry;
+    
+    while (std::getline(routeStream, routeEntry, ';')) {
+        if (routeEntry.empty()) continue;
+        
+        std::istringstream entryStream(routeEntry);
+        std::string groupAddrStr, interfacesStr;
+        
+        if (entryStream >> groupAddrStr >> interfacesStr) {
+            L3Address groupAddr = L3AddressResolver().resolve(groupAddrStr.c_str());
+            if (groupAddr.isUnspecified()) {
+                EV_ERROR << "Invalid multicast address: " << groupAddrStr << endl;
+                continue;
+            }
+            
+            std::vector<int> interfaceIds;
+            std::istringstream ifStream(interfacesStr);
+            std::string ifName;
+            
+            while (std::getline(ifStream, ifName, ',')) {
+                if (ifName.empty()) continue;
+                NetworkInterface *ie = ift->findInterfaceByName(ifName.c_str());
+                if (ie != nullptr) {
+                    interfaceIds.push_back(ie->getInterfaceId());
+                    EV_INFO << "Added interface " << ifName 
+                            << " (id=" << ie->getInterfaceId() 
+                            << ") for multicast group " << groupAddr << endl;
+                } else {
+                    EV_ERROR << "Interface '" << ifName << "' not found!" << endl;
+                }
+            }
+            
+            if (!interfaceIds.empty()) {
+                multicastRoutesMap[groupAddr] = interfaceIds;
+            }
+        }
+    }
 }
 
 } /* namespace inet */
