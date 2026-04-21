@@ -26,12 +26,16 @@ simple UserGatewayApp like IApp
     	int computeGatewayPort = default(5000);  
     	int computeNodePort = default(5000);  
         string localAddress = default("");		
-    	string multicastInterfaces = default("");  // 组播转发接口列表，空格分隔，如 "ppp0 ppp1"
-    	string interfaceTableModule = default("^.interfaceTable");  // 接口表模块路径
+    	string interfaceTableModule = default("^.interfaceTable");
     	
-    	// 按算力类型配置组播组地址
-    	string cpuMulticastGroups = default("");   // CPU算力组播组地址列表，空格分隔
-    	string gpuMulticastGroups = default("");   // GPU算力组播组地址列表，空格分隔
+    	// 按算力类型配置组播组地址 (每种算力类型只对应一个组播组地址)
+    	string cpuMulticastGroup = default("");   // CPU算力组播组地址
+    	string gpuMulticastGroup = default("");   // GPU算力组播组地址
+    	
+    	// 组播路由配置：组播地址 -> 转发接口列表
+    	// 格式: "组播地址 接口1,接口2,...;组播地址 接口1,..."
+    	// 例如: "225.0.1.1 ppp1;225.0.1.2 ppp1,ppp2"
+    	string multicastRoutes = default("");
 
     gates:
         input socketIn;

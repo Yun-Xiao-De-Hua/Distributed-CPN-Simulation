@@ -41,10 +41,11 @@ protected:
 
     UdpSocket socket;
     
-    std::vector<int> multicastInterfaceIds;  // 组播转发接口 ID 列表
+    // 组播地址 -> 转发接口ID列表的映射
+    std::map<inet::L3Address, std::vector<int>> multicastInterfacesMap;
     
-    // 按算力类型存储组播组地址列表 (0=CPU, 1=GPU)
-    std::map<int, std::vector<inet::L3Address>> computingTypeMulticastGroups;
+    // 算力类型 -> 组播组地址的映射 (每种算力类型只对应一个组播组地址)
+    std::map<int, inet::L3Address> computingTypeMulticastGroup;
 
 protected:
     virtual void initialize(int stage) override;
@@ -69,8 +70,10 @@ protected:
     void processCprpResp(Packet *packet);
     // 发送算力确认消息
     void sendCprpConfirm(Packet *packet);
-    // 解析组播组地址字符串
-    void parseMulticastGroups(const char *groupsStr, int computingType);
+    // 解析组播组地址 (算力类型 -> 单个组播地址)
+    void parseMulticastGroup(const char *groupStr, int computingType);
+    // 解析组播路由配置 (组播地址 -> 接口列表)
+    void parseMulticastRoutes(const char *routesStr);
 
 public:
     UserGatewayApp();

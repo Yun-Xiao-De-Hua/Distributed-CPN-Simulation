@@ -41,64 +41,100 @@ void UserGatewayApp::initialize(int stage)
 
     else if (stage == INITSTAGE_APPLICATION_LAYER) {
         socket.setOutputGate(gate("socketOut"));
-        socket.bind(localPort); // 监听本机所有网卡
-        socket.setCallback(this);   // 将当前应用实例注册为 socket 的回调处理对象
+        socket.bind(localPort);
+        socket.setCallback(this);
         socket.setMulticastLoop(false);
         
-        // 解析组播转发接口列表，匹配静态组播路由配置
-        const char *multicastIfs = par("multicastInterfaces");
-        if (multicastIfs && strlen(multicastIfs) > 0) {
-            IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-            if (ift != nullptr) {
-                // 按空格分割接口名称
-                std::string interfacesStr(multicastIfs);
-                std::istringstream iss(interfacesStr);
-                std::string ifName;
-                while (iss >> ifName) {
-                    NetworkInterface *ie = ift->findInterfaceByName(ifName.c_str());
-                    if (ie != nullptr) {
-                        multicastInterfaceIds.push_back(ie->getInterfaceId());
-                        EV_INFO << "Added multicast output interface: " << ifName 
-                                << " (id=" << ie->getInterfaceId() << ")" << endl;
-                    } else {
-                        EV_ERROR << "Warning: Interface '" << ifName << "' not found!" << endl;
-                    }
-                }
-            }
-        }
+        // 解析组播路由配置 (组播地址 -> 接口列表)
+        parseMulticastRoutes(par("multicastRoutes"));
         
-        // 解析按算力类型配置的组播组地址
-        parseMulticastGroups(par("cpuMulticastGroups"), 0);  // 0 = CPU
-        parseMulticastGroups(par("gpuMulticastGroups"), 1);  // 1 = GPU
+        // 解析按算力类型配置的组播组地址 (每种算力类型只对应一个组播组地址)
+        parseMulticastGroup(par("cpuMulticastGroup"), 0);  // 0 = CPU
+        parseMulticastGroup(par("gpuMulticastGroup"), 1);  // 1 = GPU
         
         // 打印配置信息
-        for (auto& entry : computingTypeMulticastGroups) {
-            EV_INFO << "Computing type " << entry.first << " multicast groups: ";
-            for (auto& addr : entry.second) {
-                EV_INFO << addr << " ";
+        for (auto& entry : computingTypeMulticastGroup) {
+            EV_INFO << "Computing type " << entry.first << " -> multicast group: " << entry.second << endl;
+        }
+        
+        for (auto& entry : multicastInterfacesMap) {
+            EV_INFO << "Multicast group " << entry.first << " -> interfaces: ";
+            for (int ifId : entry.second) {
+                EV_INFO << ifId << " ";
             }
             EV_INFO << endl;
         }
         
-        // 设置 TTL，防止组播包在网络中无限转发
         socket.setTimeToLive(32);
     }
 }
 
-void UserGatewayApp::parseMulticastGroups(const char *groupsStr, int computingType)
+void UserGatewayApp::parseMulticastGroup(const char *groupStr, int computingType)
 {
-    if (groupsStr && strlen(groupsStr) > 0) {
-        std::string groups(groupsStr);
-        std::istringstream iss(groups);
-        std::string addrStr;
-        while (iss >> addrStr) {
-            L3Address addr = L3AddressResolver().resolve(addrStr.c_str());
-            if (!addr.isUnspecified()) {
-                computingTypeMulticastGroups[computingType].push_back(addr);
-                EV_INFO << "Added multicast group " << addr 
-                        << " for computing type " << computingType << endl;
-            } else {
-                EV_ERROR << "Warning: Invalid multicast address '" << addrStr << "'" << endl;
+    if (groupStr && strlen(groupStr) > 0) {
+        L3Address addr = L3AddressResolver().resolve(groupStr);
+        if (!addr.isUnspecified()) {
+            computingTypeMulticastGroup[computingType] = addr;
+            EV_INFO << "Configured multicast group " << addr 
+                    << " for computing type " << computingType << endl;
+        } else {
+            EV_ERROR << "Warning: Invalid multicast address '" << groupStr << "'" << endl;
+        }
+    }
+}
+
+void UserGatewayApp::parseMulticastRoutes(const char *routesStr)
+{
+    if (!routesStr || strlen(routesStr) == 0) {
+        EV_WARN << "No multicast routes configured" << endl;
+        return;
+    }
+    
+    IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+    if (ift == nullptr) {
+        EV_ERROR << "Interface table not found!" << endl;
+        return;
+    }
+    
+    // 格式: "组播地址 接口1,接口2,...;组播地址 接口1,..."
+    // 例如: "225.0.1.1 ppp1;225.0.1.2 ppp1,ppp2"
+    std::string routes(routesStr);
+    std::istringstream routeStream(routes);
+    std::string routeEntry;
+    
+    while (std::getline(routeStream, routeEntry, ';')) {
+        if (routeEntry.empty()) continue;
+        
+        std::istringstream entryStream(routeEntry);
+        std::string groupAddrStr, interfacesStr;
+        
+        if (entryStream >> groupAddrStr >> interfacesStr) {
+            L3Address groupAddr = L3AddressResolver().resolve(groupAddrStr.c_str());
+            if (groupAddr.isUnspecified()) {
+                EV_ERROR << "Invalid multicast address: " << groupAddrStr << endl;
+                continue;
+            }
+            
+            // 解析接口列表 (逗号分隔)
+            std::vector<int> interfaceIds;
+            std::istringstream ifStream(interfacesStr);
+            std::string ifName;
+            
+            while (std::getline(ifStream, ifName, ',')) {
+                if (ifName.empty()) continue;
+                NetworkInterface *ie = ift->findInterfaceByName(ifName.c_str());
+                if (ie != nullptr) {
+                    interfaceIds.push_back(ie->getInterfaceId());
+                    EV_INFO << "Added interface " << ifName 
+                            << " (id=" << ie->getInterfaceId() 
+                            << ") for multicast group " << groupAddr << endl;
+                } else {
+                    EV_ERROR << "Interface '" << ifName << "' not found!" << endl;
+                }
+            }
+            
+            if (!interfaceIds.empty()) {
+                multicastInterfacesMap[groupAddr] = interfaceIds;
             }
         }
     }
@@ -154,53 +190,47 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     std::string messageType = payload->getMsgType();
     int computingType = requestInfo->getComputingType();
     
-    // 获取对应算力类型的组播组地址列表
-    auto it = computingTypeMulticastGroups.find(computingType);
-    if (it == computingTypeMulticastGroups.end() || it->second.empty()) {
-        EV_ERROR << "No multicast groups configured for computing type " << computingType << endl;
+    // 获取对应算力类型的组播组地址
+    auto typeIt = computingTypeMulticastGroup.find(computingType);
+    if (typeIt == computingTypeMulticastGroup.end()) {
+        EV_ERROR << "No multicast group configured for computing type " << computingType << endl;
         delete packet;
         return;
     }
     
-    const std::vector<inet::L3Address>& targetGroups = it->second;
+    const inet::L3Address& groupAddr = typeIt->second;
+    
+    // 获取该组播地址对应的转发接口列表
+    auto routeIt = multicastInterfacesMap.find(groupAddr);
+    if (routeIt == multicastInterfacesMap.end() || routeIt->second.empty()) {
+        EV_ERROR << "No forwarding interfaces configured for multicast group " << groupAddr << endl;
+        delete packet;
+        return;
+    }
+    
+    const std::vector<int>& interfaceIds = routeIt->second;
     
     EV_INFO << "Forwarding CPRP request for task(" << payload->getUserId() << "-" << payload->getTaskId() 
             << ") computingType=" << computingType 
-            << " to " << targetGroups.size() << " multicast group(s)" << endl;
+            << " to multicast group " << groupAddr 
+            << " via " << interfaceIds.size() << " interface(s)" << endl;
 
-    // 检查是否配置了组播转发接口
-    if (!multicastInterfaceIds.empty()) {
-        // 为每个组播组地址和每个接口创建数据包副本并发送
-        for (const auto& groupAddr : targetGroups) {
-            for (int interfaceId : multicastInterfaceIds) {
-                Packet *pkt = new Packet(messageType.c_str());
-                pkt->insertAtBack(payload);
-                
-                // 使用 InterfaceReq 标签强制指定输出接口
-                auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
-                interfaceReq->setInterfaceId(interfaceId);
-                
-                // 设置目的地址和端口
-                auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
-                addressReq->setDestAddress(groupAddr);
-                pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeGatewayPort);
-                
-                // 发送
-                socket.sendTo(pkt, groupAddr, computeGatewayPort);
-                
-                EV_INFO << "Sent to group " << groupAddr 
-                        << " via interfaceId=" << interfaceId << endl;
-            }
-        }
-    } else {
-        // 没有配置特定接口，使用默认组播发送
-        for (const auto& groupAddr : targetGroups) {
-            Packet *pkt = new Packet(messageType.c_str());
-            pkt->insertAtBack(payload);
-            socket.sendTo(pkt, groupAddr, computeGatewayPort);
-            
-            EV_INFO << "Sent to group " << groupAddr << " (default interface)" << endl;
-        }
+    // 向每个转发接口复制转发组播数据包
+    for (int interfaceId : interfaceIds) {
+        Packet *pkt = new Packet(messageType.c_str());
+        pkt->insertAtBack(payload);
+        
+        auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
+        interfaceReq->setInterfaceId(interfaceId);
+        
+        auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
+        addressReq->setDestAddress(groupAddr);
+        pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeGatewayPort);
+        
+        socket.sendTo(pkt, groupAddr, computeGatewayPort);
+        
+        EV_INFO << "Sent to group " << groupAddr 
+                << " via interfaceId=" << interfaceId << endl;
     }
 
     // 启动算力请求计时

@@ -53,11 +53,11 @@ void ComputeGatewayApp::initialize(int stage)
             computingPowerGroup.push_back(multicastGroup);  // 记录算力组 组播地址，用于后续轮询
         }
 
-        // 加入全局算力请求组
-        L3Address groupAddress = L3AddressResolver().resolve(par("groupAddress"));
-        socket.joinMulticastGroup(groupAddress);
-
-        EV_INFO << "Joined group: " << groupAddress << endl;
+//        // 加入全局算力请求组
+//        L3Address groupAddress = L3AddressResolver().resolve(par("groupAddress"));
+//        socket.joinMulticastGroup(groupAddress);
+//
+//        EV_INFO << "Joined group: " << groupAddress << endl;
 
         // CIB更新计时器
         scheduleAt(simTime(), SelfCibUpdateEvent);
