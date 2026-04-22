@@ -15,6 +15,7 @@ inet/examples/*
 !inet/examples/distributed_computing_power_network
 
 inet/examples/distributed_computing_power_network/*/results
+inet/examples/distributed_computing_power_network/*/.qtenvrc
 
 inet/src/inet/*
 
