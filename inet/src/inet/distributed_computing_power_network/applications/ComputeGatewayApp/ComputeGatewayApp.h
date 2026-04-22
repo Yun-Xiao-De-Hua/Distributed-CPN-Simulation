@@ -33,6 +33,7 @@ protected:
         int computingType;
         double computingCapacity;
         double availableStorage;
+        simtime_t updateTime;
     };
 
     int computeGatewayId;

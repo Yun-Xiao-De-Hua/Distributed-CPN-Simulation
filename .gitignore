@@ -14,6 +14,8 @@ inet/examples/*
 
 !inet/examples/distributed_computing_power_network
 
+inet/examples/distributed_computing_power_network/*/results
+
 inet/src/inet/*
 
 !inet/src/inet/distributed_computing_power_network

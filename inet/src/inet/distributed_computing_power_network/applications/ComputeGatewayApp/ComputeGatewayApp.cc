@@ -155,6 +155,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.nodeAddress = reportInfo->getComputeNodeAddress();
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
+    cib.updateTime = reportInfo->getSendTime();
 
     EV_INFO << "CIB has been updated: computingType:" << cib.computingType << std::endl;
 
