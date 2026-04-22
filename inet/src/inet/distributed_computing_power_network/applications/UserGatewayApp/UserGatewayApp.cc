@@ -4,8 +4,6 @@
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
-#include "inet/networklayer/common/L3AddressTag_m.h"
-#include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "UserGatewayApp.h"
 
@@ -222,10 +220,6 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
         
         auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
         interfaceReq->setInterfaceId(interfaceId);
-        
-        auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
-        addressReq->setDestAddress(groupAddr);
-        pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeGatewayPort);
         
         socket.sendTo(pkt, groupAddr, computeGatewayPort);
         

@@ -2,8 +2,6 @@
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
-#include "inet/networklayer/common/L3AddressTag_m.h"
-#include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include <string>
 #include <sstream>
@@ -124,11 +122,7 @@ void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
             
             auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
             interfaceReq->setInterfaceId(interfaceId);
-            
-            auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
-            addressReq->setDestAddress(cpGroupAddress);
-            pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeNodePort);
-            
+
             socket.sendTo(pkt, cpGroupAddress, computeNodePort);
             
             EV_INFO << "CGMP_Query sent to group " << cpGroupAddress 

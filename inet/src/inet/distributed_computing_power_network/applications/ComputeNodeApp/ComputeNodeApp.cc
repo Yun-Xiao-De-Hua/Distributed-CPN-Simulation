@@ -1,6 +1,7 @@
 #include<cstring>
 #include "ComputeNodeApp.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/common/HopLimitTag_m.h"
 
 
 Define_Module(inet::ComputeNodeApp);
@@ -65,9 +66,12 @@ void ComputeNodeApp::sendCgmpReport()
     Packet *pkt = new Packet(messageType.c_str());
     pkt->insertAtBack(payload);
 
+    auto hopLimitReq = pkt->addTagIfAbsent<HopLimitReq>();
+    hopLimitReq->setHopLimit(1);
+
     socket.sendTo(pkt, multicastAddress, computeGatewayPort);
 
-    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report to computeGateway" << computeGatewayId << "\n";
+    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report (TTL=1) to computeGateway" << computeGatewayId << "\n";
 }
 
 
