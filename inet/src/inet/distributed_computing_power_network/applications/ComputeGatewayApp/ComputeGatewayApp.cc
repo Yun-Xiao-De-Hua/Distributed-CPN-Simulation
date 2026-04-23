@@ -2,7 +2,10 @@
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
+#include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
+#include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 #include <string>
 #include <sstream>
 #include "ComputeGatewayApp.h"
@@ -167,7 +170,6 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
-    // 提取算力请求负载信息
     const auto& requestInfo = packet->popAtFront<CprpRequestMsg>();
 
     if(requestInfo == nullptr){
@@ -177,25 +179,22 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
         return;
     }
 
-    // 算力组查询
     if(cibInfoMap.find(requestInfo->getComputingType()) == cibInfoMap.end()){
         EV_INFO << "ComputeGateway" << computeGatewayId << " has no cib entry for computingType: " << requestInfo->getComputingType() << std::endl;
+        delete packet;
         return;
     }
 
     const auto& groupMap = cibInfoMap.at(requestInfo->getComputingType());
 
-    // 算力节点选择算法
-    int selectedNodeId = 1; // test，暂时硬编码
+    int selectedNodeId = 1;
 
     CIB destNodeInfo;
     if(groupMap.find(selectedNodeId)==groupMap.end())
-        destNodeInfo = groupMap.at(4);   // test，暂时硬编码
+        destNodeInfo = groupMap.at(4);
     else
-        destNodeInfo = groupMap.at(selectedNodeId);   // test，暂时硬编码
+        destNodeInfo = groupMap.at(selectedNodeId);
 
-
-    // 创建算力应答载荷
     auto payload = makeShared<CprpResponseMsg>();
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
@@ -207,16 +206,29 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setAvailableStorage(destNodeInfo.availableStorage);
     payload->setSendTime(simTime());
 
-    // 创建并转发Packet至源用户网关
+    payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+    payload->setMaxDelayTolerance(requestInfo->getTotalDelayRequirement());
+    payload->setComputingDelay(0.001);
+    payload->setQueuingDelay(0.0005);
+    payload->setTransmissionDelay(0.001);
+    payload->setComputeCost(10.0);
+
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
     pkt->insertAtBack(payload);
 
+    auto pathReq = pkt->addTagIfAbsent<CpnPathReq>();
+    pathReq->setMode(PATH_RECORD_MODE);
+    pathReq->setUserId(requestInfo->getUserId());
+    pathReq->setTaskId(requestInfo->getTaskId());
+    pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
+    pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+
     socket.sendTo(pkt, requestInfo->getUserGatewayAddress(), userGatewayPort);
 
-    EV_INFO << "ComputeGateway" << computeGatewayId << " has sent CPRP_RESP.\n";
+    EV_INFO << "ComputeGateway" << computeGatewayId << " has sent CPRP_RESP with path recording for task(" 
+            << requestInfo->getUserId() << "," << requestInfo->getTaskId() << ").\n";
 
-    // 清理算力请求消息
     delete packet;
 }
 

@@ -27,6 +27,7 @@ void UserNodeApp::initialize(int stage)
        this->localAddress = L3AddressResolver().resolve(par("localAddress"));
        this->userGatewayAddress = L3AddressResolver().resolve(par("userGatewayAddress"));
        this->userGatewayPort = par("userGatewayPort");
+       this->maxTransmissionBandwidth = par("maxTransmissionBandwidth");
 
        this->selfTaskCreationEvent = new cMessage("TaskCreationSelfMsg");
     }
@@ -64,6 +65,7 @@ void UserNodeApp::sendTaskRequest()
     payload->setUserId(this->userNodeId);
     payload->setTaskId(1);  // test，暂时硬编码
     payload->setComputingType(0);   // test，暂时硬编码
+    payload->setUserMaxBandwidth(this->maxTransmissionBandwidth);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());

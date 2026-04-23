@@ -15,8 +15,23 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.node.ospfv2.OspfRouter;
+import inet.distributed_computing_power_network.router.BandwidthManager;
+import inet.distributed_computing_power_network.router.CpnPathProcessor;
 
 module Router extends OspfRouter
 {
-    
+    parameters:
+        bool hasBandwidthManager = default(true);
+        bool hasCpnPathProcessor = default(true);
+        @display("i=abstract/router");
+        
+    submodules:
+        bandwidthManager: BandwidthManager if hasBandwidthManager {
+            @display("p=600,100");
+        }
+        cpnPathProcessor: CpnPathProcessor if hasCpnPathProcessor {
+            parameters:
+                ipv4Module = "^.ipv4";
+            @display("p=600,150");
+        }
 }

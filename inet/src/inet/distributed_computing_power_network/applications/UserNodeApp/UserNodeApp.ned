@@ -24,7 +24,8 @@ simple UserNodeApp like IApp
        string localAddress = default("");					
        int localPort = default(5000);					
        string userGatewayAddress = default("");				
-       int userGatewayPort = default(5000);					
+       int userGatewayPort = default(5000);
+       double maxTransmissionBandwidth @unit(bps) = default(100Mbps);  // 用户最大传输带宽
 
 	gates:	
 	    input socketIn;

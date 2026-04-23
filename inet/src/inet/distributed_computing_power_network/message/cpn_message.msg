@@ -40,8 +40,9 @@ class CprpRequestMsg extends inet::FieldsChunk {
     double transferAmount;      // 任务传输量
     simtime_t totalDelayRequirement; // 总时延要求
     double budget;              // 预算
+    double userMaxBandwidth;    // 用户最大传输带宽
     
-    chunkLength = B(12 + 32); // 在构造函数中直接赋值
+    chunkLength = B(12 + 40); // 在构造函数中直接赋值
 }
 
 class CprpResponseMsg extends inet::FieldsChunk {
@@ -57,9 +58,17 @@ class CprpResponseMsg extends inet::FieldsChunk {
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     double computingCapacity;	// 算力
     double availableStorage;     // 可用存储    
-    simtime_t sendTime;   // 发送时间戳    
+    simtime_t sendTime;   // 发送时间戳
     
-    chunkLength = B(20 + 16); // 在构造函数中直接赋值
+    // 路径和资源预留相关字段
+    double requiredBandwidth;       // 用户最大传输带宽(用于预留)
+    simtime_t maxDelayTolerance;    // 用户最大时延忍耐值
+    simtime_t computingDelay;       // 任务计算时延
+    simtime_t queuingDelay;         // 任务排队时延
+    simtime_t transmissionDelay;    // 任务传输时延
+    double computeCost;             // 任务计算费用
+    
+    chunkLength = B(20 + 48); // 在构造函数中直接赋值
 }
 
 class CprpConfirmMsg extends inet::FieldsChunk {
@@ -71,6 +80,7 @@ class CprpConfirmMsg extends inet::FieldsChunk {
     string msgType = "CPRP_CONFIRM";    
  
 	int selectedNodeId;	// 最终选定的算力节点
+	int selectedPathIndex = 0;  // 用户选定的路径索引(可选)
 	
 	// 任务数据参数	
     simtime_t generationTime;   // 任务产生的时刻
@@ -81,7 +91,7 @@ class CprpConfirmMsg extends inet::FieldsChunk {
     simtime_t totalDelayRequirement; // 总时延要求
     double budget;              // 预算 
     
-    chunkLength = B(20 + 32); // 在构造函数中直接赋值
+    chunkLength = B(24 + 32); // 在构造函数中直接赋值
 }
 
 // ==============================================
@@ -103,8 +113,9 @@ class TaskRequestMsg extends inet::FieldsChunk {
     double transferAmount;      // 任务传输量
     simtime_t totalDelayRequirement; // 总时延要求
     double budget;              // 预算
+    double userMaxBandwidth;    // 用户最大传输带宽
     
-    chunkLength = B(12 + 32); // 在构造函数中直接赋值
+    chunkLength = B(12 + 40); // 在构造函数中直接赋值
 }
 
 // ==============================================
@@ -127,9 +138,10 @@ class TaskDataMsg extends inet::FieldsChunk {
     double computingAmount;     // 任务计算量
     double transferAmount;      // 任务传输量
     simtime_t totalDelayRequirement; // 总时延要求
-    double budget;              // 预算 
+    double budget;              // 预算
+    int priority = 5;           // DSCP优先级，默认EF(5)
     
-    chunkLength = B(12 + 32); // 在构造函数中直接赋值
+    chunkLength = B(16 + 32); // 在构造函数中直接赋值
 }
 
 // 算力应答超时自消息

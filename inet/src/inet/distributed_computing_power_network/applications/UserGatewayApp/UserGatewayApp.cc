@@ -1,10 +1,13 @@
 
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
+#include "inet/networklayer/common/DscpTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
+#include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 #include "UserGatewayApp.h"
 
 Define_Module(inet::UserGatewayApp);
@@ -278,7 +281,6 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
-    // 提取任务请求负载信息
     const auto& respInfo = packet->popAtFront<CprpResponseMsg>();
 
     if(respInfo == nullptr){
@@ -294,44 +296,130 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     auto& cpArray = cpMap[{uid,tid}];
     computeNodeInfo cpNodeInfo;
     cpNodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
+    cpNodeInfo.computeNodeId = respInfo->getComputeNodeId();
+    cpNodeInfo.computingType = respInfo->getComputingType();
+    cpNodeInfo.computingCapacity = respInfo->getComputingCapacity();
+    cpNodeInfo.availableStorage = respInfo->getAvailableStorage();
+    cpNodeInfo.sendTime = respInfo->getSendTime();
     cpArray.push_back(cpNodeInfo);
+
+    auto pathInd = packet->findTag<CpnPathInd>();
+    PathInfo pathInfo;
+    
+    if (pathInd != nullptr) {
+        for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
+            pathInfo.sidPath.push_back(pathInd->getHopAddress(i));
+        }
+        std::reverse(pathInfo.sidPath.begin(), pathInfo.sidPath.end());
+    }
+    
+    simtime_t propagationDelay = simTime() - respInfo->getSendTime();
+    simtime_t totalDelay = respInfo->getComputingDelay() 
+                         + respInfo->getQueuingDelay()
+                         + respInfo->getTransmissionDelay()
+                         + propagationDelay;
+    
+    pathInfo.totalDelay = totalDelay.dbl();
+    pathInfo.computeCost = respInfo->getComputeCost();
+    pathInfo.bandwidth = respInfo->getRequiredBandwidth();
+    pathInfo.computeNodeId = respInfo->getComputeNodeId();
+    pathInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
+    pathInfo.timestamp = simTime();
+    
+    pathCache[{uid, tid}].push_back(pathInfo);
+
+    EV_INFO << "Recorded path for task (" << uid << "," << tid 
+            << ") with totalDelay=" << totalDelay 
+            << " pathHops=" << pathInfo.sidPath.size() << endl;
 
     EV_INFO << "Node info of CPRP_RESP has been recorded\n";
 
     delete packet;
 }
 
-// 发送算力确认消息
-void UserGatewayApp::sendCprpConfirm(Packet *packet)
+// 处理算力确认消息
+void UserGatewayApp::processCprpConfirm(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
-//    // 提取任务请求负载信息
-//    const auto& comfInfo = packet->popAtFront<CprpConfirmMsg>();
-//
-//    if(comfInfo == nullptr){
-//        EV_WARN << "Error: Received a Packet named '" << packet->getName()
-//                 << "', but it does not contain a CprpConfirmMsg chunk. Discarding.";
-//        delete packet;
-//        return;
-//    }
-//
-//    // 创建算力应答载荷
-//    auto payload = makeShared<CprpConfirmMsg>();
-//    payload->setUserId(comfInfo->getUserId());
-//    payload->setTaskId(comfInfo->getTaskId());
-//    payload->setSelectedNodeId(comfInfo->getSelectedNodeId());
-//
-//    std::string messageType = payload->getMsgType();
-//    Packet *pkt = new Packet(messageType.c_str());
-//    pkt->insertAtBack(payload);
-//
-//    socket.sendTo(pkt, comfInfo->, userGatewayPort);
+    const auto& confirmInfo = packet->popAtFront<CprpConfirmMsg>();
 
+    if(confirmInfo == nullptr){
+        EV_WARN << "Error: Received a Packet named '" << packet->getName()
+                 << "', but it does not contain a CprpConfirmMsg chunk. Discarding.";
+        delete packet;
+        return;
+    }
 
-    EV_INFO << "Node info of CPRP_RESP has been recorded\n";
+    int uid = confirmInfo->getUserId();
+    int tid = confirmInfo->getTaskId();
+    int selectedNodeId = confirmInfo->getSelectedNodeId();
+    int computingType = confirmInfo->getComputingType();
+
+    EV_INFO << "Processing CPRP_CONFIRM for task (" << uid << "," << tid 
+            << ") selectedNode=" << selectedNodeId << endl;
+
+    forwardTaskData(uid, tid, selectedNodeId, computingType);
 
     delete packet;
+}
+
+// 转发任务数据消息
+void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, int computingType)
+{
+    auto it = pathCache.find({userId, taskId});
+    if (it == pathCache.end() || it->second.empty()) {
+        EV_ERROR << "No path found for task (" << userId << "," << taskId << ")" << endl;
+        return;
+    }
+
+    std::vector<PathInfo>* paths = &it->second;
+    
+    PathInfo* selectedPath = nullptr;
+    double minDelay = std::numeric_limits<double>::max();
+    
+    for (auto& path : *paths) {
+        if (path.computeNodeId == selectedNodeId && path.totalDelay < minDelay) {
+            selectedPath = &path;
+            minDelay = path.totalDelay;
+        }
+    }
+
+    if (!selectedPath || selectedPath->sidPath.empty()) {
+        EV_ERROR << "Selected node path not found or path is empty" << endl;
+        return;
+    }
+
+    EV_INFO << "Selected path with delay=" << selectedPath->totalDelay 
+            << " hops=" << selectedPath->sidPath.size() << endl;
+
+    auto taskData = makeShared<TaskDataMsg>();
+    taskData->setUserId(userId);
+    taskData->setTaskId(taskId);
+    taskData->setComputingType(computingType);
+    taskData->setPriority(5);
+
+    Packet *pkt = new Packet("TASK_DATA");
+    pkt->insertAtBack(taskData);
+
+    auto pathReq = pkt->addTagIfAbsent<CpnPathReq>();
+    pathReq->setMode(PATH_USE_MODE);
+    pathReq->setUserId(userId);
+    pathReq->setTaskId(taskId);
+    pathReq->setSidListArraySize(selectedPath->sidPath.size());
+    for (size_t i = 0; i < selectedPath->sidPath.size(); i++) {
+        pathReq->setSidList(i, selectedPath->sidPath[i]);
+    }
+    pathReq->setCurrentHopIndex(0);
+
+    pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
+
+    L3Address firstHop = selectedPath->sidPath[0];
+    socket.sendTo(pkt, firstHop, computeNodePort);
+
+    EV_INFO << "Forwarding TASK_DATA via selected path to " << firstHop << endl;
+
+    pathCache.erase({userId, taskId});
 }
 
 
@@ -345,7 +433,7 @@ void UserGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
         processCprpResp(packet);
     }
     else if(strcmp(packet->getName(), "CPRP_CONFIRM") == 0){
-
+        processCprpConfirm(packet);
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;
