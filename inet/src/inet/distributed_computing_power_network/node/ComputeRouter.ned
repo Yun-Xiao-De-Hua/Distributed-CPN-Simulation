@@ -15,21 +15,24 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.node.ospfv2.OspfRouter;
-import inet.distributed_computing_power_network.router.BandwidthManager;
-import inet.distributed_computing_power_network.router.CpnPathProcessor;
+import inet.distributed_computing_power_network.router.SessionManager;
+import inet.distributed_computing_power_network.router.ComputeRouterProcessor;
 
-module Router extends OspfRouter
+// 算力路由器模块
+// 支持请求会话软状态管理、算力路由选择算法、浅度包检测
+module ComputeRouter extends OspfRouter
 {
     parameters:
-        bool hasBandwidthManager = default(true);
-        bool hasCpnPathProcessor = default(true);
+        bool hasSessionManager = default(true);
+        bool hasComputeRouterProcessor = default(true);
+        double sessionTimeout @unit(s) = default(60s);  // 请求会话超时时间
         @display("i=abstract/router");
         
     submodules:
-        bandwidthManager: BandwidthManager if hasBandwidthManager {
+        sessionManager: SessionManager if hasSessionManager {
             @display("p=600,100");
         }
-        cpnPathProcessor: CpnPathProcessor if hasCpnPathProcessor {
+        computeRouterProcessor: ComputeRouterProcessor if hasComputeRouterProcessor {
             parameters:
                 ipv4Module = "^.ipv4";
             @display("p=600,150");

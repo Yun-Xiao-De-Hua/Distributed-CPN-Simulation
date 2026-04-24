@@ -68,7 +68,14 @@ class CprpResponseMsg extends inet::FieldsChunk {
     simtime_t transmissionDelay;    // 任务传输时延
     double computeCost;             // 任务计算费用
     
-    chunkLength = B(20 + 48); // 在构造函数中直接赋值
+    // 路由选择相关字段
+    simtime_t lastHopSendTime;      // 上一跳发送时间戳
+    L3Address lastHopAddress;       // 上一跳IP地址
+    simtime_t accumulatedDelay;     // 累积网络延迟
+    L3Address computeGatewayAddress; // 算力网关地址
+    int computeGatewayPort;         // 算力网关端口
+    
+    chunkLength = B(32 + 64); // 在构造函数中直接赋值
 }
 
 class CprpConfirmMsg extends inet::FieldsChunk {
@@ -194,6 +201,20 @@ class CgmpReportMsg extends inet::FieldsChunk {
     simtime_t sendTime;   // 发送时间戳    
     
     chunkLength = B(8 + 16); // 在构造函数中直接赋值	    
+}
+
+// ==============================================
+// ================== Cancel消息 =================
+// ==============================================
+
+class CancelMsg extends inet::FieldsChunk {
+    int userId;                       // 用户ID
+    int taskId;                       // 任务ID
+    L3Address computeGatewayAddress;  // 算力网关地址
+    int computeGatewayPort;           // 算力网关端口
+    
+    string msgType = "CANCEL";
+    chunkLength = B(16);
 }
 
 

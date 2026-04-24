@@ -9,6 +9,7 @@ import inet.distributed_computing_power_network.node.UserGateway;
 import inet.distributed_computing_power_network.node.ComputeGateway;
 import inet.distributed_computing_power_network.node.UserNode;
 import inet.distributed_computing_power_network.node.ComputeNode;
+import inet.distributed_computing_power_network.node.ComputeRouter;
 
 network Network
 {
@@ -36,7 +37,7 @@ network Network
                 pppg[2];
         }
 
-        router1: OspfRouter {
+        router1: ComputeRouter {
             parameters:
                 multicastForwarding = true;
                 @display("p=350,228");

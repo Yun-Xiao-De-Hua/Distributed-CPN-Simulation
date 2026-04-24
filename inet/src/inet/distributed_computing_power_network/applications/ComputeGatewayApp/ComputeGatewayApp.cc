@@ -212,6 +212,12 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setQueuingDelay(0.0005);
     payload->setTransmissionDelay(0.001);
     payload->setComputeCost(10.0);
+    
+    payload->setLastHopSendTime(simTime());
+    payload->setLastHopAddress(localAddress);
+    payload->setAccumulatedDelay(0);
+    payload->setComputeGatewayAddress(localAddress);
+    payload->setComputeGatewayPort(localPort);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
