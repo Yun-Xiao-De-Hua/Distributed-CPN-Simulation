@@ -2,7 +2,7 @@ package inet.distributed_computing_power_network.router;
 
 import inet.common.contract.IModule;
 
-simple ComputeRouterProcessor like IModule
+simple CprpProcessorBase like IModule
 {
     parameters:
         @display("i=block/routing");

@@ -199,8 +199,9 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
     payload->setComputeNodeId(selectedNodeId);
-
     payload->setComputeNodeAddress(destNodeInfo.nodeAddress);
+    payload->setComputeNodePort(computeNodePort);
+
     payload->setComputingType(destNodeInfo.computingType);
     payload->setComputingCapacity(destNodeInfo.computingCapacity);
     payload->setAvailableStorage(destNodeInfo.availableStorage);
@@ -208,16 +209,17 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
     payload->setMaxDelayTolerance(requestInfo->getTotalDelayRequirement());
-    payload->setComputingDelay(0.001);
-    payload->setQueuingDelay(0.0005);
-    payload->setTransmissionDelay(0.001);
     payload->setComputeCost(10.0);
+    
+    double computingDelay = 0.001;
+    double queuingDelay = 0.0005;
+    double transmissionDelay = 0.001;
+    double totalDelay = computingDelay + queuingDelay + transmissionDelay;
+    
+    payload->setAccumulatedDelay(totalDelay);
     
     payload->setLastHopSendTime(simTime());
     payload->setLastHopAddress(localAddress);
-    payload->setAccumulatedDelay(0);
-    payload->setComputeGatewayAddress(localAddress);
-    payload->setComputeGatewayPort(localPort);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -229,12 +231,58 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
     pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+    
+    pathReq->setHopAddressArraySize(2);
+    pathReq->setHopAddress(0, destNodeInfo.nodeAddress);
+    pathReq->setHopAddress(1, localAddress);
 
     socket.sendTo(pkt, requestInfo->getUserGatewayAddress(), userGatewayPort);
 
-    EV_INFO << "ComputeGateway" << computeGatewayId << " has sent CPRP_RESP with path recording for task(" 
-            << requestInfo->getUserId() << "," << requestInfo->getTaskId() << ").\n";
+    EV_INFO << "ComputeGateway" << computeGatewayId << " has sent CPRP_RESP for task(" 
+            << requestInfo->getUserId() << "," << requestInfo->getTaskId() 
+            << ") with computeNode=" << destNodeInfo.nodeAddress 
+            << ":" << computeNodePort << ".\n";
 
+    delete packet;
+}
+
+// 处理任务完成通告
+void ComputeGatewayApp::handleTaskCompletion(Packet *packet)
+{
+    EV_INFO << "Received task completion notification" << std::endl;
+    
+    const auto& completion = packet->peekAtFront<TaskCompletionMsg>();
+    
+    if (completion == nullptr) {
+        EV_WARN << "Invalid TaskCompletionMsg" << std::endl;
+        delete packet;
+        return;
+    }
+    
+    int uid = completion->getUserId();
+    int tid = completion->getTaskId();
+    L3Address computeNodeAddr = completion->getComputeNodeAddress();
+    int cnPort = completion->getComputeNodePort();
+    L3Address userGwAddr = completion->getUserGatewayAddress();
+    
+    EV_INFO << "Task (" << uid << "," << tid << ") completed by computeNode " 
+            << computeNodeAddr << ":" << cnPort << std::endl;
+    
+    auto cancel = makeShared<CancelMsg>();
+    cancel->setUserId(uid);
+    cancel->setTaskId(tid);
+    cancel->setComputeNodeAddress(computeNodeAddr);
+    cancel->setComputeNodePort(cnPort);
+    cancel->setSenderType(SENDER_COMPUTE_GW);
+    
+    Packet *cancelPkt = new Packet("CANCEL");
+    cancelPkt->insertAtBack(cancel);
+    
+    socket.sendTo(cancelPkt, userGwAddr, userGatewayPort);
+    
+    EV_INFO << "Sent CANCEL to user gateway " << userGwAddr << " for task (" 
+            << uid << "," << tid << ")" << std::endl;
+    
     delete packet;
 }
 
@@ -246,6 +294,9 @@ void ComputeGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
     }
     else if(strcmp(packet->getName(), "CGMP_Report") == 0){
         updateCib(packet);
+    }
+    else if(strcmp(packet->getName(), "TASK_COMPLETION") == 0){
+        handleTaskCompletion(packet);
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << std::endl;

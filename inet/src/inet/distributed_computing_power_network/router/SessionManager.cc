@@ -1,268 +1,183 @@
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
-
 #include "SessionManager.h"
-#include "inet/common/ModuleAccess.h"
 
 namespace inet {
 
 Define_Module(SessionManager);
 
-SessionManager::SessionManager()
-{
-}
+SessionManager::SessionManager() {}
+SessionManager::~SessionManager() {}
 
-SessionManager::~SessionManager()
-{
-    cancelAndDelete(cleanupTimer);
-}
-
-void SessionManager::initialize(int stage)
-{
+void SessionManager::initialize(int stage) {
     cSimpleModule::initialize(stage);
-
     if (stage == INITSTAGE_LOCAL) {
         sessionTimeout = par("sessionTimeout");
-        defaultReservationTimeout = par("defaultReservationTimeout");
-        strictPruning = par("strictPruning");
-        cleanupTimer = new cMessage("CleanupTimer");
-        
-        EV_INFO << "SessionManager initialized with sessionTimeout=" << sessionTimeout 
-                << " strictPruning=" << strictPruning << endl;
-    }
-    else if (stage == INITSTAGE_APPLICATION_LAYER) {
-        scheduleCleanupTimer();
+        WATCH_MAP(sessionTable);
     }
 }
 
-void SessionManager::handleMessage(cMessage *msg)
-{
-    if (msg == cleanupTimer) {
-        cleanupExpiredSessions();
-        cleanupExpiredReservations();
-        scheduleCleanupTimer();
-    }
+void SessionManager::handleMessage(cMessage *msg) {
+    delete msg;
 }
 
-void SessionManager::refreshDisplay() const
-{
-    char buf[128];
-    sprintf(buf, "Sessions: %zu, Interfaces: %zu", sessionTable.size(), interfaceBandwidths.size());
-    getDisplayString().setTagArg("t", 0, buf);
+void SessionManager::finish() {
+    printSessionTable();
 }
 
-void SessionManager::scheduleCleanupTimer()
-{
-    scheduleAt(simTime() + 10.0, cleanupTimer);
-}
-
-void SessionManager::cleanupExpiredSessions()
-{
-    simtime_t now = simTime();
-    int cleanedCount = 0;
-    
-    std::vector<std::pair<int, int>> toRemove;
-    for (auto& pair : sessionTable) {
-        if (pair.second.expiryTime <= now) {
-            toRemove.push_back(pair.first);
-            cleanedCount++;
-        }
-    }
-    
-    for (auto& key : toRemove) {
-        EV_INFO << "Expired session for (" << key.first << "," << key.second << ")" << endl;
-        sessionTable.erase(key);
-    }
-    
-    if (cleanedCount > 0) {
-        EV_INFO << "Cleaned " << cleanedCount << " expired sessions" << endl;
-    }
-}
-
-void SessionManager::cleanupExpiredReservations()
-{
-    simtime_t now = simTime();
-    int cleanedCount = 0;
-
-    for (auto& ifPair : interfaceBandwidths) {
-        auto& state = ifPair.second;
-        std::vector<std::pair<int, int>> toRemove;
-
-        for (auto& resPair : state.reservations) {
-            if (resPair.second.expiryTime <= now) {
-                toRemove.push_back(resPair.first);
-                state.reservedBandwidth -= resPair.second.reservedBandwidth;
-                cleanedCount++;
-            }
-        }
-
-        for (auto& key : toRemove) {
-            state.reservations.erase(key);
-        }
-    }
-
-    if (cleanedCount > 0) {
-        EV_INFO << "Cleaned " << cleanedCount << " expired reservations" << endl;
-    }
-}
-
-// 会话管理方法
-bool SessionManager::hasSession(int userId, int taskId) const
-{
+bool SessionManager::hasSession(int userId, int taskId) {
     return sessionTable.find({userId, taskId}) != sessionTable.end();
 }
 
-const RequestSessionState* SessionManager::getSession(int userId, int taskId) const
-{
+const RequestSessionState* SessionManager::getSession(int userId, int taskId) {
     auto it = sessionTable.find({userId, taskId});
-    if (it != sessionTable.end())
-        return &it->second;
+    if (it != sessionTable.end()) {
+        return &(it->second);
+    }
     return nullptr;
 }
 
-RequestSessionState* SessionManager::getSessionForUpdate(int userId, int taskId)
-{
+RequestSessionState* SessionManager::getSessionForUpdate(int userId, int taskId) {
     auto it = sessionTable.find({userId, taskId});
-    if (it != sessionTable.end())
-        return &it->second;
+    if (it != sessionTable.end()) {
+        return &(it->second);
+    }
     return nullptr;
 }
 
-void SessionManager::createSession(const RequestSessionState& state)
-{
-    sessionTable[{state.userId, state.taskId}] = state;
-    sessionTable[{state.userId, state.taskId}].expiryTime = simTime() + sessionTimeout;
+void SessionManager::createSession(const RequestSessionState& state) {
+    auto key = std::make_pair(state.userId, state.taskId);
     
-    EV_INFO << "Created session for (" << state.userId << "," << state.taskId << ")" << endl;
-}
-
-void SessionManager::updateSession(const RequestSessionState& state)
-{
-    auto it = sessionTable.find({state.userId, state.taskId});
-    if (it != sessionTable.end()) {
-        it->second = state;
-        it->second.expiryTime = simTime() + sessionTimeout;
-        
-        EV_INFO << "Updated session for (" << state.userId << "," << state.taskId << ")" << endl;
-    }
-}
-
-void SessionManager::removeSession(int userId, int taskId)
-{
-    auto it = sessionTable.find({userId, taskId});
-    if (it != sessionTable.end()) {
-        sessionTable.erase(it);
-        EV_INFO << "Removed session for (" << userId << "," << taskId << ")" << endl;
-    }
-}
-
-void SessionManager::refreshSession(int userId, int taskId)
-{
-    auto it = sessionTable.find({userId, taskId});
-    if (it != sessionTable.end()) {
-        it->second.expiryTime = simTime() + sessionTimeout;
-        EV_INFO << "Refreshed session for (" << userId << "," << taskId << ")" << endl;
-    }
-}
-
-// 带宽管理方法
-void SessionManager::setInterfaceBandwidth(int interfaceId, double bandwidth)
-{
-    auto& state = interfaceBandwidths[interfaceId];
-    state.totalBandwidth = bandwidth;
-    
-    EV_INFO << "Set interface " << interfaceId << " bandwidth to " << bandwidth << " bps" << endl;
-}
-
-double SessionManager::getTotalBandwidth(int interfaceId) const
-{
-    auto it = interfaceBandwidths.find(interfaceId);
-    if (it != interfaceBandwidths.end())
-        return it->second.totalBandwidth;
-    return 0;
-}
-
-double SessionManager::getReservedBandwidth(int interfaceId) const
-{
-    auto it = interfaceBandwidths.find(interfaceId);
-    if (it != interfaceBandwidths.end())
-        return it->second.reservedBandwidth;
-    return 0;
-}
-
-double SessionManager::getAvailableBandwidth(int interfaceId)
-{
-    auto it = interfaceBandwidths.find(interfaceId);
-    if (it != interfaceBandwidths.end())
-        return it->second.totalBandwidth - it->second.reservedBandwidth;
-    return 0;
-}
-
-bool SessionManager::tryReserveBandwidth(int interfaceId, int userId, int taskId,
-                                          const L3Address& userGwAddr,
-                                          double bandwidth, simtime_t duration)
-{
-    auto& state = interfaceBandwidths[interfaceId];
-    
-    double available = state.totalBandwidth - state.reservedBandwidth;
-    
-    if (available < bandwidth) {
-        EV_WARN << "Insufficient bandwidth for flow (" << userId << "," << taskId 
-                << ") on interface " << interfaceId 
-                << ": required=" << bandwidth 
-                << " available=" << available << endl;
-        return false;
-    }
-
-    BandwidthReservation res;
-    res.userId = userId;
-    res.taskId = taskId;
-    res.userGatewayAddress = userGwAddr;
-    res.reservedBandwidth = bandwidth;
-    res.expiryTime = simTime() + (duration > 0 ? duration : defaultReservationTimeout);
-    res.interfaceId = interfaceId;
-
-    state.reservations[{userId, taskId}] = res;
-    state.reservedBandwidth += bandwidth;
-
-    EV_INFO << "Reserved " << bandwidth << " bps for flow (" << userId << "," << taskId 
-            << ") on interface " << interfaceId << endl;
-
-    return true;
-}
-
-void SessionManager::releaseBandwidth(int interfaceId, int userId, int taskId)
-{
-    auto it = interfaceBandwidths.find(interfaceId);
-    if (it == interfaceBandwidths.end())
+    if (hasSession(state.userId, state.taskId)) {
+        EV_WARN << "Session already exists for task (" << state.userId 
+                << "," << state.taskId << "), use updateSession instead" << endl;
         return;
-
-    auto& state = it->second;
-    auto resIt = state.reservations.find({userId, taskId});
-    if (resIt != state.reservations.end()) {
-        state.reservedBandwidth -= resIt->second.reservedBandwidth;
-        EV_INFO << "Released bandwidth for flow (" << userId << "," << taskId 
-                << ") on interface " << interfaceId << endl;
-        state.reservations.erase(resIt);
+    }
+    
+    if (canReserveBandwidth(state.interfaceId, state.requiredBandwidth)) {
+        reserveBandwidth(state.interfaceId, state.requiredBandwidth);
+        
+        sessionTable[key] = state;
+        sessionTable[key].createTime = simTime();
+        sessionTable[key].updateTime = simTime();
+        
+        EV_INFO << "Created session for task (" << state.userId << "," << state.taskId 
+                << ") computeNode=" << state.computeNodeAddress 
+                << ":" << state.computeNodePort << endl;
+    } else {
+        EV_WARN << "Cannot create session: insufficient bandwidth on interface " 
+                << state.interfaceId << endl;
     }
 }
 
-bool SessionManager::checkBandwidthAvailability(int interfaceId, double required)
-{
-    double available = getAvailableBandwidth(interfaceId);
-    return available >= required;
+void SessionManager::updateSession(const RequestSessionState& state) {
+    auto key = std::make_pair(state.userId, state.taskId);
+    
+    if (!hasSession(state.userId, state.taskId)) {
+        EV_WARN << "Session not found for task (" << state.userId 
+                << "," << state.taskId << "), use createSession instead" << endl;
+        return;
+    }
+    
+    RequestSessionState& oldState = sessionTable[key];
+    
+    if (oldState.interfaceId != state.interfaceId || 
+        oldState.requiredBandwidth != state.requiredBandwidth) {
+        
+        releaseBandwidth(oldState.interfaceId, oldState.requiredBandwidth);
+        
+        if (canReserveBandwidth(state.interfaceId, state.requiredBandwidth)) {
+            reserveBandwidth(state.interfaceId, state.requiredBandwidth);
+        } else {
+            EV_WARN << "Cannot update session: insufficient bandwidth" << endl;
+            reserveBandwidth(oldState.interfaceId, oldState.requiredBandwidth);
+            return;
+        }
+    }
+    
+    sessionTable[key] = state;
+    sessionTable[key].updateTime = simTime();
+    
+    EV_INFO << "Updated session for task (" << state.userId << "," << state.taskId 
+            << ") computeNode=" << state.computeNodeAddress 
+            << ":" << state.computeNodePort << endl;
+}
+
+void SessionManager::removeSession(int userId, int taskId) {
+    auto it = sessionTable.find({userId, taskId});
+    if (it == sessionTable.end()) {
+        EV_WARN << "Session not found for task (" << userId << "," << taskId << ")" << endl;
+        return;
+    }
+    
+    releaseBandwidth(it->second.interfaceId, it->second.requiredBandwidth);
+    
+    EV_INFO << "Removed session for task (" << userId << "," << taskId 
+            << ") computeNode=" << it->second.computeNodeAddress 
+            << ":" << it->second.computeNodePort << endl;
+    
+    sessionTable.erase(it);
+}
+
+void SessionManager::reserveBandwidth(int interfaceId, double bandwidth) {
+    reservedBandwidth[interfaceId] += bandwidth;
+    EV_INFO << "Reserved " << bandwidth << " bps on interface " << interfaceId 
+            << ", total reserved: " << reservedBandwidth[interfaceId] << endl;
+}
+
+void SessionManager::releaseBandwidth(int interfaceId, double bandwidth) {
+    if (reservedBandwidth[interfaceId] >= bandwidth) {
+        reservedBandwidth[interfaceId] -= bandwidth;
+        EV_INFO << "Released " << bandwidth << " bps on interface " << interfaceId 
+                << ", total reserved: " << reservedBandwidth[interfaceId] << endl;
+    } else {
+        EV_WARN << "Cannot release more bandwidth than reserved on interface " 
+                << interfaceId << endl;
+    }
+}
+
+double SessionManager::getAvailableBandwidth(int interfaceId) {
+    double total = interfaceBandwidth[interfaceId];
+    double reserved = reservedBandwidth[interfaceId];
+    return total - reserved;
+}
+
+bool SessionManager::canReserveBandwidth(int interfaceId, double bandwidth) {
+    return getAvailableBandwidth(interfaceId) >= bandwidth;
+}
+
+void SessionManager::refreshSession(int userId, int taskId) {
+    auto it = sessionTable.find({userId, taskId});
+    if (it != sessionTable.end()) {
+        it->second.updateTime = simTime();
+        EV_INFO << "Refreshed session for task (" << userId << "," << taskId << ")" << endl;
+    }
+}
+
+void SessionManager::removeExpiredSessions() {
+    simtime_t now = simTime();
+    std::vector<std::pair<int, int>> expiredKeys;
+    
+    for (auto& pair : sessionTable) {
+        if (now - pair.second.updateTime > sessionTimeout) {
+            expiredKeys.push_back(pair.first);
+        }
+    }
+    
+    for (auto& key : expiredKeys) {
+        EV_INFO << "Removing expired session for task (" << key.first 
+                << "," << key.second << ")" << endl;
+        removeSession(key.first, key.second);
+    }
+}
+
+void SessionManager::printSessionTable() {
+    EV_INFO << "=== Session Table ===" << endl;
+    for (const auto& pair : sessionTable) {
+        const RequestSessionState& s = pair.second;
+        EV_INFO << "Task(" << s.userId << "," << s.taskId << ") "
+                << "ComputeNode=" << s.computeNodeAddress << ":" << s.computeNodePort << " "
+                << "Delay=" << s.totalDelay << " "
+                << "Age=" << (simTime() - s.updateTime) << endl;
+    }
 }
 
 } // namespace inet

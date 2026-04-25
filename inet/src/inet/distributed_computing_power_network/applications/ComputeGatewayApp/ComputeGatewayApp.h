@@ -72,6 +72,8 @@ protected:
     void updateCib(Packet *packet);
     // 发送算力应答
     void sendCprpResponse(Packet *packet);
+    // 处理任务完成通告
+    void handleTaskCompletion(Packet *packet);
 
 public:
     ComputeGatewayApp();

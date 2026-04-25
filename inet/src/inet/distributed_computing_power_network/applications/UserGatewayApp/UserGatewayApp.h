@@ -32,6 +32,7 @@ struct PathInfo {
     double bandwidth;
     int computeNodeId;
     L3Address computeNodeAddress;
+    int computeNodePort;
     simtime_t timestamp;
 };
 
@@ -49,7 +50,9 @@ protected:
     std::map<int, inet::L3Address> userNodeIpMap;
     std::map<std::pair<int,int>,std::vector<computeNodeInfo>> cpMap;
     
-    std::map<std::pair<int, int>, std::vector<PathInfo>> pathCache;
+    std::map<std::pair<int, int>, std::map<std::string, PathInfo>> pathCache;
+    
+    std::map<std::pair<int, int>, simtime_t> requestTimers;
 
     UdpSocket socket;
     
@@ -77,6 +80,12 @@ protected:
     void forwardTaskData(int userId, int taskId, int selectedNodeId, int computingType);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);
+    
+    bool isTimerExpired(int userId, int taskId);
+    void sendCancelToPathNodes(int userId, int taskId, 
+                                const L3Address& computeNodeAddr, int computeNodePort,
+                                const std::vector<L3Address>& path);
+    void processCancelMsg(Packet *packet);
 
 public:
     UserGatewayApp();

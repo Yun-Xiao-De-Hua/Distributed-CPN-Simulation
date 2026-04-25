@@ -90,11 +90,21 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    // 创建算力应答载荷
+    int selectedIndex = 0;
+    if (sumInfo->getNodeInfoArraySize() == 0) {
+        EV_WARN << "No compute node info available" << std::endl;
+        delete packet;
+        return;
+    }
+    
+    computeNodeInfo selectedNode = sumInfo->getNodeInfo(selectedIndex);
+
     auto payload = makeShared<CprpConfirmMsg>();
     payload->setUserId(sumInfo->getUserId());
     payload->setTaskId(sumInfo->getTaskId());
-    payload->setSelectedNodeId(1);  // test，暂时硬编码为1
+    payload->setSelectedNodeId(selectedNode.computeNodeId);
+    payload->setSelectedNodeAddress(selectedNode.computeNodeAddress);
+    payload->setSelectedNodePort(5000);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -102,7 +112,8 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     socket.sendTo(pkt, userGatewayAddress, userGatewayPort);
 
-    EV_INFO << "user has sent CprpConfirmMsg\n";
+    EV_INFO << "User sent CPRP_CONFIRM for task (" << sumInfo->getUserId() << "," << sumInfo->getTaskId()
+            << ") selectedNode=" << selectedNode.computeNodeAddress << std::endl;
 
     delete packet;
 }

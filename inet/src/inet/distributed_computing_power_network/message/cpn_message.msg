@@ -54,28 +54,26 @@ class CprpResponseMsg extends inet::FieldsChunk {
     string msgType = "CPRP_RESP";    
  
 	L3Address computeNodeAddress;	// 算力节点地址 
-	int computeNodeId;	
+	int computeNodeId;
+	int computeNodePort;			// 算力节点端口号
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     double computingCapacity;	// 算力
     double availableStorage;     // 可用存储    
     simtime_t sendTime;   // 发送时间戳
     
-    // 路径和资源预留相关字段
-    double requiredBandwidth;       // 用户最大传输带宽(用于预留)
-    simtime_t maxDelayTolerance;    // 用户最大时延忍耐值
-    simtime_t computingDelay;       // 任务计算时延
-    simtime_t queuingDelay;         // 任务排队时延
-    simtime_t transmissionDelay;    // 任务传输时延
+    // 资源预留参数
+    double requiredBandwidth;       // 用户最大传输带宽
+    simtime_t maxDelayTolerance;    // 最大时延忍耐值
     double computeCost;             // 任务计算费用
+    
+    // 时延信息
+    simtime_t accumulatedDelay;     // 算力网关计算的总时延
     
     // 路由选择相关字段
     simtime_t lastHopSendTime;      // 上一跳发送时间戳
     L3Address lastHopAddress;       // 上一跳IP地址
-    simtime_t accumulatedDelay;     // 累积网络延迟
-    L3Address computeGatewayAddress; // 算力网关地址
-    int computeGatewayPort;         // 算力网关端口
     
-    chunkLength = B(32 + 64); // 在构造函数中直接赋值
+    chunkLength = B(32 + 64);
 }
 
 class CprpConfirmMsg extends inet::FieldsChunk {
@@ -87,7 +85,9 @@ class CprpConfirmMsg extends inet::FieldsChunk {
     string msgType = "CPRP_CONFIRM";    
  
 	int selectedNodeId;	// 最终选定的算力节点
-	int selectedPathIndex = 0;  // 用户选定的路径索引(可选)
+	L3Address selectedNodeAddress;  // 选定算力节点IP
+	int selectedNodePort;           // 选定算力节点端口
+	int selectedPathIndex = 0;      // 用户选定的路径索引(可选)
 	
 	// 任务数据参数	
     simtime_t generationTime;   // 任务产生的时刻
@@ -98,7 +98,7 @@ class CprpConfirmMsg extends inet::FieldsChunk {
     simtime_t totalDelayRequirement; // 总时延要求
     double budget;              // 预算 
     
-    chunkLength = B(24 + 32); // 在构造函数中直接赋值
+    chunkLength = B(28 + 32);
 }
 
 // ==============================================
@@ -207,14 +207,38 @@ class CgmpReportMsg extends inet::FieldsChunk {
 // ================== Cancel消息 =================
 // ==============================================
 
+enum CancelSenderType {
+    SENDER_USER_GW = 0;
+    SENDER_COMPUTE_GW = 1;
+    SENDER_COMPUTE_ROUTER = 2;
+}
+
 class CancelMsg extends inet::FieldsChunk {
     int userId;                       // 用户ID
     int taskId;                       // 任务ID
-    L3Address computeGatewayAddress;  // 算力网关地址
-    int computeGatewayPort;           // 算力网关端口
+    L3Address computeNodeAddress;     // 算力节点IP
+    int computeNodePort;              // 算力节点端口
+    int senderType;                   // 发送方类型 (CancelSenderType)
     
     string msgType = "CANCEL";
-    chunkLength = B(16);
+    chunkLength = B(20);
+}
+
+// ==============================================
+// ============ 任务完成通告消息 =================
+// ==============================================
+
+class TaskCompletionMsg extends inet::FieldsChunk {
+    int userId;                       // 用户ID
+    int taskId;                       // 任务ID
+    L3Address computeNodeAddress;     // 算力节点地址
+    int computeNodePort;              // 算力节点端口
+    L3Address userGatewayAddress;     // 用户网关地址
+    simtime_t completionTime;         // 任务完成时间
+    double taskResult;                // 任务结果大小
+    
+    string msgType = "TASK_COMPLETION";
+    chunkLength = B(24);
 }
 
 
