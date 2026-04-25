@@ -11,7 +11,6 @@ void SessionManager::initialize(int stage) {
     cSimpleModule::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
         sessionTimeout = par("sessionTimeout");
-        WATCH_MAP(sessionTable);
     }
 }
 

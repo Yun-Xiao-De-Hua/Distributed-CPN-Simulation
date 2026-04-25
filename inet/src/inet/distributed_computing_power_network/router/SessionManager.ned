@@ -4,26 +4,16 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
 
 package inet.distributed_computing_power_network.router;
 
-import inet.common.contract.IModule;
-
-simple SessionManager like IModule
+simple SessionManager
 {
     parameters:
         @display("i=block/routing");
-        double sessionTimeout @unit(s) = default(60s);  // 请求会话超时时间
-        double defaultReservationTimeout @unit(s) = default(60s);  // 带宽预留超时
-        bool strictPruning = default(true);  // 严格剪枝模式
+        double sessionTimeout @unit(s) = default(60s);
+        double defaultReservationTimeout @unit(s) = default(60s);
+        bool strictPruning = default(true);
         
     gates:
         input in;

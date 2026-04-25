@@ -69,6 +69,8 @@ public:
     void refreshSession(int userId, int taskId);
     void removeExpiredSessions();
     void printSessionTable();
+
+    size_t getSessionCount() const { return sessionTable.size(); }
 };
 
 } // namespace inet

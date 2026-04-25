@@ -30,11 +30,17 @@ module ComputeRouter extends OspfRouter
         
     submodules:
         sessionManager: SessionManager if hasSessionManager {
+            parameters:
+                sessionTimeout = parent.sessionTimeout;
             @display("p=600,100");
         }
         computeRouterProcessor: ComputeRouterProcessor if hasComputeRouterProcessor {
             parameters:
-                ipv4Module = "^.ipv4";
+                ipv4Module = "^.ipv4.ip";
             @display("p=600,150");
         }
+
+    connections allowunconnected:
+        computeRouterProcessor.ipOut --> tn.in++ if hasComputeRouterProcessor;
+        computeRouterProcessor.ipIn <-- tn.out++ if hasComputeRouterProcessor;
 }

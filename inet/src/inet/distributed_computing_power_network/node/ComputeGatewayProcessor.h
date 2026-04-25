@@ -16,10 +16,10 @@ class ComputeGatewayProcessor : public CprpProcessorBase
 {
 protected:
     int computeNodePort;
-    
+
 protected:
     virtual void initialize(int stage) override;
-    
+
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet) override;
 
 public:

@@ -17,7 +17,7 @@ ComputeGatewayProcessor::~ComputeGatewayProcessor() {}
 
 void ComputeGatewayProcessor::initialize(int stage) {
     CprpProcessorBase::initialize(stage);
-    
+
     if (stage == INITSTAGE_LOCAL) {
         computeNodePort = par("computeNodePort");
     }
@@ -25,8 +25,8 @@ void ComputeGatewayProcessor::initialize(int stage) {
 
 void ComputeGatewayProcessor::extractSessionFromResp(RequestSessionState& state, Packet *packet) {
     CprpProcessorBase::extractSessionFromResp(state, packet);
-    
-    EV_INFO << "ComputeGatewayProcessor extracted session for task (" 
+
+    EV_INFO << "ComputeGatewayProcessor extracted session for task ("
             << state.userId << "," << state.taskId << ")" << endl;
 }
 

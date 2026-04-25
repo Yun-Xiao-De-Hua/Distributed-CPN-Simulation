@@ -1,8 +1,6 @@
 package inet.distributed_computing_power_network.router;
 
-import inet.common.contract.IModule;
-
-simple CprpProcessorBase like IModule
+simple CprpProcessorBase
 {
     parameters:
         @display("i=block/routing");
@@ -10,5 +8,9 @@ simple CprpProcessorBase like IModule
         bool strictPruning = default(true);
         string sessionManagerModule = default("^.sessionManager");
         string interfaceTableModule = default("^.interfaceTable");
-        string ipv4Module = default("^.ipv4");
+        string ipv4Module = default("^.ipv4.ip");
+
+    gates:
+        input ipIn;
+        output ipOut;
 }
