@@ -68,6 +68,10 @@ protected:
     virtual Result processPathRecordMode(Packet *packet);
     virtual Result processPathUseMode(Packet *packet);
 
+    virtual void handlePathHeader(Packet *packet);
+    virtual void stripPathHeader(Packet *packet);
+    virtual B getPayloadOffset(Packet *packet);
+
     virtual Ptr<const CprpResponseMsg> getCprpResp(Packet *packet);
     virtual Ptr<const CancelMsg> getCancelMsg(Packet *packet);
 

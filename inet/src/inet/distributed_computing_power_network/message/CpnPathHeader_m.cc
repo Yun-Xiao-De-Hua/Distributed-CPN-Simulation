@@ -154,6 +154,665 @@ namespace inet {
 
 Register_Enum(inet::CpnPathMode, (inet::CpnPathMode::PATH_RECORD_MODE, inet::CpnPathMode::PATH_USE_MODE));
 
+Register_Class(CpnPathHeader)
+
+CpnPathHeader::CpnPathHeader() : ::inet::FieldsChunk()
+{
+    this->setChunkLength(B(32));
+
+}
+
+CpnPathHeader::CpnPathHeader(const CpnPathHeader& other) : ::inet::FieldsChunk(other)
+{
+    copy(other);
+}
+
+CpnPathHeader::~CpnPathHeader()
+{
+    delete [] this->hopAddress;
+    delete [] this->sidList;
+}
+
+CpnPathHeader& CpnPathHeader::operator=(const CpnPathHeader& other)
+{
+    if (this == &other) return *this;
+    ::inet::FieldsChunk::operator=(other);
+    copy(other);
+    return *this;
+}
+
+void CpnPathHeader::copy(const CpnPathHeader& other)
+{
+    this->mode = other.mode;
+    this->userId = other.userId;
+    this->taskId = other.taskId;
+    delete [] this->hopAddress;
+    this->hopAddress = (other.hopAddress_arraysize==0) ? nullptr : new L3Address[other.hopAddress_arraysize];
+    hopAddress_arraysize = other.hopAddress_arraysize;
+    for (size_t i = 0; i < hopAddress_arraysize; i++) {
+        this->hopAddress[i] = other.hopAddress[i];
+    }
+    this->userGatewayAddress = other.userGatewayAddress;
+    this->requiredBandwidth = other.requiredBandwidth;
+    delete [] this->sidList;
+    this->sidList = (other.sidList_arraysize==0) ? nullptr : new L3Address[other.sidList_arraysize];
+    sidList_arraysize = other.sidList_arraysize;
+    for (size_t i = 0; i < sidList_arraysize; i++) {
+        this->sidList[i] = other.sidList[i];
+    }
+    this->currentHopIndex = other.currentHopIndex;
+}
+
+void CpnPathHeader::parsimPack(omnetpp::cCommBuffer *b) const
+{
+    ::inet::FieldsChunk::parsimPack(b);
+    doParsimPacking(b,this->mode);
+    doParsimPacking(b,this->userId);
+    doParsimPacking(b,this->taskId);
+    b->pack(hopAddress_arraysize);
+    doParsimArrayPacking(b,this->hopAddress,hopAddress_arraysize);
+    doParsimPacking(b,this->userGatewayAddress);
+    doParsimPacking(b,this->requiredBandwidth);
+    b->pack(sidList_arraysize);
+    doParsimArrayPacking(b,this->sidList,sidList_arraysize);
+    doParsimPacking(b,this->currentHopIndex);
+}
+
+void CpnPathHeader::parsimUnpack(omnetpp::cCommBuffer *b)
+{
+    ::inet::FieldsChunk::parsimUnpack(b);
+    doParsimUnpacking(b,this->mode);
+    doParsimUnpacking(b,this->userId);
+    doParsimUnpacking(b,this->taskId);
+    delete [] this->hopAddress;
+    b->unpack(hopAddress_arraysize);
+    if (hopAddress_arraysize == 0) {
+        this->hopAddress = nullptr;
+    } else {
+        this->hopAddress = new L3Address[hopAddress_arraysize];
+        doParsimArrayUnpacking(b,this->hopAddress,hopAddress_arraysize);
+    }
+    doParsimUnpacking(b,this->userGatewayAddress);
+    doParsimUnpacking(b,this->requiredBandwidth);
+    delete [] this->sidList;
+    b->unpack(sidList_arraysize);
+    if (sidList_arraysize == 0) {
+        this->sidList = nullptr;
+    } else {
+        this->sidList = new L3Address[sidList_arraysize];
+        doParsimArrayUnpacking(b,this->sidList,sidList_arraysize);
+    }
+    doParsimUnpacking(b,this->currentHopIndex);
+}
+
+int CpnPathHeader::getMode() const
+{
+    return this->mode;
+}
+
+void CpnPathHeader::setMode(int mode)
+{
+    handleChange();
+    this->mode = mode;
+}
+
+int CpnPathHeader::getUserId() const
+{
+    return this->userId;
+}
+
+void CpnPathHeader::setUserId(int userId)
+{
+    handleChange();
+    this->userId = userId;
+}
+
+int CpnPathHeader::getTaskId() const
+{
+    return this->taskId;
+}
+
+void CpnPathHeader::setTaskId(int taskId)
+{
+    handleChange();
+    this->taskId = taskId;
+}
+
+size_t CpnPathHeader::getHopAddressArraySize() const
+{
+    return hopAddress_arraysize;
+}
+
+const L3Address& CpnPathHeader::getHopAddress(size_t k) const
+{
+    if (k >= hopAddress_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)hopAddress_arraysize, (unsigned long)k);
+    return this->hopAddress[k];
+}
+
+void CpnPathHeader::setHopAddressArraySize(size_t newSize)
+{
+    handleChange();
+    L3Address *hopAddress2 = (newSize==0) ? nullptr : new L3Address[newSize];
+    size_t minSize = hopAddress_arraysize < newSize ? hopAddress_arraysize : newSize;
+    for (size_t i = 0; i < minSize; i++)
+        hopAddress2[i] = this->hopAddress[i];
+    delete [] this->hopAddress;
+    this->hopAddress = hopAddress2;
+    hopAddress_arraysize = newSize;
+}
+
+void CpnPathHeader::setHopAddress(size_t k, const L3Address& hopAddress)
+{
+    if (k >= hopAddress_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)hopAddress_arraysize, (unsigned long)k);
+    handleChange();
+    this->hopAddress[k] = hopAddress;
+}
+
+void CpnPathHeader::insertHopAddress(size_t k, const L3Address& hopAddress)
+{
+    if (k > hopAddress_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)hopAddress_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = hopAddress_arraysize + 1;
+    L3Address *hopAddress2 = new L3Address[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        hopAddress2[i] = this->hopAddress[i];
+    hopAddress2[k] = hopAddress;
+    for (i = k + 1; i < newSize; i++)
+        hopAddress2[i] = this->hopAddress[i-1];
+    delete [] this->hopAddress;
+    this->hopAddress = hopAddress2;
+    hopAddress_arraysize = newSize;
+}
+
+void CpnPathHeader::appendHopAddress(const L3Address& hopAddress)
+{
+    insertHopAddress(hopAddress_arraysize, hopAddress);
+}
+
+void CpnPathHeader::eraseHopAddress(size_t k)
+{
+    if (k >= hopAddress_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)hopAddress_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = hopAddress_arraysize - 1;
+    L3Address *hopAddress2 = (newSize == 0) ? nullptr : new L3Address[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        hopAddress2[i] = this->hopAddress[i];
+    for (i = k; i < newSize; i++)
+        hopAddress2[i] = this->hopAddress[i+1];
+    delete [] this->hopAddress;
+    this->hopAddress = hopAddress2;
+    hopAddress_arraysize = newSize;
+}
+
+const L3Address& CpnPathHeader::getUserGatewayAddress() const
+{
+    return this->userGatewayAddress;
+}
+
+void CpnPathHeader::setUserGatewayAddress(const L3Address& userGatewayAddress)
+{
+    handleChange();
+    this->userGatewayAddress = userGatewayAddress;
+}
+
+double CpnPathHeader::getRequiredBandwidth() const
+{
+    return this->requiredBandwidth;
+}
+
+void CpnPathHeader::setRequiredBandwidth(double requiredBandwidth)
+{
+    handleChange();
+    this->requiredBandwidth = requiredBandwidth;
+}
+
+size_t CpnPathHeader::getSidListArraySize() const
+{
+    return sidList_arraysize;
+}
+
+const L3Address& CpnPathHeader::getSidList(size_t k) const
+{
+    if (k >= sidList_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)sidList_arraysize, (unsigned long)k);
+    return this->sidList[k];
+}
+
+void CpnPathHeader::setSidListArraySize(size_t newSize)
+{
+    handleChange();
+    L3Address *sidList2 = (newSize==0) ? nullptr : new L3Address[newSize];
+    size_t minSize = sidList_arraysize < newSize ? sidList_arraysize : newSize;
+    for (size_t i = 0; i < minSize; i++)
+        sidList2[i] = this->sidList[i];
+    delete [] this->sidList;
+    this->sidList = sidList2;
+    sidList_arraysize = newSize;
+}
+
+void CpnPathHeader::setSidList(size_t k, const L3Address& sidList)
+{
+    if (k >= sidList_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)sidList_arraysize, (unsigned long)k);
+    handleChange();
+    this->sidList[k] = sidList;
+}
+
+void CpnPathHeader::insertSidList(size_t k, const L3Address& sidList)
+{
+    if (k > sidList_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)sidList_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = sidList_arraysize + 1;
+    L3Address *sidList2 = new L3Address[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        sidList2[i] = this->sidList[i];
+    sidList2[k] = sidList;
+    for (i = k + 1; i < newSize; i++)
+        sidList2[i] = this->sidList[i-1];
+    delete [] this->sidList;
+    this->sidList = sidList2;
+    sidList_arraysize = newSize;
+}
+
+void CpnPathHeader::appendSidList(const L3Address& sidList)
+{
+    insertSidList(sidList_arraysize, sidList);
+}
+
+void CpnPathHeader::eraseSidList(size_t k)
+{
+    if (k >= sidList_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)sidList_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = sidList_arraysize - 1;
+    L3Address *sidList2 = (newSize == 0) ? nullptr : new L3Address[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        sidList2[i] = this->sidList[i];
+    for (i = k; i < newSize; i++)
+        sidList2[i] = this->sidList[i+1];
+    delete [] this->sidList;
+    this->sidList = sidList2;
+    sidList_arraysize = newSize;
+}
+
+int CpnPathHeader::getCurrentHopIndex() const
+{
+    return this->currentHopIndex;
+}
+
+void CpnPathHeader::setCurrentHopIndex(int currentHopIndex)
+{
+    handleChange();
+    this->currentHopIndex = currentHopIndex;
+}
+
+class CpnPathHeaderDescriptor : public omnetpp::cClassDescriptor
+{
+  private:
+    mutable const char **propertyNames;
+    enum FieldConstants {
+        FIELD_mode,
+        FIELD_userId,
+        FIELD_taskId,
+        FIELD_hopAddress,
+        FIELD_userGatewayAddress,
+        FIELD_requiredBandwidth,
+        FIELD_sidList,
+        FIELD_currentHopIndex,
+    };
+  public:
+    CpnPathHeaderDescriptor();
+    virtual ~CpnPathHeaderDescriptor();
+
+    virtual bool doesSupport(omnetpp::cObject *obj) const override;
+    virtual const char **getPropertyNames() const override;
+    virtual const char *getProperty(const char *propertyName) const override;
+    virtual int getFieldCount() const override;
+    virtual const char *getFieldName(int field) const override;
+    virtual int findField(const char *fieldName) const override;
+    virtual unsigned int getFieldTypeFlags(int field) const override;
+    virtual const char *getFieldTypeString(int field) const override;
+    virtual const char **getFieldPropertyNames(int field) const override;
+    virtual const char *getFieldProperty(int field, const char *propertyName) const override;
+    virtual int getFieldArraySize(omnetpp::any_ptr object, int field) const override;
+    virtual void setFieldArraySize(omnetpp::any_ptr object, int field, int size) const override;
+
+    virtual const char *getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual std::string getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const override;
+    virtual omnetpp::cValue getFieldValue(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const override;
+
+    virtual const char *getFieldStructName(int field) const override;
+    virtual omnetpp::any_ptr getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const override;
+};
+
+Register_ClassDescriptor(CpnPathHeaderDescriptor)
+
+CpnPathHeaderDescriptor::CpnPathHeaderDescriptor() : omnetpp::cClassDescriptor(omnetpp::opp_typename(typeid(inet::CpnPathHeader)), "inet::FieldsChunk")
+{
+    propertyNames = nullptr;
+}
+
+CpnPathHeaderDescriptor::~CpnPathHeaderDescriptor()
+{
+    delete[] propertyNames;
+}
+
+bool CpnPathHeaderDescriptor::doesSupport(omnetpp::cObject *obj) const
+{
+    return dynamic_cast<CpnPathHeader *>(obj)!=nullptr;
+}
+
+const char **CpnPathHeaderDescriptor::getPropertyNames() const
+{
+    if (!propertyNames) {
+        static const char *names[] = {  nullptr };
+        omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+        const char **baseNames = base ? base->getPropertyNames() : nullptr;
+        propertyNames = mergeLists(baseNames, names);
+    }
+    return propertyNames;
+}
+
+const char *CpnPathHeaderDescriptor::getProperty(const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? base->getProperty(propertyName) : nullptr;
+}
+
+int CpnPathHeaderDescriptor::getFieldCount() const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? 8+base->getFieldCount() : 8;
+}
+
+unsigned int CpnPathHeaderDescriptor::getFieldTypeFlags(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeFlags(field);
+        field -= base->getFieldCount();
+    }
+    static unsigned int fieldTypeFlags[] = {
+        FD_ISEDITABLE,    // FIELD_mode
+        FD_ISEDITABLE,    // FIELD_userId
+        FD_ISEDITABLE,    // FIELD_taskId
+        FD_ISARRAY | FD_ISRESIZABLE,    // FIELD_hopAddress
+        0,    // FIELD_userGatewayAddress
+        FD_ISEDITABLE,    // FIELD_requiredBandwidth
+        FD_ISARRAY | FD_ISRESIZABLE,    // FIELD_sidList
+        FD_ISEDITABLE,    // FIELD_currentHopIndex
+    };
+    return (field >= 0 && field < 8) ? fieldTypeFlags[field] : 0;
+}
+
+const char *CpnPathHeaderDescriptor::getFieldName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldName(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldNames[] = {
+        "mode",
+        "userId",
+        "taskId",
+        "hopAddress",
+        "userGatewayAddress",
+        "requiredBandwidth",
+        "sidList",
+        "currentHopIndex",
+    };
+    return (field >= 0 && field < 8) ? fieldNames[field] : nullptr;
+}
+
+int CpnPathHeaderDescriptor::findField(const char *fieldName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    int baseIndex = base ? base->getFieldCount() : 0;
+    if (strcmp(fieldName, "mode") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "userId") == 0) return baseIndex + 1;
+    if (strcmp(fieldName, "taskId") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "hopAddress") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "requiredBandwidth") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "sidList") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "currentHopIndex") == 0) return baseIndex + 7;
+    return base ? base->findField(fieldName) : -1;
+}
+
+const char *CpnPathHeaderDescriptor::getFieldTypeString(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeString(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldTypeStrings[] = {
+        "int",    // FIELD_mode
+        "int",    // FIELD_userId
+        "int",    // FIELD_taskId
+        "inet::L3Address",    // FIELD_hopAddress
+        "inet::L3Address",    // FIELD_userGatewayAddress
+        "double",    // FIELD_requiredBandwidth
+        "inet::L3Address",    // FIELD_sidList
+        "int",    // FIELD_currentHopIndex
+    };
+    return (field >= 0 && field < 8) ? fieldTypeStrings[field] : nullptr;
+}
+
+const char **CpnPathHeaderDescriptor::getFieldPropertyNames(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldPropertyNames(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+const char *CpnPathHeaderDescriptor::getFieldProperty(int field, const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldProperty(field, propertyName);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+int CpnPathHeaderDescriptor::getFieldArraySize(omnetpp::any_ptr object, int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldArraySize(object, field);
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_hopAddress: return pp->getHopAddressArraySize();
+        case FIELD_sidList: return pp->getSidListArraySize();
+        default: return 0;
+    }
+}
+
+void CpnPathHeaderDescriptor::setFieldArraySize(omnetpp::any_ptr object, int field, int size) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldArraySize(object, field, size);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_hopAddress: pp->setHopAddressArraySize(size); break;
+        case FIELD_sidList: pp->setSidListArraySize(size); break;
+        default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'CpnPathHeader'", field);
+    }
+}
+
+const char *CpnPathHeaderDescriptor::getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldDynamicTypeString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+std::string CpnPathHeaderDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValueAsString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_mode: return long2string(pp->getMode());
+        case FIELD_userId: return long2string(pp->getUserId());
+        case FIELD_taskId: return long2string(pp->getTaskId());
+        case FIELD_hopAddress: return pp->getHopAddress(i).str();
+        case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
+        case FIELD_requiredBandwidth: return double2string(pp->getRequiredBandwidth());
+        case FIELD_sidList: return pp->getSidList(i).str();
+        case FIELD_currentHopIndex: return long2string(pp->getCurrentHopIndex());
+        default: return "";
+    }
+}
+
+void CpnPathHeaderDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValueAsString(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_mode: pp->setMode(string2long(value)); break;
+        case FIELD_userId: pp->setUserId(string2long(value)); break;
+        case FIELD_taskId: pp->setTaskId(string2long(value)); break;
+        case FIELD_requiredBandwidth: pp->setRequiredBandwidth(string2double(value)); break;
+        case FIELD_currentHopIndex: pp->setCurrentHopIndex(string2long(value)); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CpnPathHeader'", field);
+    }
+}
+
+omnetpp::cValue CpnPathHeaderDescriptor::getFieldValue(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValue(object,field,i);
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_mode: return pp->getMode();
+        case FIELD_userId: return pp->getUserId();
+        case FIELD_taskId: return pp->getTaskId();
+        case FIELD_hopAddress: return omnetpp::toAnyPtr(&pp->getHopAddress(i)); break;
+        case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        case FIELD_requiredBandwidth: return pp->getRequiredBandwidth();
+        case FIELD_sidList: return omnetpp::toAnyPtr(&pp->getSidList(i)); break;
+        case FIELD_currentHopIndex: return pp->getCurrentHopIndex();
+        default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CpnPathHeader' as cValue -- field index out of range?", field);
+    }
+}
+
+void CpnPathHeaderDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValue(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_mode: pp->setMode(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_requiredBandwidth: pp->setRequiredBandwidth(value.doubleValue()); break;
+        case FIELD_currentHopIndex: pp->setCurrentHopIndex(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CpnPathHeader'", field);
+    }
+}
+
+const char *CpnPathHeaderDescriptor::getFieldStructName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructName(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    };
+}
+
+omnetpp::any_ptr CpnPathHeaderDescriptor::getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructValuePointer(object, field, i);
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        case FIELD_hopAddress: return omnetpp::toAnyPtr(&pp->getHopAddress(i)); break;
+        case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        case FIELD_sidList: return omnetpp::toAnyPtr(&pp->getSidList(i)); break;
+        default: return omnetpp::any_ptr(nullptr);
+    }
+}
+
+void CpnPathHeaderDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldStructValuePointer(object, field, i, ptr);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    CpnPathHeader *pp = omnetpp::fromAnyPtr<CpnPathHeader>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CpnPathHeader'", field);
+    }
+}
+
 Register_Class(CpnPathReq)
 
 CpnPathReq::CpnPathReq() : ::inet::TagBase()

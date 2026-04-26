@@ -30,6 +30,7 @@
 
 namespace inet {
 
+class CpnPathHeader;
 class CpnPathReq;
 class CpnPathInd;
 
@@ -39,13 +40,15 @@ class CpnPathInd;
 
 #include "inet/common/TagBase_m.h" // import inet.common.TagBase
 
+#include "inet/common/packet/chunk/Chunk_m.h" // import inet.common.packet.chunk.Chunk
+
 #include "inet/networklayer/common/L3Address_m.h" // import inet.networklayer.common.L3Address
 
 
 namespace inet {
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:8</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:9</tt> by opp_msgtool.
  * <pre>
  * // 路径操作模式
  * enum CpnPathMode
@@ -66,9 +69,8 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathMode& e) { int n; 
 /**
  * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:16</tt> by opp_msgtool.
  * <pre>
- * // 算力网络路径记录请求Tag (应用层 -> 网络层)
- * // 用于请求网络层记录路径或使用指定路径转发
- * class CpnPathReq extends TagBase
+ * // 算力网络路径Header (物理报文头，用于跨节点传输)
+ * class CpnPathHeader extends inet::FieldsChunk
  * {
  *     int mode = 0;                    // 路径操作模式: PATH_RECORD_MODE 或 PATH_USE_MODE
  * 
@@ -84,6 +86,97 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathMode& e) { int n; 
  *     // 路径使用模式字段
  *     L3Address sidList[];             // SID路径列表(源路由)
  *     int currentHopIndex = 0;         // 当前跳索引
+ * 
+ *     chunkLength = B(32); // 基础长度，实际长度随数组变化
+ * }
+ * </pre>
+ */
+class INET_API CpnPathHeader : public ::inet::FieldsChunk
+{
+  protected:
+    int mode = 0;
+    int userId = -1;
+    int taskId = -1;
+    L3Address *hopAddress = nullptr;
+    size_t hopAddress_arraysize = 0;
+    L3Address userGatewayAddress;
+    double requiredBandwidth = 0;
+    L3Address *sidList = nullptr;
+    size_t sidList_arraysize = 0;
+    int currentHopIndex = 0;
+
+  private:
+    void copy(const CpnPathHeader& other);
+
+  protected:
+    bool operator==(const CpnPathHeader&) = delete;
+
+  public:
+    CpnPathHeader();
+    CpnPathHeader(const CpnPathHeader& other);
+    virtual ~CpnPathHeader();
+    CpnPathHeader& operator=(const CpnPathHeader& other);
+    virtual CpnPathHeader *dup() const override {return new CpnPathHeader(*this);}
+    virtual void parsimPack(omnetpp::cCommBuffer *b) const override;
+    virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
+
+    virtual int getMode() const;
+    virtual void setMode(int mode);
+
+    virtual int getUserId() const;
+    virtual void setUserId(int userId);
+
+    virtual int getTaskId() const;
+    virtual void setTaskId(int taskId);
+
+    virtual void setHopAddressArraySize(size_t size);
+    virtual size_t getHopAddressArraySize() const;
+    virtual const L3Address& getHopAddress(size_t k) const;
+    virtual L3Address& getHopAddressForUpdate(size_t k) { handleChange();return const_cast<L3Address&>(const_cast<CpnPathHeader*>(this)->getHopAddress(k));}
+    virtual void setHopAddress(size_t k, const L3Address& hopAddress);
+    virtual void insertHopAddress(size_t k, const L3Address& hopAddress);
+    [[deprecated]] void insertHopAddress(const L3Address& hopAddress) {appendHopAddress(hopAddress);}
+    virtual void appendHopAddress(const L3Address& hopAddress);
+    virtual void eraseHopAddress(size_t k);
+
+    virtual const L3Address& getUserGatewayAddress() const;
+    virtual L3Address& getUserGatewayAddressForUpdate() { handleChange();return const_cast<L3Address&>(const_cast<CpnPathHeader*>(this)->getUserGatewayAddress());}
+    virtual void setUserGatewayAddress(const L3Address& userGatewayAddress);
+
+    virtual double getRequiredBandwidth() const;
+    virtual void setRequiredBandwidth(double requiredBandwidth);
+
+    virtual void setSidListArraySize(size_t size);
+    virtual size_t getSidListArraySize() const;
+    virtual const L3Address& getSidList(size_t k) const;
+    virtual L3Address& getSidListForUpdate(size_t k) { handleChange();return const_cast<L3Address&>(const_cast<CpnPathHeader*>(this)->getSidList(k));}
+    virtual void setSidList(size_t k, const L3Address& sidList);
+    virtual void insertSidList(size_t k, const L3Address& sidList);
+    [[deprecated]] void insertSidList(const L3Address& sidList) {appendSidList(sidList);}
+    virtual void appendSidList(const L3Address& sidList);
+    virtual void eraseSidList(size_t k);
+
+    virtual int getCurrentHopIndex() const;
+    virtual void setCurrentHopIndex(int currentHopIndex);
+};
+
+inline void doParsimPacking(omnetpp::cCommBuffer *b, const CpnPathHeader& obj) {obj.parsimPack(b);}
+inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathHeader& obj) {obj.parsimUnpack(b);}
+
+/**
+ * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:37</tt> by opp_msgtool.
+ * <pre>
+ * // 算力网络路径记录请求Tag (应用层 -> 网络层，本地指令)
+ * class CpnPathReq extends TagBase
+ * {
+ *     int mode = 0;
+ *     int userId = -1;
+ *     int taskId = -1;
+ *     L3Address hopAddress[];
+ *     L3Address userGatewayAddress;
+ *     double requiredBandwidth = 0;
+ *     L3Address sidList[];
+ *     int currentHopIndex = 0;
  * }
  * </pre>
  */
@@ -160,18 +253,16 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CpnPathReq& obj) {obj
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathReq& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:36</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:50</tt> by opp_msgtool.
  * <pre>
  * // 算力网络路径记录指示Tag (网络层 -> 应用层)
- * // 用于向应用层传递已记录的路径信息
  * class CpnPathInd extends TagBase
  * {
- *     int userId = -1;                 // 用户ID
- *     int taskId = -1;                 // 任务ID
- * 
- *     L3Address hopAddress[];          // 记录的跳地址列表
- *     int hopCount = 0;                // 跳数
- *     double reservedBandwidth = 0;    // 已预留带宽
+ *     int userId = -1;
+ *     int taskId = -1;
+ *     L3Address hopAddress[];
+ *     int hopCount = 0;
+ *     double reservedBandwidth = 0;
  * }
  * </pre>
  */
@@ -232,6 +323,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathInd& obj) {obj.par
 
 namespace omnetpp {
 
+template<> inline inet::CpnPathHeader *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CpnPathHeader*>(ptr.get<cObject>()); }
 template<> inline inet::CpnPathReq *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CpnPathReq*>(ptr.get<cObject>()); }
 template<> inline inet::CpnPathInd *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CpnPathInd*>(ptr.get<cObject>()); }
 

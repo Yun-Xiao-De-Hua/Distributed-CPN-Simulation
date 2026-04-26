@@ -37,17 +37,29 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
     const char *pktName = packet->getName();
     Result result = ACCEPT;
 
+    // 1. 处理路径头部封装 (针对本地发出的 UDP 包)
+    handlePathHeader(packet);
+
     if (strcmp(pktName, "CPRP_RESP") == 0) {
         result = processCprpResp(packet);
         if (result == DROP) return DROP;
     }
 
     // 只处理路径使用模式，服务端IP和算力网关IP已在应用层写入SID列表
-    auto pathReq = packet->findTag<CpnPathReq>();
-    if (pathReq != nullptr) {
-        int mode = pathReq->getMode();
+    auto pathReqTag = packet->findTag<CpnPathReq>();
+    if (pathReqTag != nullptr) {
+        int mode = pathReqTag->getMode();
         if (mode == PATH_USE_MODE) {
             processPathUseMode(packet);
+        }
+    }
+    else {
+        auto offset = getPayloadOffset(packet);
+        if (offset >= B(0)) {
+            auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
+            if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
+                processPathUseMode(packet);
+            }
         }
     }
 
