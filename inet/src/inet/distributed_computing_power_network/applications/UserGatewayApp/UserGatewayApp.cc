@@ -294,9 +294,10 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     int tid = respInfo->getTaskId();
     L3Address computeNodeAddr = respInfo->getComputeNodeAddress();
     int computeNodePort = respInfo->getComputeNodePort();
+    int computeNodeId = respInfo->getComputeNodeId();
     
     EV_INFO << "Processing CPRP_RESP for task (" << uid << "," << tid 
-            << ") computeNode=" << computeNodeAddr << ":" << computeNodePort << std::endl;
+            << ") computeNode" << computeNodeId << " = " << computeNodeAddr << ":" << computeNodePort << std::endl;
 
     if (isTimerExpired(uid, tid)) {
         EV_INFO << "Timer expired for task (" << uid << "," << tid 
@@ -346,7 +347,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     pathCache[{uid, tid}][key] = pathInfo;
 
     EV_INFO << "Recorded session for task (" << uid << "," << tid 
-            << ") computeNode=" << computeNodeAddr << ":" << computeNodePort
+            << ") computeNode" << pathInfo.computeNodeId << " = " << computeNodeAddr << ":" << computeNodePort
             << " with totalDelay=" << pathInfo.totalDelay << std::endl;
 
     delete packet;

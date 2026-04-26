@@ -30,4 +30,28 @@ void ComputeGatewayProcessor::extractSessionFromResp(RequestSessionState& state,
             << state.userId << "," << state.taskId << ")" << endl;
 }
 
+INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packet *packet){
+    Enter_Method("datagramPostRoutingHook");
+    if (!enabled) return ACCEPT;
+
+    const char *pktName = packet->getName();
+    Result result = ACCEPT;
+
+    if (strcmp(pktName, "CPRP_RESP") == 0) {
+        result = processCprpResp(packet);
+        if (result == DROP) return DROP;
+    }
+
+    // 只处理路径使用模式，服务端IP和算力网关IP已在应用层写入SID列表
+    auto pathReq = packet->findTag<CpnPathReq>();
+    if (pathReq != nullptr) {
+        int mode = pathReq->getMode();
+        if (mode == PATH_USE_MODE) {
+            processPathUseMode(packet);
+        }
+    }
+
+    return result;
+}
+
 } // namespace inet

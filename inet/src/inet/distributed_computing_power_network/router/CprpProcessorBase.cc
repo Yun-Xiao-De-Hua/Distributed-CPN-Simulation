@@ -112,26 +112,28 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
     if (!enabled) return ACCEPT;
 
     const char *pktName = packet->getName();
+    Result result = ACCEPT;
 
     if (strcmp(pktName, "CPRP_RESP") == 0) {
-        return processCprpResp(packet);
-    }
-    else if (strcmp(pktName, "CANCEL") == 0) {
-        return processCancelMsg(packet);
+        result = processCprpResp(packet);
+        if (result == DROP) return DROP;
     }
 
     auto pathReq = packet->findTag<CpnPathReq>();
     if (pathReq != nullptr) {
         int mode = pathReq->getMode();
         if (mode == PATH_RECORD_MODE) {
-            return processPathRecordMode(packet);
+            processPathRecordMode(packet);
         }
         else if (mode == PATH_USE_MODE) {
-            return processPathUseMode(packet);
+            processPathUseMode(packet);
         }
     }
+    else{
+        EV_INFO << "Current packet has no tag: CpnPathReq\n";
+    }
 
-    return ACCEPT;
+    return result;
 }
 
 INetfilter::IHook::Result CprpProcessorBase::datagramLocalInHook(Packet *packet) {
@@ -276,6 +278,11 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
     auto cancel = getCancelMsg(packet);
     if (!cancel) return ACCEPT;
 
+    if (cancel->getSenderType() == SENDER_COMPUTE_GW) {
+        EV_INFO << "CANCEL sent by ComputeGateway, ACCEPTing to pass through" << endl;
+        return ACCEPT;
+    }
+
     int userId = cancel->getUserId();
     int taskId = cancel->getTaskId();
     L3Address computeNodeAddr = cancel->getComputeNodeAddress();
@@ -375,18 +382,44 @@ std::vector<L3Address> CprpProcessorBase::getUpstreamNodes(const std::vector<L3A
 INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packet) {
     auto outIE = packet->findTag<InterfaceReq>();
     auto pathReq = packet->findTagForUpdate<CpnPathReq>();
-    if (pathReq == nullptr || !outIE) return ACCEPT;
+    
+    if (pathReq == nullptr) {
+        EV_WARN << "processPathRecordMode: CpnPathReq tag is missing from packet, returning ACCEPT without recording." << endl;
+        return ACCEPT;
+    }
+    
+    if (!outIE) {
+        EV_WARN << "processPathRecordMode: InterfaceReq tag is missing from packet (no output interface known), returning ACCEPT without recording." << endl;
+        return ACCEPT;
+    }
 
     auto ie = interfaceTable->getInterfaceById(outIE->getInterfaceId());
-    if (!ie) return ACCEPT;
+    if (!ie) {
+        EV_WARN << "processPathRecordMode: Output interface with ID " << outIE->getInterfaceId() 
+                << " not found in interfaceTable, returning ACCEPT without recording." << endl;
+        return ACCEPT;
+    }
 
-    Ipv4Address outAddr = ie->getProtocolData<Ipv4InterfaceData>()->getIPAddress();
+    auto ipv4Data = ie->getProtocolData<Ipv4InterfaceData>();
+    if (!ipv4Data) {
+        EV_WARN << "processPathRecordMode: Interface '" << ie->getInterfaceName() 
+                << "' has no IPv4 configuration (Ipv4InterfaceData is null), returning ACCEPT without recording." << endl;
+        return ACCEPT;
+    }
+
+    Ipv4Address outAddr = ipv4Data->getIPAddress();
+
+    if (outAddr.isUnspecified()) {
+        EV_WARN << "processPathRecordMode: Output interface '" << ie->getInterfaceName() 
+                << "' has an unspecified IP address, recording may be invalid." << endl;
+    }
 
     int hopCount = pathReq->getHopAddressArraySize();
     pathReq->setHopAddressArraySize(hopCount + 1);
     pathReq->setHopAddress(hopCount, outAddr);
 
-    EV_INFO << "Recording hop " << hopCount << ": " << outAddr << endl;
+    EV_INFO << "processPathRecordMode: Successfully recorded hop " << hopCount 
+            << " as " << outAddr << ", returning ACCEPT to continue routing." << endl;
 
     return ACCEPT;
 }
