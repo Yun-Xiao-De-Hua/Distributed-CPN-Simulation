@@ -298,6 +298,11 @@ void ComputeGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
     else if(strcmp(packet->getName(), "TASK_COMPLETION") == 0){
         handleTaskCompletion(packet);
     }
+    else if(strcmp(packet->getName(), "CANCEL") == 0){
+        EV_INFO << "ComputeGatewayApp received CANCEL msg, preparing to revoke app-level soft state." << std::endl;
+        // 在这里添加应用层状态清理的逻辑（如果有）
+        delete packet;
+    }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << std::endl;
         delete packet;

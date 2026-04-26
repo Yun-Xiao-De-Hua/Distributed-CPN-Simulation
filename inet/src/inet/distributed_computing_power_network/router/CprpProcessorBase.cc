@@ -300,6 +300,12 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
         EV_INFO << "No session found for task (" << userId << "," << taskId << ")" << endl;
     }
 
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    if (ipv4Header && ipv4Header->getProtocol() == &Protocol::udp) {
+        EV_INFO << "CANCEL is UDP, ACCEPTing to pass to application layer" << endl;
+        return ACCEPT;
+    }
+
     return DROP;
 }
 
@@ -452,10 +458,24 @@ Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
 
 Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
-    if (!ipv4Header || ipv4Header->getProtocol() != &cprp::cprp) return nullptr;
+    if (!ipv4Header) return nullptr;
     
     auto ipLen = B(ipv4Header->getHeaderLength());
-    return packet->peekDataAt<CancelMsg>(ipLen);
+
+    if (ipv4Header->getProtocol() == &cprp::cprp) {
+        // Form 1: Raw IP (Network Layer CANCEL)
+        return packet->peekDataAt<CancelMsg>(ipLen);
+    } 
+    else if (ipv4Header->getProtocol() == &Protocol::udp) {
+        // Form 2: UDP (Application Layer CANCEL)
+        auto udpHeader = packet->peekDataAt<UdpHeader>(ipLen);
+        if (!udpHeader) return nullptr;
+        
+        auto udpLen = B(udpHeader->getChunkLength());
+        return packet->peekDataAt<CancelMsg>(ipLen + udpLen);
+    }
+
+    return nullptr;
 }
 
 } // namespace inet
