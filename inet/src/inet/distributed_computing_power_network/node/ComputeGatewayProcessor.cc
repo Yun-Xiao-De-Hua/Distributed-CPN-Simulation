@@ -34,6 +34,8 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
     Enter_Method("datagramPostRoutingHook");
     if (!enabled) return ACCEPT;
 
+    if (!isCprpPacket(packet)) return ACCEPT;
+
     const char *pktName = packet->getName();
     Result result = ACCEPT;
 
@@ -54,12 +56,9 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
         }
     }
     else {
-        auto offset = getPayloadOffset(packet);
-        if (offset >= B(0)) {
-            auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
-            if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
-                processPathUseMode(packet);
-            }
+        auto pathHeader = getCpnPathHeader(packet);
+        if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
+            processPathUseMode(packet);
         }
     }
 

@@ -101,6 +101,23 @@ class CprpConfirmMsg extends inet::FieldsChunk {
     chunkLength = B(28 + 32);
 }
 
+enum CancelSenderType {
+    SENDER_USER_GW = 0;
+    SENDER_COMPUTE_GW = 1;
+    SENDER_COMPUTE_ROUTER = 2;
+}
+
+class CancelMsg extends inet::FieldsChunk {
+    int userId;                       // 用户ID
+    int taskId;                       // 任务ID
+    L3Address computeNodeAddress;     // 算力节点IP
+    int computeNodePort;              // 算力节点端口
+    int senderType;                   // 发送方类型 (CancelSenderType)
+    
+    string msgType = "CPRP_CANCEL";
+    chunkLength = B(20);
+}
+
 // ==============================================
 // ================= 用户节点相关 =================
 // ==============================================
@@ -203,26 +220,6 @@ class CgmpReportMsg extends inet::FieldsChunk {
     chunkLength = B(8 + 16); // 在构造函数中直接赋值	    
 }
 
-// ==============================================
-// ================== Cancel消息 =================
-// ==============================================
-
-enum CancelSenderType {
-    SENDER_USER_GW = 0;
-    SENDER_COMPUTE_GW = 1;
-    SENDER_COMPUTE_ROUTER = 2;
-}
-
-class CancelMsg extends inet::FieldsChunk {
-    int userId;                       // 用户ID
-    int taskId;                       // 任务ID
-    L3Address computeNodeAddress;     // 算力节点IP
-    int computeNodePort;              // 算力节点端口
-    int senderType;                   // 发送方类型 (CancelSenderType)
-    
-    string msgType = "CPRP_CANCEL";
-    chunkLength = B(20);
-}
 
 // ==============================================
 // ============ 任务完成通告消息 =================

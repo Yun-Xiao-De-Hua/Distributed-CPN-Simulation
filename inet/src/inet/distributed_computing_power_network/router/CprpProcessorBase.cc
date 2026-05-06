@@ -62,7 +62,7 @@ void CprpProcessorBase::handleMessage(cMessage *msg) {
     }
     else if (msg->isPacket()) {
         auto packet = check_and_cast<Packet*>(msg);
-        if (strcmp(packet->getName(), "CANCEL") == 0) {
+        if (strcmp(packet->getName(), "CPRP_CANCEL") == 0) {
             processCancelMsg(packet);
         }
         else {
@@ -112,6 +112,11 @@ bool CprpProcessorBase::isCprpPacket(Packet *packet) {
     if (strncmp(name, "CPRP_", 5) == 0 || strncmp(name, "TASK_", 5) == 0) {
         return true;
     }
+
+    // CGMP 报文同样走 UDP 5000 端口，但不属于 CPRP 业务流，必须显式排除。
+    if (strcmp(name, "CGMP_Query") == 0 || strcmp(name, "CGMP_Report") == 0) {
+        return false;
+    }
     
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
     if (ipv4Header) {
@@ -136,7 +141,7 @@ Ptr<const CpnPathHeader> CprpProcessorBase::getCpnPathHeader(Packet *packet) {
     if (offset < B(0)) return nullptr;
 
     auto chunk = packet->peekDataAt<Chunk>(offset);
-    return dynamic_ptr_cast<const CpnPathHeader>(chunk);
+    return dynamicPtrCast<const CpnPathHeader>(chunk);
 }
 
 INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *packet) {
@@ -178,33 +183,6 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
             }
             else if (mode == PATH_USE_MODE) {
                 processPathUseMode(packet);
-            }
-        }
-    }
-    }
-    else {
-        auto pathHeader = getCpnPathHeader(packet);
-        if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
-            processPathUseMode(packet);
-        }
-    }
-        else if (mode == PATH_USE_MODE) {
-            processPathUseMode(packet);
-        }
-    }
-    else {
-        // 检查是否存在物理 Header (转发节点)
-        auto offset = getPayloadOffset(packet);
-        if (offset >= B(0)) {
-            auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
-            if (pathHeader != nullptr) {
-                int mode = pathHeader->getMode();
-                if (mode == PATH_RECORD_MODE) {
-                    processPathRecordMode(packet);
-                }
-                else if (mode == PATH_USE_MODE) {
-                    processPathUseMode(packet);
-                }
             }
         }
     }
@@ -360,7 +338,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
     if (!cancel) return ACCEPT;
 
     if (cancel->getSenderType() == SENDER_COMPUTE_GW) {
-        EV_INFO << "CANCEL sent by ComputeGateway, ACCEPTing to pass through" << endl;
+        EV_INFO << "CPRP_CANCEL sent by ComputeGateway, ACCEPTing to pass through" << endl;
         return ACCEPT;
     }
 
@@ -369,7 +347,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
     L3Address computeNodeAddr = cancel->getComputeNodeAddress();
     int computeNodePort = cancel->getComputeNodePort();
 
-    EV_INFO << "Processing CANCEL for task (" << userId << "," << taskId
+    EV_INFO << "Processing CPRP_CANCEL for task (" << userId << "," << taskId
             << ") computeNode=" << computeNodeAddr << ":" << computeNodePort << endl;
 
     const RequestSessionState* session = sessionManager->getSession(userId, taskId);
@@ -380,7 +358,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
             sessionManager->removeSession(userId, taskId);
             EV_INFO << "Removed session for task (" << userId << "," << taskId << ")" << endl;
         } else {
-            EV_INFO << "CANCEL does not match current session (current="
+            EV_INFO << "CPRP_CANCEL does not match current session (current="
                     << session->computeNodeAddress << ":" << session->computeNodePort
                     << "), ignoring" << endl;
         }
@@ -390,7 +368,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
 
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
     if (ipv4Header && ipv4Header->getProtocol() == &Protocol::udp) {
-        EV_INFO << "CANCEL is UDP, ACCEPTing to pass to application layer" << endl;
+        EV_INFO << "CPRP_CANCEL is UDP, ACCEPTing to pass to application layer" << endl;
         return ACCEPT;
     }
 
@@ -398,7 +376,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
 }
 
 void CprpProcessorBase::sendPendingCancels() {
-    EV_INFO << "Sending " << pendingCancels.size() << " pending CANCEL messages" << endl;
+    EV_INFO << "Sending " << pendingCancels.size() << " pending CPRP_CANCEL messages" << endl;
 
     for (const auto& info : pendingCancels) {
         sendCancelPacket(info);
@@ -415,7 +393,7 @@ void CprpProcessorBase::sendCancelPacket(const PendingCancel& info) {
     cancel->setSenderType(info.senderType);
     cancel->setChunkLength(B(20));
 
-    Packet *packet = new Packet("CANCEL");
+    Packet *packet = new Packet("CPRP_CANCEL");
     packet->insertAtBack(cancel);
 
     packet->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&cprp::cprp);
@@ -425,7 +403,7 @@ void CprpProcessorBase::sendCancelPacket(const PendingCancel& info) {
 
     send(packet, "ipOut");
 
-    EV_INFO << "Sent CANCEL to " << info.destAddr << " for task ("
+    EV_INFO << "Sent CPRP_CANCEL to " << info.destAddr << " for task ("
             << info.userId << "," << info.taskId << ")" << endl;
 }
 
@@ -664,7 +642,7 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
     if (ipv4Header->getProtocol() == &cprp::cprp) {
         // Form 1: Raw IP (Network Layer CANCEL)
         auto chunk = packet->peekDataAt<Chunk>(ipLen);
-        return dynamic_ptr_cast<const CancelMsg>(chunk);
+        return dynamicPtrCast<const CancelMsg>(chunk);
     } 
     else if (ipv4Header->getProtocol() == &Protocol::udp) {
         // Form 2: UDP (Application Layer CANCEL)
@@ -677,7 +655,7 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
         }
         
         auto chunk = packet->peekDataAt<Chunk>(offset);
-        return dynamic_ptr_cast<const CancelMsg>(chunk);
+        return dynamicPtrCast<const CancelMsg>(chunk);
     }
 
     return nullptr;
