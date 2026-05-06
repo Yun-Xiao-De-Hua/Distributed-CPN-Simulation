@@ -170,6 +170,8 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
+    // 根据用户网关转发来的 CPRP_REQ 选择一个候选算力节点，构造 CPRP_RESP。
+    // 该响应既承担候选节点通告作用，也为后续网络层路径记录与会话建立提供初始输入。
     const auto& requestInfo = packet->popAtFront<CprpRequestMsg>();
 
     if(requestInfo == nullptr){
@@ -236,7 +238,8 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
     pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
-    // 应用层预先写入上游路径起点：[算力节点, 算力网关]
+    // 应用层预先写入上游路径起点：[算力节点, 算力网关]。
+    // 后续算力路由器在网络层继续向 hopAddress 末尾追加自身出口地址。
     pathReq->setHopAddressArraySize(2);
     pathReq->setHopAddress(0, destNodeInfo.nodeAddress);
     pathReq->setHopAddress(1, localAddress);
@@ -257,6 +260,11 @@ void ComputeGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
     }
     else if(strcmp(packet->getName(), "CGMP_Report") == 0){
         updateCib(packet);
+    }
+    else if(strcmp(packet->getName(), "CPRP_CANCEL") == 0){
+        // 网络层已先完成带宽/会话撤销。应用层这里只预留软状态清理入口。
+        EV_INFO << "ComputeGatewayApp received CPRP_CANCEL." << std::endl;
+        delete packet;
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << std::endl;

@@ -31,6 +31,9 @@ void ComputeNodeApp::initialize(int stage)
        this->computingType = par("computingType");
        this->computingCapacity = par("computingCapacity");
        this->storageCapacity = par("storageCapacity");
+       // availableStorage 表示当前可用容量。初始化时应与 storageCapacity 一致，
+       // 后续若引入任务执行逻辑，再由任务生命周期动态扣减与释放。
+       this->availableStorage = this->storageCapacity;
        this->multicastAddress = L3AddressResolver().resolve(par("multicastAddress"));
     }
 
@@ -41,7 +44,9 @@ void ComputeNodeApp::initialize(int stage)
         socket.setCallback(this);   // 将当前应用实例注册为 socket 的回调处理对象
         socket.setMulticastLoop(false);
 
-        // 加入算力组
+        // 加入算力组。
+        // 当前回滚状态下，ComputeNodeApp 仅承担算力状态上报职责，
+        // 尚未恢复 TASK_DATA / TASK_COMPLETION 的完整执行链路。
         socket.joinMulticastGroup(multicastAddress);
 
         EV_INFO << "ComputeNode" << computeNodeId << " initialized and joined multicast group: " << multicastAddress << endl;
@@ -66,6 +71,8 @@ void ComputeNodeApp::sendCgmpReport()
     Packet *pkt = new Packet(messageType.c_str());
     pkt->insertAtBack(payload);
 
+    // CGMP_Report 只应在本地接入域内传播，不应穿越上游算力路由器，
+    // 因此显式限制 HopLimit 为 1。
     auto hopLimitReq = pkt->addTagIfAbsent<HopLimitReq>();
     hopLimitReq->setHopLimit(1);
 

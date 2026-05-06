@@ -47,8 +47,8 @@
     <!-- 【局部组播：网关下发到节点】 单跳路由 -->
     <multicast-route hosts="computeGateway1" groups="225.0.1.1" children=">computeNode1"/>
     <multicast-route hosts="computeGateway1" groups="225.0.1.2" children=">computeNode2"/>
-    <multicast-route hosts="computeGateway2" groups="225.0.1.1" children=">computeNode3"/>
-    <multicast-route hosts="computeGateway2" groups="225.0.1.2" children=">computeNode4"/>
+    <multicast-route hosts="computeGateway2" groups="225.0.1.2" children=">computeNode3"/>
+    <multicast-route hosts="computeGateway2" groups="225.0.1.1" children=">computeNode4"/>
 
     <!-- 【局部组播：节点上报到网关】 单跳路由 (防止节点向组播地址发包时找不到网关) -->
     <multicast-route hosts="computeNode1" groups="225.0.1.1" children=">computeGateway1"/>

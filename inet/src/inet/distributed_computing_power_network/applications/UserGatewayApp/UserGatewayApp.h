@@ -17,7 +17,20 @@ struct PathInfo {
     double bandwidth;
     int computeNodeId;
     L3Address computeNodeAddress;
+    int computeNodePort;
     simtime_t timestamp;
+};
+
+struct RequestContext {
+    L3Address userNodeAddress;
+    simtime_t generationTime;
+    int computingType;
+    double requiredStorage;
+    double computingAmount;
+    double transferAmount;
+    simtime_t totalDelayRequirement;
+    double budget;
+    double userMaxBandwidth;
 };
 
 class UserGatewayApp: public ApplicationBase, public UdpSocket::ICallback{
@@ -35,6 +48,7 @@ protected:
     std::map<std::pair<int,int>,std::vector<computeNodeInfo>> cpMap;
 
     std::map<std::pair<int, int>, std::vector<PathInfo>> pathCache;
+    std::map<std::pair<int, int>, RequestContext> requestContextCache;
 
     UdpSocket socket;
     
@@ -59,7 +73,7 @@ protected:
     void startCprpRequestTimer(int userId, int taskId);
     void processCprpResp(Packet *packet);
     void processCprpConfirm(Packet *packet);
-    void forwardTaskData(int userId, int taskId, int selectedNodeId, int computingType);
+    void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int computingType);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);
 

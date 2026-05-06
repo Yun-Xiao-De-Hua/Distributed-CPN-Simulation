@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <limits>
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
@@ -164,7 +165,8 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
-    // 提取任务请求负载信息
+    // 用户网关在这里把终端侧任务请求转换为 CPRP_REQ，并缓存原始任务上下文。
+    // 后续收到 CPRP_RESP 与 CPRP_CONFIRM 后，应用层需要依赖这份上下文来恢复 TASK_DATA 的完整业务字段。
     const auto& requestInfo = packet->popAtFront<TaskRequestMsg>();
 
     if(requestInfo == nullptr){
@@ -186,6 +188,19 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     payload->setTransferAmount(requestInfo->getTransferAmount());
     payload->setTotalDelayRequirement(requestInfo->getTotalDelayRequirement());
     payload->setBudget(requestInfo->getBudget());
+    payload->setUserMaxBandwidth(requestInfo->getUserMaxBandwidth());
+
+    RequestContext requestContext;
+    requestContext.userNodeAddress = userNodeIpMap.at(requestInfo->getUserId());
+    requestContext.generationTime = requestInfo->getGenerationTime();
+    requestContext.computingType = requestInfo->getComputingType();
+    requestContext.requiredStorage = requestInfo->getRequiredStorage();
+    requestContext.computingAmount = requestInfo->getComputingAmount();
+    requestContext.transferAmount = requestInfo->getTransferAmount();
+    requestContext.totalDelayRequirement = requestInfo->getTotalDelayRequirement();
+    requestContext.budget = requestInfo->getBudget();
+    requestContext.userMaxBandwidth = requestInfo->getUserMaxBandwidth();
+    requestContextCache[{requestInfo->getUserId(), requestInfo->getTaskId()}] = requestContext;
 
     std::string messageType = payload->getMsgType();
     int computingType = requestInfo->getComputingType();
@@ -244,10 +259,9 @@ void UserGatewayApp::sendCollectedNodeInfo(int uid, int tid)
 
     auto payload = makeShared<RespSummaryMsg>();
     payload->setNodeInfoArraySize(cpArray.size());
-    for(auto nodeInfo:cpArray){
-        for(int i=0;i<payload->getNodeInfoArraySize();i++){
-            payload->setNodeInfo(i, nodeInfo);
-        }
+    // 汇总消息中的 nodeInfo 按候选节点一一写入，保持与 cpMap 中的候选顺序一致。
+    for (int i = 0; i < (int)cpArray.size(); i++) {
+        payload->setNodeInfo(i, cpArray[i]);
     }
 
     payload->setUserId(uid);
@@ -306,23 +320,23 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     PathInfo pathInfo;
 
     if (pathInd != nullptr) {
+        // 网络层记录的 hopAddress 顺序是从上游向用户网关累积的。
+        // 应用层在下发 TASK_DATA 时需要从用户网关到算力节点的方向，因此在此反转。
         for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
             pathInfo.sidPath.push_back(pathInd->getHopAddress(i));
         }
         std::reverse(pathInfo.sidPath.begin(), pathInfo.sidPath.end());
     }
 
-    simtime_t propagationDelay = simTime() - respInfo->getSendTime();
-    simtime_t totalDelay = respInfo->getComputingDelay()
-                         + respInfo->getQueuingDelay()
-                         + respInfo->getTransmissionDelay()
-                         + propagationDelay;
+    // 当前 RESP 已直接携带网关侧累计时延，应用层不再拆分计算/排队/传输分项时延。
+    simtime_t totalDelay = respInfo->getAccumulatedDelay();
 
     pathInfo.totalDelay = totalDelay.dbl();
     pathInfo.computeCost = respInfo->getComputeCost();
     pathInfo.bandwidth = respInfo->getRequiredBandwidth();
     pathInfo.computeNodeId = respInfo->getComputeNodeId();
     pathInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
+    pathInfo.computeNodePort = respInfo->getComputeNodePort();
     pathInfo.timestamp = simTime();
 
     pathCache[{uid, tid}].push_back(pathInfo);
@@ -353,18 +367,20 @@ void UserGatewayApp::processCprpConfirm(Packet *packet)
     int uid = confirmInfo->getUserId();
     int tid = confirmInfo->getTaskId();
     int selectedNodeId = confirmInfo->getSelectedNodeId();
+    L3Address selectedNodeAddress = confirmInfo->getSelectedNodeAddress();
+    int selectedNodePort = confirmInfo->getSelectedNodePort();
     int computingType = confirmInfo->getComputingType();
 
     EV_INFO << "Processing CPRP_CONFIRM for task (" << uid << "," << tid
             << ") selectedNode=" << selectedNodeId << endl;
 
-    forwardTaskData(uid, tid, selectedNodeId, computingType);
+    forwardTaskData(uid, tid, selectedNodeId, selectedNodeAddress, selectedNodePort, computingType);
 
     delete packet;
 }
 
 // 转发任务数据消息
-void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, int computingType)
+void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int computingType)
 {
     auto it = pathCache.find({userId, taskId});
     if (it == pathCache.end() || it->second.empty()) {
@@ -372,13 +388,22 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
         return;
     }
 
+    auto requestIt = requestContextCache.find({userId, taskId});
+    if (requestIt == requestContextCache.end()) {
+        EV_ERROR << "No request context found for task (" << userId << "," << taskId << ")" << endl;
+        return;
+    }
+
     std::vector<PathInfo>* paths = &it->second;
+    const RequestContext& requestContext = requestIt->second;
 
     PathInfo* selectedPath = nullptr;
     double minDelay = std::numeric_limits<double>::max();
 
+    // 同一任务可能收到多个候选 RESP。
+    // 这里先按选定节点过滤，再选择该节点对应的最小时延路径作为最终下发路径。
     for (auto& path : *paths) {
-        if (path.computeNodeId == selectedNodeId && path.totalDelay < minDelay) {
+        if (path.computeNodeId == selectedNodeId && path.computeNodeAddress == selectedNodeAddress && path.totalDelay < minDelay) {
             selectedPath = &path;
             minDelay = path.totalDelay;
         }
@@ -395,7 +420,14 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     auto taskData = makeShared<TaskDataMsg>();
     taskData->setUserId(userId);
     taskData->setTaskId(taskId);
+    taskData->setUserNodeAddress(requestContext.userNodeAddress);
+    taskData->setGenerationTime(requestContext.generationTime);
     taskData->setComputingType(computingType);
+    taskData->setRequiredStorage(requestContext.requiredStorage);
+    taskData->setComputingAmount(requestContext.computingAmount);
+    taskData->setTransferAmount(requestContext.transferAmount);
+    taskData->setTotalDelayRequirement(requestContext.totalDelayRequirement);
+    taskData->setBudget(requestContext.budget);
     taskData->setPriority(5);
 
     Packet *pkt = new Packet("TASK_DATA");
@@ -414,7 +446,8 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
 
     L3Address firstHop = selectedPath->sidPath[0];
-    socket.sendTo(pkt, firstHop, computeNodePort);
+    // 数据包通过源路由逐跳转发到目标算力节点，因此这里的 UDP 目的端口必须与目标节点监听端口一致。
+    socket.sendTo(pkt, firstHop, selectedNodePort > 0 ? selectedNodePort : selectedPath->computeNodePort);
 
     EV_INFO << "Forwarding TASK_DATA via selected path to " << firstHop << endl;
 
@@ -433,6 +466,12 @@ void UserGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
     }
     else if(strcmp(packet->getName(), "CPRP_CONFIRM") == 0){
         processCprpConfirm(packet);
+    }
+    else if(strcmp(packet->getName(), "CPRP_CANCEL") == 0){
+        // 用户网关应用层在这里接收来自算力网关的撤销/完成通知。
+        // 当前回滚状态下暂不维护额外软状态，因此先记录日志并释放报文。
+        EV_INFO << "UserGatewayApp received CPRP_CANCEL." << endl;
+        delete packet;
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;

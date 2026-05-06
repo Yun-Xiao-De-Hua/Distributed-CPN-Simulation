@@ -60,10 +60,27 @@ void UserNodeApp::sendTaskRequest()
     EV_INFO << "User" << userNodeId << " is to send TaskRequestMsg...\n";
 
     auto payload = makeShared<TaskRequestMsg>();
+    // 当前示例场景仅生成一条测试任务，请求字段需要与后续 CPRP_CONFIRM/TASK_DATA 保持一致。
     payload->setUserId(this->userNodeId);
     payload->setTaskId(1);  // test，暂时硬编码
+    payload->setGenerationTime(simTime());
     payload->setComputingType(0);   // test，暂时硬编码
+    payload->setRequiredStorage(100);
+    payload->setComputingAmount(1000);
+    payload->setTransferAmount(1000);
+    payload->setTotalDelayRequirement(1);
+    payload->setBudget(100);
     payload->setUserMaxBandwidth(this->maxTransmissionBandwidth);
+
+    UserTaskContext taskContext;
+    taskContext.generationTime = payload->getGenerationTime();
+    taskContext.computingType = payload->getComputingType();
+    taskContext.requiredStorage = payload->getRequiredStorage();
+    taskContext.computingAmount = payload->getComputingAmount();
+    taskContext.transferAmount = payload->getTransferAmount();
+    taskContext.totalDelayRequirement = payload->getTotalDelayRequirement();
+    taskContext.budget = payload->getBudget();
+    taskContextCache[payload->getTaskId()] = taskContext;
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -88,11 +105,39 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    // 创建算力应答载荷
+    if (sumInfo->getNodeInfoArraySize() == 0) {
+        EV_WARN << "RespSummaryMsg contains no candidate node information." << std::endl;
+        delete packet;
+        return;
+    }
+
+    auto taskIt = taskContextCache.find(sumInfo->getTaskId());
+    if (taskIt == taskContextCache.end()) {
+        EV_WARN << "No cached task context found for taskId=" << sumInfo->getTaskId() << std::endl;
+        delete packet;
+        return;
+    }
+
+    const auto& selectedNode = sumInfo->getNodeInfo(0);
+    const auto& taskContext = taskIt->second;
+
+    // CPRP_CONFIRM 必须带上最终选定节点以及任务参数，
+    // 这样用户网关在转发 TASK_DATA 时才能恢复完整业务上下文。
     auto payload = makeShared<CprpConfirmMsg>();
     payload->setUserId(sumInfo->getUserId());
     payload->setTaskId(sumInfo->getTaskId());
-    payload->setSelectedNodeId(1);  // test，暂时硬编码为1
+    payload->setSelectedNodeId(selectedNode.computeNodeId);
+    payload->setSelectedNodeAddress(selectedNode.computeNodeAddress);
+    // 当前示例拓扑中算力节点统一监听 5000 端口。
+    payload->setSelectedNodePort(5000);
+    payload->setSelectedPathIndex(0);
+    payload->setGenerationTime(taskContext.generationTime);
+    payload->setComputingType(taskContext.computingType);
+    payload->setRequiredStorage(taskContext.requiredStorage);
+    payload->setComputingAmount(taskContext.computingAmount);
+    payload->setTransferAmount(taskContext.transferAmount);
+    payload->setTotalDelayRequirement(taskContext.totalDelayRequirement);
+    payload->setBudget(taskContext.budget);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -100,7 +145,9 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     socket.sendTo(pkt, userGatewayAddress, userGatewayPort);
 
-    EV_INFO << "user has sent CprpConfirmMsg\n";
+    EV_INFO << "User node has sent CPRP_CONFIRM for task(" << sumInfo->getUserId()
+            << "," << sumInfo->getTaskId() << ") using selectedNodeId="
+            << selectedNode.computeNodeId << "\n";
 
     delete packet;
 }
@@ -110,9 +157,6 @@ void UserNodeApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
     if(strcmp(packet->getName(), "RespSummaryMsg") == 0){
         sendCprpConfirm(packet);
-    }
-    else if(strcmp(packet->getName(), "") == 0){
-
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;
