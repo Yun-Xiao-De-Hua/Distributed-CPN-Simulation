@@ -1,18 +1,3 @@
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
-
 #ifndef INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_APPLICATIONS_COMPUTEGATEWAYAPP_COMPUTEGATEWAYAPP_H_
 #define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_APPLICATIONS_COMPUTEGATEWAYAPP_COMPUTEGATEWAYAPP_H_
 
@@ -33,6 +18,7 @@ protected:
         int computingType;
         double computingCapacity;
         double availableStorage;
+        simtime_t updateTime;
     };
 
     int computeGatewayId;
@@ -45,6 +31,9 @@ protected:
     simtime_t cibUpdateInterval;
     std::unordered_map<int, std::unordered_map<int, CIB>> cibInfoMap;  // 存储算力组类型 -> (算力节点编号 -> 算力节点状态信息)的映射
     std::vector<L3Address> computingPowerGroup; // 所管理算力组的组播地址
+    std::map<L3Address, std::vector<int>> multicastRoutesMap;  // 组播地址 -> 转发接口ID列表
+
+    void parseMulticastRoutes(const char *routesConfig);
 
     cMessage *SelfCibUpdateEvent = nullptr;    // CIB状态更新自消息
     UdpSocket socket;
