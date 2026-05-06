@@ -18,7 +18,7 @@ network Network
         channel testChannel extends ThruputMeteringChannel
         {
             delay = 0.01s;
-            datarate = 10Mbps;
+            datarate = 100Mbps;
         }
 
     submodules:

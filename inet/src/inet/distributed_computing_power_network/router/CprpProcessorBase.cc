@@ -64,6 +64,7 @@ void CprpProcessorBase::handleMessage(cMessage *msg) {
         auto packet = check_and_cast<Packet*>(msg);
         if (strcmp(packet->getName(), "CPRP_CANCEL") == 0) {
             processCancelMsg(packet);
+            delete packet;
         }
         else {
             delete packet;
@@ -349,6 +350,11 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
 
     EV_INFO << "Processing CPRP_CANCEL for task (" << userId << "," << taskId
             << ") computeNode=" << computeNodeAddr << ":" << computeNodePort << endl;
+
+    if (!sessionManager) {
+        EV_INFO << "No session manager is configured, ignoring CPRP_CANCEL soft-state cleanup" << endl;
+        return DROP;
+    }
 
     const RequestSessionState* session = sessionManager->getSession(userId, taskId);
 

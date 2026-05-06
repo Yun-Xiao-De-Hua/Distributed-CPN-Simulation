@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <omnetpp.h>
+#include "inet/common/InitStages.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 
@@ -43,11 +44,15 @@ protected:
     std::map<int, double> reservedBandwidth;
     
     simtime_t sessionTimeout;
+    double defaultInterfaceBandwidth;
     
 protected:
+    virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *msg) override;
     virtual void finish() override;
+
+    virtual void initializeInterfaceBandwidths();
 
 public:
     SessionManager();

@@ -26,12 +26,15 @@ module ComputeRouter extends OspfRouter
         bool hasSessionManager = default(true);
         bool hasComputeRouterProcessor = default(true);
         double sessionTimeout @unit(s) = default(60s);  // 请求会话超时时间
+        double defaultInterfaceBandwidth @unit(bps) = default(100Mbps);
         @display("i=abstract/router");
         
     submodules:
         sessionManager: SessionManager if hasSessionManager {
             parameters:
                 sessionTimeout = parent.sessionTimeout;
+                interfaceTableModule = "^.interfaceTable";
+                defaultInterfaceBandwidth = parent.defaultInterfaceBandwidth;
             @display("p=600,100");
         }
         computeRouterProcessor: ComputeRouterProcessor if hasComputeRouterProcessor {

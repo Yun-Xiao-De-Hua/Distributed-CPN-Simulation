@@ -1,4 +1,6 @@
 #include "SessionManager.h"
+#include "inet/common/ModuleAccess.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -11,6 +13,38 @@ void SessionManager::initialize(int stage) {
     cSimpleModule::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
         sessionTimeout = par("sessionTimeout");
+        defaultInterfaceBandwidth = par("defaultInterfaceBandwidth");
+    }
+    else if (stage == INITSTAGE_NETWORK_LAYER) {
+        initializeInterfaceBandwidths();
+    }
+}
+
+void SessionManager::initializeInterfaceBandwidths() {
+    interfaceBandwidth.clear();
+    reservedBandwidth.clear();
+
+    IInterfaceTable *ift = findModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+    if (!ift) {
+        EV_WARN << "SessionManager cannot initialize interface bandwidths: interface table not found" << endl;
+        return;
+    }
+
+    for (int i = 0; i < ift->getNumInterfaces(); i++) {
+        auto ie = ift->getInterface(i);
+        if (!ie || ie->isLoopback())
+            continue;
+
+        double bandwidth = ie->getDatarate();
+        if (bandwidth <= 0)
+            bandwidth = defaultInterfaceBandwidth;
+
+        interfaceBandwidth[ie->getInterfaceId()] = bandwidth;
+        reservedBandwidth[ie->getInterfaceId()] = 0;
+
+        EV_INFO << "Initialized interface bandwidth: " << ie->getInterfaceName()
+                << " id=" << ie->getInterfaceId()
+                << " bandwidth=" << bandwidth << " bps" << endl;
     }
 }
 
@@ -134,7 +168,8 @@ void SessionManager::releaseBandwidth(int interfaceId, double bandwidth) {
 }
 
 double SessionManager::getAvailableBandwidth(int interfaceId) {
-    double total = interfaceBandwidth[interfaceId];
+    auto totalIt = interfaceBandwidth.find(interfaceId);
+    double total = totalIt != interfaceBandwidth.end() ? totalIt->second : defaultInterfaceBandwidth;
     double reserved = reservedBandwidth[interfaceId];
     return total - reserved;
 }

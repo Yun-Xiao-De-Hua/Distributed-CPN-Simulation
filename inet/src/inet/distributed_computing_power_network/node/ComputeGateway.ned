@@ -15,12 +15,38 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.distributed_computing_power_network.applications.ComputeGatewayApp.ComputeGatewayApp;
+import inet.distributed_computing_power_network.node.ComputeGatewayProcessor;
+import inet.distributed_computing_power_network.router.SessionManager;
 import inet.node.ospfv2.OspfRouter;
 
 module ComputeGateway extends OspfRouter
 {
     parameters:
         hasUdp = true;
-    	numApps = default(1);
-    	app[0].typename = "ComputeGatewayApp";     
+        numApps = default(1);
+        app[0].typename = "ComputeGatewayApp";
+        bool hasSessionManager = default(true);
+        bool hasComputeGatewayProcessor = default(true);
+        double sessionTimeout @unit(s) = default(60s);
+        double defaultInterfaceBandwidth @unit(bps) = default(100Mbps);
+
+    submodules:
+        sessionManager: SessionManager if hasSessionManager {
+            parameters:
+                sessionTimeout = parent.sessionTimeout;
+                interfaceTableModule = "^.interfaceTable";
+                defaultInterfaceBandwidth = parent.defaultInterfaceBandwidth;
+            @display("p=600,100");
+        }
+        computeGatewayProcessor: ComputeGatewayProcessor if hasComputeGatewayProcessor {
+            parameters:
+                sessionManagerModule = "^.sessionManager";
+                interfaceTableModule = "^.interfaceTable";
+                ipv4Module = "^.ipv4.ip";
+            @display("p=600,150");
+        }
+
+    connections allowunconnected:
+        computeGatewayProcessor.ipOut --> tn.in++ if hasComputeGatewayProcessor;
+        computeGatewayProcessor.ipIn <-- tn.out++ if hasComputeGatewayProcessor;
 }

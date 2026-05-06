@@ -13,6 +13,8 @@ simple SessionManager
         @display("i=block/routing");
         double sessionTimeout @unit(s) = default(60s);
         double defaultReservationTimeout @unit(s) = default(60s);
+        string interfaceTableModule = default("^.interfaceTable");
+        double defaultInterfaceBandwidth @unit(bps) = default(100Mbps);
         bool strictPruning = default(true);
         
     gates:
