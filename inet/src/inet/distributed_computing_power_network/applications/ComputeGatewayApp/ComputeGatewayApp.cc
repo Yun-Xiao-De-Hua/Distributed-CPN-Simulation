@@ -187,20 +187,30 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     const auto& groupMap = cibInfoMap.at(requestInfo->getComputingType());
 
-    int selectedNodeId = 1;
+    if (groupMap.empty()) {
+        EV_WARN << "ComputeGateway" << computeGatewayId
+                << " has an empty CIB group for computingType: "
+                << requestInfo->getComputingType() << std::endl;
+        delete packet;
+        return;
+    }
+
+    int selectedNodeId = 1; // TODO: replace with a real selection algorithm
 
     CIB destNodeInfo;
-    if(groupMap.find(selectedNodeId)==groupMap.end())
-        destNodeInfo = groupMap.at(4);
+    auto selectedIt = groupMap.find(selectedNodeId);
+    if (selectedIt != groupMap.end())
+        destNodeInfo = selectedIt->second;
     else
-        destNodeInfo = groupMap.at(selectedNodeId);
+        destNodeInfo = groupMap.begin()->second;
 
     auto payload = makeShared<CprpResponseMsg>();
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
-    payload->setComputeNodeId(selectedNodeId);
+    payload->setComputeNodeId(destNodeInfo.nodeId);
 
     payload->setComputeNodeAddress(destNodeInfo.nodeAddress);
+    payload->setComputeNodePort(computeNodePort);
     payload->setComputingType(destNodeInfo.computingType);
     payload->setComputingCapacity(destNodeInfo.computingCapacity);
     payload->setAvailableStorage(destNodeInfo.availableStorage);
@@ -208,16 +218,13 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
     payload->setMaxDelayTolerance(requestInfo->getTotalDelayRequirement());
-    payload->setComputingDelay(0.001);
-    payload->setQueuingDelay(0.0005);
-    payload->setTransmissionDelay(0.001);
     payload->setComputeCost(10.0);
 
     payload->setLastHopSendTime(simTime());
     payload->setLastHopAddress(localAddress);
-    payload->setAccumulatedDelay(0);
-    payload->setComputeGatewayAddress(localAddress);
-    payload->setComputeGatewayPort(localPort);
+    // 网关侧尚未引入更细粒度的固定时延模型，先以 0 作为累计时延初值，
+    // 后续由沿途网络层节点继续叠加路径相关时延。
+    payload->setAccumulatedDelay(SIMTIME_ZERO);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -229,6 +236,10 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
     pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+    // 应用层预先写入上游路径起点：[算力节点, 算力网关]
+    pathReq->setHopAddressArraySize(2);
+    pathReq->setHopAddress(0, destNodeInfo.nodeAddress);
+    pathReq->setHopAddress(1, localAddress);
 
     socket.sendTo(pkt, requestInfo->getUserGatewayAddress(), userGatewayPort);
 
