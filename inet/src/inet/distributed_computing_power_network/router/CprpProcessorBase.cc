@@ -107,9 +107,43 @@ INetfilter::IHook::Result CprpProcessorBase::datagramForwardHook(Packet *packet)
     return ACCEPT;
 }
 
+bool CprpProcessorBase::isCprpPacket(Packet *packet) {
+    const char *name = packet->getName();
+    if (strncmp(name, "CPRP_", 5) == 0 || strncmp(name, "TASK_", 5) == 0) {
+        return true;
+    }
+    
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    if (ipv4Header) {
+        if (ipv4Header->getProtocol() == &cprp::cprp) {
+            return true;
+        }
+        if (ipv4Header->getProtocol() == &Protocol::udp) {
+            auto ipLen = B(ipv4Header->getHeaderLength());
+            auto udpHeader = packet->peekDataAt<UdpHeader>(ipLen);
+            if (udpHeader && (udpHeader->getSourcePort() == 5000 || udpHeader->getDestinationPort() == 5000)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+Ptr<const CpnPathHeader> CprpProcessorBase::getCpnPathHeader(Packet *packet) {
+    if (!isCprpPacket(packet)) return nullptr;
+
+    B offset = getPayloadOffset(packet);
+    if (offset < B(0)) return nullptr;
+
+    auto chunk = packet->peekDataAt<Chunk>(offset);
+    return dynamic_ptr_cast<const CpnPathHeader>(chunk);
+}
+
 INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *packet) {
     Enter_Method("datagramPostRoutingHook");
     if (!enabled) return ACCEPT;
+
+    if (!isCprpPacket(packet)) return ACCEPT;
 
     const char *pktName = packet->getName();
     Result result = ACCEPT;
@@ -130,6 +164,30 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
         if (mode == PATH_RECORD_MODE) {
             processPathRecordMode(packet);
         }
+        else if (mode == PATH_USE_MODE) {
+            processPathUseMode(packet);
+        }
+    }
+    else {
+        // 检查是否存在物理 Header (转发节点)
+        auto pathHeader = getCpnPathHeader(packet);
+        if (pathHeader != nullptr) {
+            int mode = pathHeader->getMode();
+            if (mode == PATH_RECORD_MODE) {
+                processPathRecordMode(packet);
+            }
+            else if (mode == PATH_USE_MODE) {
+                processPathUseMode(packet);
+            }
+        }
+    }
+    }
+    else {
+        auto pathHeader = getCpnPathHeader(packet);
+        if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
+            processPathUseMode(packet);
+        }
+    }
         else if (mode == PATH_USE_MODE) {
             processPathUseMode(packet);
         }
@@ -158,10 +216,12 @@ INetfilter::IHook::Result CprpProcessorBase::datagramLocalInHook(Packet *packet)
     Enter_Method("datagramLocalInHook");
     if (!enabled) return ACCEPT;
 
+    if (!isCprpPacket(packet)) return ACCEPT;
+
     // 1. 剥离路径头部并转换为 Tag (针对到达本地的包)
     stripPathHeader(packet);
 
-    if (strcmp(packet->getName(), "CANCEL") == 0) {
+    if (strcmp(packet->getName(), "CPRP_CANCEL") == 0) {
         return processCancelMsg(packet);
     }
 
@@ -374,7 +434,7 @@ INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packe
     auto pathReqTag = packet->findTagForUpdate<CpnPathReq>();
     
     B offset = getPayloadOffset(packet);
-    Ptr<const CpnPathHeader> pathHeader = (offset >= B(0)) ? packet->peekDataAt<CpnPathHeader>(offset) : nullptr;
+    Ptr<const CpnPathHeader> pathHeader = getCpnPathHeader(packet);
 
     if (pathReqTag == nullptr && pathHeader == nullptr) {
         EV_WARN << "processPathRecordMode: Neither CpnPathReq tag nor CpnPathHeader chunk is present, skipping recording." << endl;
@@ -426,7 +486,7 @@ INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packe
 INetfilter::IHook::Result CprpProcessorBase::processPathUseMode(Packet *packet) {
     auto pathReqTag = packet->findTagForUpdate<CpnPathReq>();
     B offset = getPayloadOffset(packet);
-    Ptr<const CpnPathHeader> pathHeader = (offset >= B(0)) ? packet->peekDataAt<CpnPathHeader>(offset) : nullptr;
+    Ptr<const CpnPathHeader> pathHeader = getCpnPathHeader(packet);
 
     if (pathReqTag == nullptr && pathHeader == nullptr) return ACCEPT;
 
@@ -467,6 +527,8 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
     if (!ipv4Header || ipv4Header->getProtocol() != &Protocol::udp) return;
 
+    if (!isCprpPacket(packet)) return;
+
     // 如果包中有 CpnPathReq 标签，但 UDP 负载中还没有 CpnPathHeader，则进行封装
     auto pathTag = packet->findTag<CpnPathReq>();
     if (pathTag == nullptr) return;
@@ -474,7 +536,7 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
     B offset = getPayloadOffset(packet);
     if (offset < B(0)) return;
 
-    auto existingHeader = packet->peekDataAt<CpnPathHeader>(offset);
+    auto existingHeader = getCpnPathHeader(packet);
     if (existingHeader == nullptr) {
         EV_INFO << "handlePathHeader: Encapsulating CpnPathReq Tag into Header chunk." << endl;
         auto pathHeader = makeShared<CpnPathHeader>();
@@ -499,10 +561,12 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
 }
 
 void CprpProcessorBase::stripPathHeader(Packet *packet) {
+    if (!isCprpPacket(packet)) return;
+
     B offset = getPayloadOffset(packet);
     if (offset < B(0)) return;
 
-    auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
+    auto pathHeader = getCpnPathHeader(packet);
     if (pathHeader != nullptr) {
         EV_INFO << "stripPathHeader: Stripping CpnPathHeader and converting to CpnPathInd Tag." << endl;
         
@@ -554,8 +618,7 @@ void CprpProcessorBase::extractSessionFromResp(RequestSessionState& state, Packe
     state.userGatewayAddress = resp->getLastHopAddress();
 
     // 优先从 Header 提取路径
-    B offset = getPayloadOffset(packet);
-    auto pathHeader = (offset >= B(0)) ? packet->peekDataAt<CpnPathHeader>(offset) : nullptr;
+    auto pathHeader = getCpnPathHeader(packet);
     
     if (pathHeader != nullptr) {
         state.sidPath.clear();
@@ -576,11 +639,13 @@ void CprpProcessorBase::extractSessionFromResp(RequestSessionState& state, Packe
 }
 
 Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
+    if (!isCprpPacket(packet)) return nullptr;
+
     B offset = getPayloadOffset(packet);
     if (offset < B(0)) return nullptr;
 
     // 检查是否存在 CpnPathHeader，如果存在，RESP 消息在它之后
-    auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
+    auto pathHeader = getCpnPathHeader(packet);
     if (pathHeader != nullptr) {
         offset += pathHeader->getChunkLength();
     }
@@ -589,6 +654,8 @@ Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
 }
 
 Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
+    if (!isCprpPacket(packet)) return nullptr;
+
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
     if (!ipv4Header) return nullptr;
     
@@ -596,19 +663,21 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
 
     if (ipv4Header->getProtocol() == &cprp::cprp) {
         // Form 1: Raw IP (Network Layer CANCEL)
-        return packet->peekDataAt<CancelMsg>(ipLen);
+        auto chunk = packet->peekDataAt<Chunk>(ipLen);
+        return dynamic_ptr_cast<const CancelMsg>(chunk);
     } 
     else if (ipv4Header->getProtocol() == &Protocol::udp) {
         // Form 2: UDP (Application Layer CANCEL)
         B offset = ipLen + B(8); // 跳过 UDP 头
         
         // 同样检查路径头部
-        auto pathHeader = packet->peekDataAt<CpnPathHeader>(offset);
+        auto pathHeader = getCpnPathHeader(packet);
         if (pathHeader != nullptr) {
             offset += pathHeader->getChunkLength();
         }
         
-        return packet->peekDataAt<CancelMsg>(offset);
+        auto chunk = packet->peekDataAt<Chunk>(offset);
+        return dynamic_ptr_cast<const CancelMsg>(chunk);
     }
 
     return nullptr;

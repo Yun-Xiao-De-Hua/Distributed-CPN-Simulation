@@ -1,13 +1,12 @@
 
 #include <string>
 #include <sstream>
-#include <algorithm>
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
-#include "inet/networklayer/common/DscpTag_m.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
+#include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
-#include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 #include "UserGatewayApp.h"
 
 Define_Module(inet::UserGatewayApp);
@@ -224,6 +223,10 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
         auto interfaceReq = pkt->addTagIfAbsent<InterfaceReq>();
         interfaceReq->setInterfaceId(interfaceId);
         
+        auto addressReq = pkt->addTagIfAbsent<L3AddressReq>();
+        addressReq->setDestAddress(groupAddr);
+        pkt->addTagIfAbsent<L4PortReq>()->setDestPort(computeGatewayPort);
+        
         socket.sendTo(pkt, groupAddr, computeGatewayPort);
         
         EV_INFO << "Sent to group " << groupAddr 
@@ -281,6 +284,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
+    // 提取任务请求负载信息
     const auto& respInfo = packet->popAtFront<CprpResponseMsg>();
 
     if(respInfo == nullptr){
@@ -292,250 +296,48 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 
     int uid = respInfo->getUserId();
     int tid = respInfo->getTaskId();
-    L3Address computeNodeAddr = respInfo->getComputeNodeAddress();
-    int computeNodePort = respInfo->getComputeNodePort();
-    int computeNodeId = respInfo->getComputeNodeId();
-    
-    EV_INFO << "Processing CPRP_RESP for task (" << uid << "," << tid 
-            << ") computeNode" << computeNodeId << " = " << computeNodeAddr << ":" << computeNodePort << std::endl;
-
-    if (isTimerExpired(uid, tid)) {
-        EV_INFO << "Timer expired for task (" << uid << "," << tid 
-                << "), sending CANCEL" << std::endl;
-        
-        auto pathInd = packet->findTag<CpnPathInd>();
-        if (pathInd) {
-            std::vector<L3Address> pathNodes;
-            for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
-                pathNodes.push_back(pathInd->getHopAddress(i));
-            }
-            sendCancelToPathNodes(uid, tid, computeNodeAddr, computeNodePort, pathNodes);
-        }
-        delete packet;
-        return;
-    }
 
     auto& cpArray = cpMap[{uid,tid}];
     computeNodeInfo cpNodeInfo;
-    cpNodeInfo.computeNodeAddress = computeNodeAddr;
-    cpNodeInfo.computeNodeId = respInfo->getComputeNodeId();
-    cpNodeInfo.computingType = respInfo->getComputingType();
-    cpNodeInfo.computingCapacity = respInfo->getComputingCapacity();
-    cpNodeInfo.availableStorage = respInfo->getAvailableStorage();
-    cpNodeInfo.sendTime = respInfo->getSendTime();
+    cpNodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
     cpArray.push_back(cpNodeInfo);
 
-    auto pathInd = packet->findTag<CpnPathInd>();
-    PathInfo pathInfo;
-    
-    if (pathInd != nullptr) {
-        for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
-            pathInfo.sidPath.push_back(pathInd->getHopAddress(i));
-        }
-        std::reverse(pathInfo.sidPath.begin(), pathInfo.sidPath.end());
-    }
-    
-    pathInfo.computeNodeAddress = computeNodeAddr;
-    pathInfo.computeNodePort = computeNodePort;
-    pathInfo.computeNodeId = respInfo->getComputeNodeId();
-    pathInfo.totalDelay = respInfo->getAccumulatedDelay().dbl();
-    pathInfo.computeCost = respInfo->getComputeCost();
-    pathInfo.bandwidth = respInfo->getRequiredBandwidth();
-    pathInfo.timestamp = simTime();
-    
-    std::string key = computeNodeAddr.str() + ":" + std::to_string(computeNodePort);
-    pathCache[{uid, tid}][key] = pathInfo;
-
-    EV_INFO << "Recorded session for task (" << uid << "," << tid 
-            << ") computeNode" << pathInfo.computeNodeId << " = " << computeNodeAddr << ":" << computeNodePort
-            << " with totalDelay=" << pathInfo.totalDelay << std::endl;
+    EV_INFO << "Node info of CPRP_RESP has been recorded\n";
 
     delete packet;
 }
 
-// 处理算力确认消息
-void UserGatewayApp::processCprpConfirm(Packet *packet)
+// 发送算力确认消息
+void UserGatewayApp::sendCprpConfirm(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
-    const auto& confirmInfo = packet->popAtFront<CprpConfirmMsg>();
+//    // 提取任务请求负载信息
+//    const auto& comfInfo = packet->popAtFront<CprpConfirmMsg>();
+//
+//    if(comfInfo == nullptr){
+//        EV_WARN << "Error: Received a Packet named '" << packet->getName()
+//                 << "', but it does not contain a CprpConfirmMsg chunk. Discarding.";
+//        delete packet;
+//        return;
+//    }
+//
+//    // 创建算力应答载荷
+//    auto payload = makeShared<CprpConfirmMsg>();
+//    payload->setUserId(comfInfo->getUserId());
+//    payload->setTaskId(comfInfo->getTaskId());
+//    payload->setSelectedNodeId(comfInfo->getSelectedNodeId());
+//
+//    std::string messageType = payload->getMsgType();
+//    Packet *pkt = new Packet(messageType.c_str());
+//    pkt->insertAtBack(payload);
+//
+//    socket.sendTo(pkt, comfInfo->, userGatewayPort);
 
-    if(confirmInfo == nullptr){
-        EV_WARN << "Error: Received a Packet named '" << packet->getName()
-                 << "', but it does not contain a CprpConfirmMsg chunk. Discarding.";
-        delete packet;
-        return;
-    }
 
-    int uid = confirmInfo->getUserId();
-    int tid = confirmInfo->getTaskId();
-    int selectedNodeId = confirmInfo->getSelectedNodeId();
-    L3Address selectedNodeAddr = confirmInfo->getSelectedNodeAddress();
-    int selectedNodePort = confirmInfo->getSelectedNodePort();
-    int computingType = confirmInfo->getComputingType();
-
-    EV_INFO << "Processing CPRP_CONFIRM for task (" << uid << "," << tid 
-            << ") selectedNode=" << selectedNodeAddr << ":" << selectedNodePort << std::endl;
-
-    auto taskIt = pathCache.find({uid, tid});
-    if (taskIt == pathCache.end()) {
-        EV_ERROR << "No sessions found for task (" << uid << "," << tid << ")" << std::endl;
-        delete packet;
-        return;
-    }
-    
-    std::string selectedKey = selectedNodeAddr.str() + ":" + std::to_string(selectedNodePort);
-    
-    for (const auto& pair : taskIt->second) {
-        if (pair.first != selectedKey) {
-            EV_INFO << "Sending CANCEL for unselected session: " << pair.first << std::endl;
-            sendCancelToPathNodes(uid, tid, 
-                                  pair.second.computeNodeAddress,
-                                  pair.second.computeNodePort,
-                                  pair.second.sidPath);
-        }
-    }
-    
-    PathInfo selectedPath = taskIt->second[selectedKey];
-    pathCache.erase({uid, tid});
-    pathCache[{uid, tid}][selectedKey] = selectedPath;
-
-    forwardTaskData(uid, tid, selectedNodeId, computingType);
+    EV_INFO << "Node info of CPRP_RESP has been recorded\n";
 
     delete packet;
-}
-
-// 转发任务数据消息
-void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, int computingType)
-{
-    auto it = pathCache.find({userId, taskId});
-    if (it == pathCache.end() || it->second.empty()) {
-        EV_ERROR << "No path found for task (" << userId << "," << taskId << ")" << endl;
-        return;
-    }
-
-    PathInfo* selectedPath = nullptr;
-    
-    for (auto& pair : it->second) {
-        if (pair.second.computeNodeId == selectedNodeId) {
-            selectedPath = &pair.second;
-            break;
-        }
-    }
-
-    if (!selectedPath || selectedPath->sidPath.empty()) {
-        EV_ERROR << "Selected node path not found or path is empty" << endl;
-        return;
-    }
-
-    EV_INFO << "Selected path with delay=" << selectedPath->totalDelay 
-            << " hops=" << selectedPath->sidPath.size() << endl;
-
-    auto taskData = makeShared<TaskDataMsg>();
-    taskData->setUserId(userId);
-    taskData->setTaskId(taskId);
-    taskData->setComputingType(computingType);
-    taskData->setPriority(5);
-
-    Packet *pkt = new Packet("TASK_DATA");
-    pkt->insertAtBack(taskData);
-
-    auto pathReq = pkt->addTagIfAbsent<CpnPathReq>();
-    pathReq->setMode(PATH_USE_MODE);
-    pathReq->setUserId(userId);
-    pathReq->setTaskId(taskId);
-    pathReq->setSidListArraySize(selectedPath->sidPath.size());
-    for (size_t i = 0; i < selectedPath->sidPath.size(); i++) {
-        pathReq->setSidList(i, selectedPath->sidPath[i]);
-    }
-    pathReq->setCurrentHopIndex(0);
-
-    pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
-
-    L3Address firstHop = selectedPath->sidPath[0];
-    socket.sendTo(pkt, firstHop, computeNodePort);
-
-    EV_INFO << "Forwarding TASK_DATA via selected path to " << firstHop << endl;
-
-    pathCache.erase({userId, taskId});
-}
-
-// 处理CANCEL消息
-void UserGatewayApp::processCancelMsg(Packet *packet)
-{
-    EV_INFO << "Received CANCEL packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
-    
-    const auto& cancel = packet->peekAtFront<CancelMsg>();
-    
-    if (cancel == nullptr) {
-        EV_WARN << "Invalid CancelMsg" << std::endl;
-        delete packet;
-        return;
-    }
-    
-    int uid = cancel->getUserId();
-    int tid = cancel->getTaskId();
-    L3Address computeNodeAddr = cancel->getComputeNodeAddress();
-    int computeNodePort = cancel->getComputeNodePort();
-    
-    EV_INFO << "Processing CANCEL for task (" << uid << "," << tid 
-            << ") computeNode=" << computeNodeAddr << ":" << computeNodePort << std::endl;
-    
-    std::string key = computeNodeAddr.str() + ":" + std::to_string(computeNodePort);
-    auto taskIt = pathCache.find({uid, tid});
-    if (taskIt == pathCache.end()) {
-        EV_WARN << "No sessions found for task (" << uid << "," << tid << ")" << std::endl;
-        delete packet;
-        return;
-    }
-    
-    auto pathIt = taskIt->second.find(key);
-    if (pathIt == taskIt->second.end()) {
-        EV_WARN << "Session not found: " << key << std::endl;
-        delete packet;
-        return;
-    }
-    
-    sendCancelToPathNodes(uid, tid, computeNodeAddr, computeNodePort, pathIt->second.sidPath);
-    
-    taskIt->second.erase(key);
-    EV_INFO << "Removed session: " << key << std::endl;
-    
-    delete packet;
-}
-
-// 检查计时器是否过期
-bool UserGatewayApp::isTimerExpired(int userId, int taskId)
-{
-    auto it = requestTimers.find({userId, taskId});
-    if (it == requestTimers.end()) return false;
-    return simTime() > it->second;
-}
-
-// 向路径节点发送CANCEL
-void UserGatewayApp::sendCancelToPathNodes(int userId, int taskId,
-                                            const L3Address& computeNodeAddr, int computeNodePort,
-                                            const std::vector<L3Address>& path)
-{
-    EV_INFO << "Sending CANCEL to " << path.size() << " path nodes for task (" 
-            << userId << "," << taskId << ") computeNode=" << computeNodeAddr 
-            << ":" << computeNodePort << std::endl;
-    
-    for (const auto& nodeAddr : path) {
-        auto cancel = makeShared<CancelMsg>();
-        cancel->setUserId(userId);
-        cancel->setTaskId(taskId);
-        cancel->setComputeNodeAddress(computeNodeAddr);
-        cancel->setComputeNodePort(computeNodePort);
-        cancel->setSenderType(SENDER_USER_GW);
-        
-        Packet *pkt = new Packet("CANCEL");
-        pkt->insertAtBack(cancel);
-        
-        socket.sendTo(pkt, nodeAddr, computeGatewayPort);
-        
-        EV_INFO << "Sent CANCEL to " << nodeAddr << std::endl;
-    }
 }
 
 
@@ -549,10 +351,7 @@ void UserGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
         processCprpResp(packet);
     }
     else if(strcmp(packet->getName(), "CPRP_CONFIRM") == 0){
-        processCprpConfirm(packet);
-    }
-    else if(strcmp(packet->getName(), "CANCEL") == 0){
-        processCancelMsg(packet);
+
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;

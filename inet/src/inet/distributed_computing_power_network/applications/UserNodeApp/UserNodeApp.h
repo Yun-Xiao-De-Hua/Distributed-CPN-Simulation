@@ -33,7 +33,6 @@ protected:
     int localPort;
     L3Address userGatewayAddress;
     int userGatewayPort;
-    double maxTransmissionBandwidth;  // 用户最大传输带宽
 
     cMessage *selfTaskCreationEvent = nullptr;    // 自消息触发任务请求消息生成
     UdpSocket socket;

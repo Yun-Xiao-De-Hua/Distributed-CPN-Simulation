@@ -220,7 +220,7 @@ class CancelMsg extends inet::FieldsChunk {
     int computeNodePort;              // 算力节点端口
     int senderType;                   // 发送方类型 (CancelSenderType)
     
-    string msgType = "CANCEL";
+    string msgType = "CPRP_CANCEL";
     chunkLength = B(20);
 }
 

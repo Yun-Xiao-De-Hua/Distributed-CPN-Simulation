@@ -33,7 +33,6 @@ protected:
         int computingType;
         double computingCapacity;
         double availableStorage;
-        simtime_t updateTime;
     };
 
     int computeGatewayId;
@@ -46,9 +45,6 @@ protected:
     simtime_t cibUpdateInterval;
     std::unordered_map<int, std::unordered_map<int, CIB>> cibInfoMap;  // 存储算力组类型 -> (算力节点编号 -> 算力节点状态信息)的映射
     std::vector<L3Address> computingPowerGroup; // 所管理算力组的组播地址
-    std::map<L3Address, std::vector<int>> multicastRoutesMap;  // 组播地址 -> 转发接口ID列表
-
-    void parseMulticastRoutes(const char *routesConfig);
 
     cMessage *SelfCibUpdateEvent = nullptr;    // CIB状态更新自消息
     UdpSocket socket;
@@ -72,8 +68,6 @@ protected:
     void updateCib(Packet *packet);
     // 发送算力应答
     void sendCprpResponse(Packet *packet);
-    // 处理任务完成通告
-    void handleTaskCompletion(Packet *packet);
 
 public:
     ComputeGatewayApp();

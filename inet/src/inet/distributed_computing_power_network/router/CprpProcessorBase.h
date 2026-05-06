@@ -75,6 +75,12 @@ protected:
     virtual Ptr<const CprpResponseMsg> getCprpResp(Packet *packet);
     virtual Ptr<const CancelMsg> getCancelMsg(Packet *packet);
 
+    // 识别数据包是否属于 CPRP 协议流
+    virtual bool isCprpPacket(Packet *packet);
+
+    // 安全提取路径头
+    virtual Ptr<const CpnPathHeader> getCpnPathHeader(Packet *packet);
+
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet);
 
     virtual std::vector<L3Address> getUpstreamNodes(const std::vector<L3Address>& sidPath);

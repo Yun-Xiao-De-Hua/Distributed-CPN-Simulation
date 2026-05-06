@@ -15,7 +15,6 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.distributed_computing_power_network.applications.UserGatewayApp.UserGatewayApp;
-import inet.distributed_computing_power_network.router.UserGatewayProcessor;
 import inet.node.ospfv2.OspfRouter;
 
 module UserGateway extends OspfRouter
@@ -24,15 +23,4 @@ module UserGateway extends OspfRouter
         hasUdp = true;        
     	numApps = default(1);
     	app[0].typename = "UserGatewayApp";        
-    
-    submodules:
-        userGatewayProcessor: UserGatewayProcessor {
-            parameters:
-                ipv4Module = "^.ipv4.ip";
-            @display("p=200,100");
-        }
-
-    connections allowunconnected:
-        userGatewayProcessor.ipOut --> tn.in++;
-        userGatewayProcessor.ipIn <-- tn.out++;
 }

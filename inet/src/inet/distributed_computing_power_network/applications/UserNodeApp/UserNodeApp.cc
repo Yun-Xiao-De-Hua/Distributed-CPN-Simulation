@@ -27,7 +27,6 @@ void UserNodeApp::initialize(int stage)
        this->localAddress = L3AddressResolver().resolve(par("localAddress"));
        this->userGatewayAddress = L3AddressResolver().resolve(par("userGatewayAddress"));
        this->userGatewayPort = par("userGatewayPort");
-       this->maxTransmissionBandwidth = par("maxTransmissionBandwidth");
 
        this->selfTaskCreationEvent = new cMessage("TaskCreationSelfMsg");
     }
@@ -65,7 +64,6 @@ void UserNodeApp::sendTaskRequest()
     payload->setUserId(this->userNodeId);
     payload->setTaskId(1);  // test，暂时硬编码
     payload->setComputingType(0);   // test，暂时硬编码
-    payload->setUserMaxBandwidth(this->maxTransmissionBandwidth);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -90,21 +88,11 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    int selectedIndex = 0;
-    if (sumInfo->getNodeInfoArraySize() == 0) {
-        EV_WARN << "No compute node info available" << std::endl;
-        delete packet;
-        return;
-    }
-    
-    computeNodeInfo selectedNode = sumInfo->getNodeInfo(selectedIndex);
-
+    // 创建算力应答载荷
     auto payload = makeShared<CprpConfirmMsg>();
     payload->setUserId(sumInfo->getUserId());
     payload->setTaskId(sumInfo->getTaskId());
-    payload->setSelectedNodeId(selectedNode.computeNodeId);
-    payload->setSelectedNodeAddress(selectedNode.computeNodeAddress);
-    payload->setSelectedNodePort(5000);
+    payload->setSelectedNodeId(1);  // test，暂时硬编码为1
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -112,8 +100,7 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     socket.sendTo(pkt, userGatewayAddress, userGatewayPort);
 
-    EV_INFO << "User sent CPRP_CONFIRM for task (" << sumInfo->getUserId() << "," << sumInfo->getTaskId()
-            << ") selectedNode=" << selectedNode.computeNodeAddress << std::endl;
+    EV_INFO << "user has sent CprpConfirmMsg\n";
 
     delete packet;
 }

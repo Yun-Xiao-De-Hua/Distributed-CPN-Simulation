@@ -14,13 +14,9 @@
 // 
 
 package inet.distributed_computing_power_network.node;
-import inet.distributed_computing_power_network.applications.ComputeGatewayApp.ComputeGatewayApp;
 import inet.node.ospfv2.OspfRouter;
 
-module ComputeGateway extends OspfRouter
+module Router extends OspfRouter
 {
-    parameters:
-        hasUdp = true;
-    	numApps = default(1);
-    	app[0].typename = "ComputeGatewayApp";     
+    
 }
