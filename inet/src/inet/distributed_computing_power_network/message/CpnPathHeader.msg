@@ -29,7 +29,7 @@ class CpnPathHeader extends inet::FieldsChunk
     L3Address sidList[];             // SID路径列表(源路由)
     int currentHopIndex = 0;         // 当前跳索引
     
-    chunkLength = B(32); // 基础长度，实际长度随数组变化
+    chunkLength = B(64); // 基础长度；实际长度由处理器按数组规模显式更新
 }
 
 // 算力网络路径记录请求Tag (应用层 -> 网络层，本地指令)

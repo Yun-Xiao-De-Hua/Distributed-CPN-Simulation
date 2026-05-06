@@ -18,6 +18,11 @@ namespace inet {
 
 Define_Module(CprpProcessorBase);
 
+static const B CPN_PATH_HEADER_BASE_LENGTH = B(64);
+static const B CPN_PATH_ADDRESS_LENGTH = B(16);
+static const int OPTIONAL_CHUNK_PEEK_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_EMPTY | Chunk::PF_ALLOW_INCOMPLETE;
+static const int OPTIONAL_TYPED_PEEK_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_INCOMPLETE;
+
 CprpProcessorBase::CprpProcessorBase() {}
 CprpProcessorBase::~CprpProcessorBase() {
     cancelAndDelete(sendCancelsMsg);
@@ -126,7 +131,9 @@ bool CprpProcessorBase::isCprpPacket(Packet *packet) {
         }
         if (ipv4Header->getProtocol() == &Protocol::udp) {
             auto ipLen = B(ipv4Header->getHeaderLength());
-            auto udpHeader = packet->peekDataAt<UdpHeader>(ipLen);
+            if (b(ipLen + B(8)) >= packet->getDataLength())
+                return false;
+            auto udpHeader = packet->peekDataAt<UdpHeader>(ipLen, B(8), OPTIONAL_TYPED_PEEK_FLAGS);
             if (udpHeader && (udpHeader->getSourcePort() == 5000 || udpHeader->getDestinationPort() == 5000)) {
                 return true;
             }
@@ -140,8 +147,9 @@ Ptr<const CpnPathHeader> CprpProcessorBase::getCpnPathHeader(Packet *packet) {
 
     B offset = getPayloadOffset(packet);
     if (offset < B(0)) return nullptr;
+    if (b(offset) >= packet->getDataLength()) return nullptr;
 
-    auto chunk = packet->peekDataAt<Chunk>(offset);
+    auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
     return dynamicPtrCast<const CpnPathHeader>(chunk);
 }
 
@@ -460,7 +468,7 @@ INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packe
         int hopCount = newHeader->getHopAddressArraySize();
         newHeader->setHopAddressArraySize(hopCount + 1);
         newHeader->setHopAddress(hopCount, outAddr);
-        packet->replaceAt(newHeader, b(offset));
+        replacePathHeader(packet, offset, newHeader, *pathHeader);
         EV_INFO << "processPathRecordMode: Recorded hop " << hopCount << " as " << outAddr << " in Header chunk." << endl;
     }
 
@@ -493,7 +501,7 @@ INetfilter::IHook::Result CprpProcessorBase::processPathUseMode(Packet *packet) 
             nextSid = pathHeader->getSidList(currentIndex);
             auto newHeader = makeShared<CpnPathHeader>(*pathHeader);
             newHeader->setCurrentHopIndex(currentIndex + 1);
-            packet->replaceAt(newHeader, b(offset));
+            replacePathHeader(packet, offset, newHeader, *pathHeader);
         }
     }
 
@@ -538,6 +546,7 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
             pathHeader->setSidList(i, pathTag->getSidList(i));
         }
         pathHeader->setCurrentHopIndex(pathTag->getCurrentHopIndex());
+        updateCpnPathHeaderLength(pathHeader);
         
         // 插入到 UDP 负载的最前端
         packet->insertAt(pathHeader, b(offset));
@@ -566,7 +575,7 @@ void CprpProcessorBase::stripPathHeader(Packet *packet) {
         pathInd->setReservedBandwidth(pathHeader->getRequiredBandwidth());
 
         // 从物理报文中剥离 Header
-        packet->removeAt(b(offset), pathHeader->getChunkLength());
+        packet->removeAt(b(offset), pathHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
     }
 }
 
@@ -579,6 +588,21 @@ B CprpProcessorBase::getPayloadOffset(Packet *packet) {
         return ipLen + B(8); // IPv4 + UDP (8 bytes)
     }
     return B(-1);
+}
+
+B CprpProcessorBase::getCpnPathHeaderLength(const CpnPathHeader& pathHeader) const {
+    int addressCount = pathHeader.getHopAddressArraySize() + pathHeader.getSidListArraySize();
+    return B(CPN_PATH_HEADER_BASE_LENGTH.get() + CPN_PATH_ADDRESS_LENGTH.get() * addressCount);
+}
+
+void CprpProcessorBase::updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& pathHeader) const {
+    pathHeader->setChunkLength(getCpnPathHeaderLength(*pathHeader));
+}
+
+void CprpProcessorBase::replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader) {
+    updateCpnPathHeaderLength(newHeader);
+    packet->removeAt(b(offset), oldHeader.getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+    packet->insertAt(newHeader, b(offset));
 }
 
 void CprpProcessorBase::extractSessionFromResp(RequestSessionState& state, Packet *packet) {
@@ -633,8 +657,9 @@ Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
     if (pathHeader != nullptr) {
         offset += pathHeader->getChunkLength();
     }
+    if (b(offset) >= packet->getDataLength()) return nullptr;
     
-    return packet->peekDataAt<CprpResponseMsg>(offset);
+    return packet->peekDataAt<CprpResponseMsg>(offset, b(-1), OPTIONAL_TYPED_PEEK_FLAGS);
 }
 
 Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
@@ -647,7 +672,8 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
 
     if (ipv4Header->getProtocol() == &cprp::cprp) {
         // Form 1: Raw IP (Network Layer CANCEL)
-        auto chunk = packet->peekDataAt<Chunk>(ipLen);
+        if (b(ipLen) >= packet->getDataLength()) return nullptr;
+        auto chunk = packet->peekDataAt<Chunk>(ipLen, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
         return dynamicPtrCast<const CancelMsg>(chunk);
     } 
     else if (ipv4Header->getProtocol() == &Protocol::udp) {
@@ -659,8 +685,9 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
         if (pathHeader != nullptr) {
             offset += pathHeader->getChunkLength();
         }
+        if (b(offset) >= packet->getDataLength()) return nullptr;
         
-        auto chunk = packet->peekDataAt<Chunk>(offset);
+        auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
         return dynamicPtrCast<const CancelMsg>(chunk);
     }
 

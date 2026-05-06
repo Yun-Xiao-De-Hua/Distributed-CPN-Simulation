@@ -158,7 +158,7 @@ Register_Class(CpnPathHeader)
 
 CpnPathHeader::CpnPathHeader() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(32));
+    this->setChunkLength(B(64));
 
 }
 

@@ -71,6 +71,9 @@ protected:
     virtual void handlePathHeader(Packet *packet);
     virtual void stripPathHeader(Packet *packet);
     virtual B getPayloadOffset(Packet *packet);
+    virtual B getCpnPathHeaderLength(const CpnPathHeader& pathHeader) const;
+    virtual void updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& pathHeader) const;
+    virtual void replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader);
 
     virtual Ptr<const CprpResponseMsg> getCprpResp(Packet *packet);
     virtual Ptr<const CancelMsg> getCancelMsg(Packet *packet);
