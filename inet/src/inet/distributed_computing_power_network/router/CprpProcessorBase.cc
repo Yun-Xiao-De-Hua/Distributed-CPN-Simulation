@@ -22,6 +22,7 @@ static const B CPN_PATH_HEADER_BASE_LENGTH = B(64);
 static const B CPN_PATH_ADDRESS_LENGTH = B(16);
 static const int OPTIONAL_CHUNK_PEEK_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_EMPTY | Chunk::PF_ALLOW_INCOMPLETE;
 static const int OPTIONAL_TYPED_PEEK_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_INCOMPLETE;
+static const int OPTIONAL_REINTERPRET_TYPED_PEEK_FLAGS = OPTIONAL_TYPED_PEEK_FLAGS | Chunk::PF_ALLOW_REINTERPRETATION;
 
 CprpProcessorBase::CprpProcessorBase() {}
 CprpProcessorBase::~CprpProcessorBase() {
@@ -628,7 +629,7 @@ void CprpProcessorBase::stripPathHeader(Packet *packet) {
         pathInd->setReservedBandwidth(pathHeader->getRequiredBandwidth());
 
         // 从物理报文中剥离 Header
-        packet->removeAt(b(offset), pathHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+        packet->eraseAt(b(offset), pathHeader->getChunkLength());
         adjustIpv4UdpHeaderLengths(packet, B(0) - B(pathHeader->getChunkLength()));
     }
 }
@@ -656,7 +657,7 @@ void CprpProcessorBase::updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& path
 void CprpProcessorBase::replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader) {
     updateCpnPathHeaderLength(newHeader);
     B delta = B(newHeader->getChunkLength()) - B(oldHeader.getChunkLength());
-    packet->removeAt(b(offset), oldHeader.getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+    packet->eraseAt(b(offset), oldHeader.getChunkLength());
     packet->insertAt(newHeader, b(offset));
     adjustIpv4UdpHeaderLengths(packet, delta);
 }
@@ -671,7 +672,7 @@ void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
         return;
     }
 
-    auto udpHeader = packet->peekDataAt<UdpHeader>(ipHeaderLength, B(8), OPTIONAL_TYPED_PEEK_FLAGS);
+    auto udpHeader = packet->peekDataAt<UdpHeader>(ipHeaderLength, B(8), OPTIONAL_REINTERPRET_TYPED_PEEK_FLAGS);
     if (!udpHeader) {
         EV_WARN << "adjustIpv4UdpHeaderLengths: UDP header not found, delta=" << delta << endl;
         return;
@@ -708,6 +709,12 @@ void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
         // CPRP在网络层修改UDP负载时，UDP校验和可能已经按旧负载计算过。
         // 保持CRC_COMPUTED并将校验和置零：若后续UDP校验钩子仍会执行，则由钩子重新计算；
         // 若钩子已经执行过，INET的IPv4 UDP接收逻辑会将0视为禁用校验，从而避免误丢包。
+        newUdpHeader->setCrc(0x0000);
+        udpChecksumReset = true;
+    }
+    else if (newUdpHeader->getCrcMode() != CRC_DISABLED) {
+        // 接收侧重解释出的UDP头可能是DECLARED_*状态；payload已被修改后该声明不再可信，且不能直接序列化。
+        newUdpHeader->setCrcMode(CRC_DISABLED);
         newUdpHeader->setCrc(0x0000);
         udpChecksumReset = true;
     }

@@ -14,6 +14,9 @@ Define_Module(inet::UserGatewayApp);
 
 namespace inet {
 
+static const int OPTIONAL_CPN_PATH_HEADER_PEEK_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_EMPTY | Chunk::PF_ALLOW_INCOMPLETE;
+static const int OPTIONAL_CPN_PATH_HEADER_TYPED_FLAGS = Chunk::PF_ALLOW_NULLPTR | Chunk::PF_ALLOW_INCOMPLETE | Chunk::PF_ALLOW_REINTERPRETATION;
+
 UserGatewayApp::UserGatewayApp() {
     // TODO Auto-generated constructor stub
 
@@ -294,6 +297,8 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 {
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << std::endl;
 
+    stripCpnPathHeader(packet);
+
     const auto& respInfo = packet->popAtFront<CprpResponseMsg>();
 
     if(respInfo == nullptr){
@@ -348,6 +353,45 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     EV_INFO << "Node info of CPRP_RESP has been recorded\n";
 
     delete packet;
+}
+
+void UserGatewayApp::stripCpnPathHeader(Packet *packet)
+{
+    Ptr<const CpnPathHeader> pathHeader;
+    auto frontChunk = packet->peekAtFront<Chunk>(b(-1), OPTIONAL_CPN_PATH_HEADER_PEEK_FLAGS);
+    pathHeader = dynamicPtrCast<const CpnPathHeader>(frontChunk);
+
+    if (pathHeader == nullptr) {
+        try {
+            pathHeader = packet->peekAtFront<CpnPathHeader>(b(-1), OPTIONAL_CPN_PATH_HEADER_TYPED_FLAGS);
+        }
+        catch (const cRuntimeError& e) {
+            EV_WARN << "UserGatewayApp: CpnPathHeader is not present at UDP payload front: " << e.what() << endl;
+            return;
+        }
+    }
+
+    if (pathHeader == nullptr)
+        return;
+
+    int mode = pathHeader->getMode();
+    if (mode != PATH_RECORD_MODE && mode != PATH_USE_MODE) {
+        EV_WARN << "UserGatewayApp: Ignoring invalid CpnPathHeader mode " << mode << endl;
+        return;
+    }
+
+    auto pathInd = packet->addTagIfAbsent<CpnPathInd>();
+    pathInd->setUserId(pathHeader->getUserId());
+    pathInd->setTaskId(pathHeader->getTaskId());
+    pathInd->setHopAddressArraySize(pathHeader->getHopAddressArraySize());
+    for (int i = 0; i < (int)pathHeader->getHopAddressArraySize(); i++)
+        pathInd->setHopAddress(i, pathHeader->getHopAddress(i));
+    pathInd->setHopCount(pathHeader->getHopAddressArraySize());
+    pathInd->setReservedBandwidth(pathHeader->getRequiredBandwidth());
+
+    packet->eraseAtFront(pathHeader->getChunkLength());
+    EV_INFO << "UserGatewayApp: Stripped CpnPathHeader from UDP payload and added CpnPathInd tag, hopCount="
+            << pathHeader->getHopAddressArraySize() << endl;
 }
 
 // 处理算力确认消息
