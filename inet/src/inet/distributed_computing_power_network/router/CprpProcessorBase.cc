@@ -511,6 +511,12 @@ INetfilter::IHook::Result CprpProcessorBase::processPathUseMode(Packet *packet) 
         if (currentIndex < sidCount) {
             nextSid = pathReqTag->getSidList(currentIndex);
             pathReqTag->setCurrentHopIndex(currentIndex + 1);
+            if (pathHeader != nullptr) {
+                // 本地Tag不会随报文跨节点传输，必须同步更新物理Header中的SID游标。
+                auto newHeader = makeShared<CpnPathHeader>(*pathHeader);
+                newHeader->setCurrentHopIndex(currentIndex + 1);
+                replacePathHeader(packet, offset, newHeader, *pathHeader);
+            }
         }
     }
     else if (pathHeader != nullptr) {
@@ -569,6 +575,7 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
         
         // 插入到 UDP 负载的最前端
         packet->insertAt(pathHeader, b(offset));
+        adjustIpv4UdpHeaderLengths(packet, pathHeader->getChunkLength());
     }
 }
 
@@ -595,6 +602,7 @@ void CprpProcessorBase::stripPathHeader(Packet *packet) {
 
         // 从物理报文中剥离 Header
         packet->removeAt(b(offset), pathHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+        adjustIpv4UdpHeaderLengths(packet, B(-pathHeader->getChunkLength().get()));
     }
 }
 
@@ -604,7 +612,7 @@ B CprpProcessorBase::getPayloadOffset(Packet *packet) {
     
     auto ipLen = B(ipv4Header->getHeaderLength());
     if (ipv4Header->getProtocol() == &Protocol::udp) {
-        return ipLen + B(8); // IPv4 + UDP (8 bytes)
+        return ipLen + B(8); // IPv4头 + UDP头(8字节)
     }
     return B(-1);
 }
@@ -620,8 +628,69 @@ void CprpProcessorBase::updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& path
 
 void CprpProcessorBase::replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader) {
     updateCpnPathHeaderLength(newHeader);
+    B delta = B(newHeader->getChunkLength().get() - oldHeader.getChunkLength().get());
     packet->removeAt(b(offset), oldHeader.getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
     packet->insertAt(newHeader, b(offset));
+    adjustIpv4UdpHeaderLengths(packet, delta);
+}
+
+void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    if (!ipv4Header || ipv4Header->getProtocol() != &Protocol::udp) return;
+
+    auto ipHeaderLength = B(ipv4Header->getHeaderLength());
+    if (b(ipHeaderLength + B(8)) > packet->getDataLength()) {
+        EV_WARN << "adjustIpv4UdpHeaderLengths: packet too short for UDP header, delta=" << delta << endl;
+        return;
+    }
+
+    auto udpHeader = packet->peekDataAt<UdpHeader>(ipHeaderLength, B(8), OPTIONAL_TYPED_PEEK_FLAGS);
+    if (!udpHeader) {
+        EV_WARN << "adjustIpv4UdpHeaderLengths: UDP header not found, delta=" << delta << endl;
+        return;
+    }
+
+    auto newIpv4Header = makeShared<Ipv4Header>(*ipv4Header);
+    auto newUdpHeader = makeShared<UdpHeader>(*udpHeader);
+
+    B newIpTotalLength = ipv4Header->getTotalLengthField() + delta;
+    B newUdpTotalLength = udpHeader->getTotalLengthField() + delta;
+    if (newIpTotalLength < ipv4Header->getHeaderLength() || newUdpTotalLength < udpHeader->getChunkLength()) {
+        EV_WARN << "adjustIpv4UdpHeaderLengths: refusing invalid length update, delta=" << delta
+                << " ipTotal=" << newIpTotalLength << " udpTotal=" << newUdpTotalLength << endl;
+        return;
+    }
+
+    bool lengthChanged = delta != B(0);
+    bool udpChecksumReset = false;
+
+    if (lengthChanged) {
+        newIpv4Header->setTotalLengthField(newIpTotalLength);
+        if (newIpv4Header->getCrcMode() == CRC_COMPUTED)
+            newIpv4Header->updateCrc();
+
+        newUdpHeader->setTotalLengthField(newUdpTotalLength);
+    }
+
+    if (newUdpHeader->getCrcMode() == CRC_COMPUTED) {
+        // CPRP在网络层修改UDP负载时，UDP校验和可能已经按旧负载计算过。
+        // 保持CRC_COMPUTED并将校验和置零：若后续UDP校验钩子仍会执行，则由钩子重新计算；
+        // 若钩子已经执行过，INET的IPv4 UDP接收逻辑会将0视为禁用校验，从而避免误丢包。
+        newUdpHeader->setCrc(0x0000);
+        udpChecksumReset = true;
+    }
+
+    if (!lengthChanged && !udpChecksumReset)
+        return;
+
+    if (lengthChanged)
+        packet->replaceAt(newIpv4Header, b(0), ipv4Header->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+    packet->replaceAt(newUdpHeader, b(ipHeaderLength), udpHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+
+    EV_INFO << "Updated IPv4/UDP headers after CPRP payload change: delta=" << delta
+            << ", ipTotal=" << newIpTotalLength
+            << ", udpTotal=" << newUdpTotalLength
+            << ", udpChecksumReset=" << udpChecksumReset << endl;
 }
 
 void CprpProcessorBase::extractSessionFromResp(RequestSessionState& state, Packet *packet) {
@@ -691,13 +760,13 @@ Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
     auto ipLen = B(ipv4Header->getHeaderLength());
 
     if (ipv4Header->getProtocol() == &cprp::cprp) {
-        // Form 1: Raw IP (Network Layer CANCEL)
+        // 形式1：网络层直接发送的原始IP CANCEL
         if (b(ipLen) >= packet->getDataLength()) return nullptr;
         auto chunk = packet->peekDataAt<Chunk>(ipLen, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
         return dynamicPtrCast<const CancelMsg>(chunk);
     } 
     else if (ipv4Header->getProtocol() == &Protocol::udp) {
-        // Form 2: UDP (Application Layer CANCEL)
+        // 形式2：应用层发送的UDP CANCEL
         B offset = ipLen + B(8); // 跳过 UDP 头
         
         // 同样检查路径头部
