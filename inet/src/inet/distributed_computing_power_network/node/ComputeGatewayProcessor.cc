@@ -42,7 +42,12 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
     // 1. 处理路径头部封装 (针对本地发出的 UDP 包)
     handlePathHeader(packet);
 
-    if (strcmp(pktName, "CPRP_RESP") == 0) {
+    auto respProbe = getCprpResp(packet);
+    if (strcmp(pktName, "CPRP_RESP") == 0 || respProbe != nullptr) {
+        if (strcmp(pktName, "CPRP_RESP") != 0) {
+            EV_INFO << "ComputeGatewayProcessor: packet name is '" << pktName
+                    << "', but CprpResponseMsg was detected in payload; treating it as CPRP_RESP." << endl;
+        }
         result = processCprpResp(packet);
         if (result == DROP) return DROP;
     }

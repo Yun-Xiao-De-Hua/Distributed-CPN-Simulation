@@ -165,7 +165,12 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
     // 1. 处理路径头部封装 (针对 UDP 数据包)
     handlePathHeader(packet);
 
-    if (strcmp(pktName, "CPRP_RESP") == 0) {
+    auto respProbe = getCprpResp(packet);
+    if (strcmp(pktName, "CPRP_RESP") == 0 || respProbe != nullptr) {
+        if (strcmp(pktName, "CPRP_RESP") != 0) {
+            EV_INFO << "datagramPostRoutingHook: packet name is '" << pktName
+                    << "', but CprpResponseMsg was detected in payload; treating it as CPRP_RESP." << endl;
+        }
         result = processCprpResp(packet);
         if (result == DROP) return DROP;
     }
@@ -240,11 +245,25 @@ void CprpProcessorBase::refreshSessionIfMatch(Packet *packet) {
 }
 
 INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
+    EV_INFO << "processCprpResp: packet='" << packet->getName()
+            << "' totalLength=" << packet->getTotalLength()
+            << " dataLength=" << packet->getDataLength() << endl;
+
     auto outIE = packet->findTag<InterfaceReq>();
-    if (!sessionManager || !outIE) return ACCEPT;
+    if (!sessionManager) {
+        EV_WARN << "processCprpResp: sessionManager is missing, skipping RESP handling." << endl;
+        return ACCEPT;
+    }
+    if (!outIE) {
+        EV_WARN << "processCprpResp: InterfaceReq tag is missing, skipping RESP handling." << endl;
+        return ACCEPT;
+    }
 
     auto resp = getCprpResp(packet);
-    if (!resp) return ACCEPT;
+    if (!resp) {
+        EV_WARN << "processCprpResp: CprpResponseMsg was not found at the expected offset." << endl;
+        return ACCEPT;
+    }
 
     int userId = resp->getUserId();
     int taskId = resp->getTaskId();
@@ -659,7 +678,8 @@ Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
     }
     if (b(offset) >= packet->getDataLength()) return nullptr;
     
-    return packet->peekDataAt<CprpResponseMsg>(offset, b(-1), OPTIONAL_TYPED_PEEK_FLAGS);
+    auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
+    return dynamicPtrCast<const CprpResponseMsg>(chunk);
 }
 
 Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
