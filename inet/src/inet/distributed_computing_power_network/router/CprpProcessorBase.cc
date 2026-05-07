@@ -35,6 +35,7 @@ void CprpProcessorBase::initialize(int stage) {
         enabled = par("enabled");
         strictPruning = par("strictPruning");
         sendCancelsMsg = new cMessage("sendCancels");
+        cprp::registerCprpProtocol();
     }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
         if (enabled) {
@@ -165,16 +166,6 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
     // 1. 处理路径头部封装 (针对 UDP 数据包)
     handlePathHeader(packet);
 
-    auto respProbe = getCprpResp(packet);
-    if (strcmp(pktName, "CPRP_RESP") == 0 || respProbe != nullptr) {
-        if (strcmp(pktName, "CPRP_RESP") != 0) {
-            EV_INFO << "datagramPostRoutingHook: packet name is '" << pktName
-                    << "', but CprpResponseMsg was detected in payload; treating it as CPRP_RESP." << endl;
-        }
-        result = processCprpResp(packet);
-        if (result == DROP) return DROP;
-    }
-
     // 2. 统一处理路径模式 (Record / Use)
     auto pathReqTag = packet->findTag<CpnPathReq>();
     if (pathReqTag != nullptr) {
@@ -199,6 +190,16 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
                 processPathUseMode(packet);
             }
         }
+    }
+
+    auto respProbe = getCprpResp(packet);
+    if (strcmp(pktName, "CPRP_RESP") == 0 || respProbe != nullptr) {
+        if (strcmp(pktName, "CPRP_RESP") != 0) {
+            EV_INFO << "datagramPostRoutingHook: packet name is '" << pktName
+                    << "', but CprpResponseMsg was detected in payload; treating it as CPRP_RESP." << endl;
+        }
+        result = processCprpResp(packet);
+        if (result == DROP) return DROP;
     }
 
     return result;
@@ -274,6 +275,38 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     extractSessionFromResp(newState, packet);
     newState.interfaceId = outIE->getInterfaceId();
 
+    simtime_t now = simTime();
+    simtime_t networkDelay = now - resp->getLastHopSendTime();
+    if (networkDelay < SIMTIME_ZERO)
+        networkDelay = SIMTIME_ZERO;
+    simtime_t roundTripDelay = networkDelay * 2;
+    simtime_t accumulatedDelay = resp->getAccumulatedDelay() + roundTripDelay;
+    newState.totalDelay = accumulatedDelay.dbl();
+    newState.lastHopSendTime = now;
+
+    L3Address lastHopAddress = resp->getLastHopAddress();
+    auto currentInterface = interfaceTable ? interfaceTable->getInterfaceById(outIE->getInterfaceId()) : nullptr;
+    if (currentInterface != nullptr) {
+        auto ipv4Data = currentInterface->getProtocolData<Ipv4InterfaceData>();
+        if (ipv4Data != nullptr)
+            lastHopAddress = L3Address(ipv4Data->getIPAddress());
+    }
+    newState.userGatewayAddress = lastHopAddress;
+
+    B respOffset = getCprpRespOffset(packet);
+    if (respOffset >= B(0)) {
+        auto updatedResp = makeShared<CprpResponseMsg>(*resp);
+        updatedResp->setAccumulatedDelay(accumulatedDelay);
+        updatedResp->setLastHopSendTime(now);
+        updatedResp->setLastHopAddress(lastHopAddress);
+        packet->replaceAt(updatedResp, b(respOffset), resp->getChunkLength(), OPTIONAL_TYPED_PEEK_FLAGS);
+        adjustIpv4UdpHeaderLengths(packet, B(0));
+    }
+
+    EV_INFO << "processCprpResp: networkDelay=" << networkDelay
+            << " roundTripDelay=" << roundTripDelay
+            << " accumulatedDelay=" << accumulatedDelay << endl;
+
     if (!sessionManager->hasSession(userId, taskId)) {
         sessionManager->createSession(newState);
         EV_INFO << "First RESP for task (" << userId << "," << taskId << "), created session" << endl;
@@ -333,15 +366,9 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 bool CprpProcessorBase::shouldKeepNewSession(const RequestSessionState& existing,
                                               const RequestSessionState& newResp,
                                               int outInterfaceId) {
-    simtime_t now = simTime();
-    simtime_t networkDelay = now - newResp.lastHopSendTime;
-    simtime_t roundTripDelay = networkDelay * 2;
+    double newTotalDelay = newResp.totalDelay;
 
-    double newTotalDelay = newResp.totalDelay + roundTripDelay.dbl();
-
-    EV_INFO << "Routing selection: networkDelay=" << networkDelay
-            << " roundTripDelay=" << roundTripDelay
-            << " newTotalDelay=" << newTotalDelay
+    EV_INFO << "Routing selection: newTotalDelay=" << newTotalDelay
             << " existingTotalDelay=" << existing.totalDelay << endl;
 
     if (sessionManager) {
@@ -602,7 +629,7 @@ void CprpProcessorBase::stripPathHeader(Packet *packet) {
 
         // 从物理报文中剥离 Header
         packet->removeAt(b(offset), pathHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
-        adjustIpv4UdpHeaderLengths(packet, B(-pathHeader->getChunkLength().get()));
+        adjustIpv4UdpHeaderLengths(packet, B(0) - B(pathHeader->getChunkLength()));
     }
 }
 
@@ -628,7 +655,7 @@ void CprpProcessorBase::updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& path
 
 void CprpProcessorBase::replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader) {
     updateCpnPathHeaderLength(newHeader);
-    B delta = B(newHeader->getChunkLength().get() - oldHeader.getChunkLength().get());
+    B delta = B(newHeader->getChunkLength()) - B(oldHeader.getChunkLength());
     packet->removeAt(b(offset), oldHeader.getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
     packet->insertAt(newHeader, b(offset));
     adjustIpv4UdpHeaderLengths(packet, delta);
@@ -653,24 +680,29 @@ void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
     auto newIpv4Header = makeShared<Ipv4Header>(*ipv4Header);
     auto newUdpHeader = makeShared<UdpHeader>(*udpHeader);
 
-    B newIpTotalLength = ipv4Header->getTotalLengthField() + delta;
-    B newUdpTotalLength = udpHeader->getTotalLengthField() + delta;
-    if (newIpTotalLength < ipv4Header->getHeaderLength() || newUdpTotalLength < udpHeader->getChunkLength()) {
+    B oldIpTotalLength = ipv4Header->getTotalLengthField();
+    B oldUdpTotalLength = udpHeader->getTotalLengthField();
+    B udpHeaderLength = B(udpHeader->getChunkLength());
+    B newIpTotalLength = B(packet->getDataLength());
+    B newUdpTotalLength = newIpTotalLength - ipHeaderLength;
+    if (newIpTotalLength < ipHeaderLength + udpHeaderLength || newUdpTotalLength < udpHeaderLength) {
         EV_WARN << "adjustIpv4UdpHeaderLengths: refusing invalid length update, delta=" << delta
                 << " ipTotal=" << newIpTotalLength << " udpTotal=" << newUdpTotalLength << endl;
         return;
     }
 
-    bool lengthChanged = delta != B(0);
+    bool ipLengthChanged = oldIpTotalLength != newIpTotalLength;
+    bool udpLengthChanged = oldUdpTotalLength != newUdpTotalLength;
     bool udpChecksumReset = false;
 
-    if (lengthChanged) {
+    if (ipLengthChanged) {
         newIpv4Header->setTotalLengthField(newIpTotalLength);
         if (newIpv4Header->getCrcMode() == CRC_COMPUTED)
             newIpv4Header->updateCrc();
-
-        newUdpHeader->setTotalLengthField(newUdpTotalLength);
     }
+
+    if (udpLengthChanged)
+        newUdpHeader->setTotalLengthField(newUdpTotalLength);
 
     if (newUdpHeader->getCrcMode() == CRC_COMPUTED) {
         // CPRP在网络层修改UDP负载时，UDP校验和可能已经按旧负载计算过。
@@ -680,16 +712,19 @@ void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
         udpChecksumReset = true;
     }
 
-    if (!lengthChanged && !udpChecksumReset)
+    if (!ipLengthChanged && !udpLengthChanged && !udpChecksumReset)
         return;
 
-    if (lengthChanged)
+    if (ipLengthChanged)
         packet->replaceAt(newIpv4Header, b(0), ipv4Header->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
-    packet->replaceAt(newUdpHeader, b(ipHeaderLength), udpHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+    if (udpLengthChanged || udpChecksumReset)
+        packet->replaceAt(newUdpHeader, b(ipHeaderLength), udpHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
 
     EV_INFO << "Updated IPv4/UDP headers after CPRP payload change: delta=" << delta
-            << ", ipTotal=" << newIpTotalLength
-            << ", udpTotal=" << newUdpTotalLength
+            << ", oldIpTotal=" << oldIpTotalLength
+            << ", newIpTotal=" << newIpTotalLength
+            << ", oldUdpTotal=" << oldUdpTotalLength
+            << ", newUdpTotal=" << newUdpTotalLength
             << ", udpChecksumReset=" << udpChecksumReset << endl;
 }
 
@@ -735,20 +770,26 @@ void CprpProcessorBase::extractSessionFromResp(RequestSessionState& state, Packe
 }
 
 Ptr<const CprpResponseMsg> CprpProcessorBase::getCprpResp(Packet *packet) {
-    if (!isCprpPacket(packet)) return nullptr;
+    B offset = getCprpRespOffset(packet);
+    if (offset < B(0)) return nullptr;
+
+    auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
+    return dynamicPtrCast<const CprpResponseMsg>(chunk);
+}
+
+B CprpProcessorBase::getCprpRespOffset(Packet *packet) {
+    if (!isCprpPacket(packet)) return B(-1);
 
     B offset = getPayloadOffset(packet);
-    if (offset < B(0)) return nullptr;
+    if (offset < B(0)) return B(-1);
 
     // 检查是否存在 CpnPathHeader，如果存在，RESP 消息在它之后
     auto pathHeader = getCpnPathHeader(packet);
-    if (pathHeader != nullptr) {
+    if (pathHeader != nullptr)
         offset += pathHeader->getChunkLength();
-    }
-    if (b(offset) >= packet->getDataLength()) return nullptr;
-    
-    auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
-    return dynamicPtrCast<const CprpResponseMsg>(chunk);
+
+    if (b(offset) >= packet->getDataLength()) return B(-1);
+    return offset;
 }
 
 Ptr<const CancelMsg> CprpProcessorBase::getCancelMsg(Packet *packet) {
@@ -810,7 +851,7 @@ std::vector<L3Address> CprpProcessorBase::getUpstreamNodes(const std::vector<L3A
     }
 
     if (myIndex < 0) {
-        EV_WARN << "getUpstreamNodes: Local address not found in SID path, returning all nodes as fallback." << endl;
+        EV_INFO << "getUpstreamNodes: Local address not found in SID path, treating all recorded hops as upstream." << endl;
         return sidPath;
     }
 

@@ -14,7 +14,8 @@ namespace inet {
 
 namespace cprp {
 
-extern const Protocol cprp;
+extern const Protocol& cprp;
+void registerCprpProtocol();
 
 } // namespace cprp
 

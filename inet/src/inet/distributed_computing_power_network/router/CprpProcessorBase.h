@@ -75,6 +75,7 @@ protected:
     virtual void updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& pathHeader) const;
     virtual void replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader);
     virtual void adjustIpv4UdpHeaderLengths(Packet *packet, B delta);
+    virtual B getCprpRespOffset(Packet *packet);
 
     virtual Ptr<const CprpResponseMsg> getCprpResp(Packet *packet);
     virtual Ptr<const CancelMsg> getCancelMsg(Packet *packet);
