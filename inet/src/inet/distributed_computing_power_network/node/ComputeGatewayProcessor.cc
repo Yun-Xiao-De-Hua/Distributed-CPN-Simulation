@@ -52,17 +52,11 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
         if (result == DROP) return DROP;
     }
 
-    // 只处理路径使用模式，服务端IP和算力网关IP已在应用层写入SID列表
+    // 只处理本地发出的路径使用模式，物理Header的PATH_USE_MODE由预路由阶段消费，避免重复跳转。
     auto pathReqTag = packet->findTag<CpnPathReq>();
     if (pathReqTag != nullptr) {
         int mode = pathReqTag->getMode();
         if (mode == PATH_USE_MODE) {
-            processPathUseMode(packet);
-        }
-    }
-    else {
-        auto pathHeader = getCpnPathHeader(packet);
-        if (pathHeader != nullptr && pathHeader->getMode() == PATH_USE_MODE) {
             processPathUseMode(packet);
         }
     }

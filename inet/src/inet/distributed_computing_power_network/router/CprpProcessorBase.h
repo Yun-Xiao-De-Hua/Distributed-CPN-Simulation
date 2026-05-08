@@ -65,6 +65,11 @@ protected:
 
     virtual void refreshSessionIfMatch(Packet *packet);
 
+    virtual bool processIntermediatePathUseMode(Packet *packet);
+    virtual bool isLocalIpv4Address(const Ipv4Address& address) const;
+    virtual bool rewriteIpv4Destination(Packet *packet, const L3Address& destination);
+    virtual void clearForwardingDecisionTags(Packet *packet);
+
     virtual Result processPathRecordMode(Packet *packet);
     virtual Result processPathUseMode(Packet *packet);
 

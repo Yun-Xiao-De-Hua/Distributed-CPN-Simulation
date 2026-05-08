@@ -136,12 +136,18 @@ const Ptr<Chunk> CpnPathHeaderSerializer::deserialize(MemoryInputStream& stream,
     if (remainingLength < CPN_PATH_HEADER_BASE_LENGTH)
         throw cRuntimeError("CpnPathHeaderSerializer: stream is too short for CpnPathHeader: %lld B", (long long)remainingLength.get());
 
+    uint32_t maxAddressCount = (uint32_t)((remainingLength - CPN_PATH_HEADER_BASE_LENGTH).get() / CPN_PATH_ADDRESS_LENGTH.get());
     auto pathHeader = makeShared<CpnPathHeader>();
-    pathHeader->setMode((int32_t)stream.readUint32Be());
+    auto mode = (int32_t)stream.readUint32Be();
+    if (mode != PATH_RECORD_MODE && mode != PATH_USE_MODE)
+        throw cRuntimeError("CpnPathHeaderSerializer: invalid path mode %d", mode);
+    pathHeader->setMode(mode);
     pathHeader->setUserId((int32_t)stream.readUint32Be());
     pathHeader->setTaskId((int32_t)stream.readUint32Be());
 
     auto hopCount = stream.readUint32Be();
+    if (hopCount > maxAddressCount)
+        throw cRuntimeError("CpnPathHeaderSerializer: hop count %u exceeds remaining address capacity %u", hopCount, maxAddressCount);
     pathHeader->setHopAddressArraySize(hopCount);
     for (uint32_t i = 0; i < hopCount; i++)
         pathHeader->setHopAddress(i, readL3Address(stream));
@@ -150,6 +156,8 @@ const Ptr<Chunk> CpnPathHeaderSerializer::deserialize(MemoryInputStream& stream,
     pathHeader->setRequiredBandwidth(readDouble(stream));
 
     auto sidCount = stream.readUint32Be();
+    if (sidCount > maxAddressCount - hopCount)
+        throw cRuntimeError("CpnPathHeaderSerializer: SID count %u exceeds remaining address capacity %u", sidCount, maxAddressCount - hopCount);
     B minimumLength = getCpnPathHeaderSerializedLength(hopCount, sidCount);
     if (remainingLength < minimumLength)
         throw cRuntimeError("CpnPathHeaderSerializer: stream length %lld B is shorter than required %lld B", (long long)remainingLength.get(), (long long)minimumLength.get());

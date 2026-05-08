@@ -10,6 +10,7 @@
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
 #include "inet/networklayer/common/DscpTag_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
+#include "inet/networklayer/common/NextHopAddressTag_m.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/transportlayer/udp/UdpHeader_m.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
@@ -107,6 +108,9 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPreRoutingHook(Packet *pack
     Enter_Method("datagramPreRoutingHook");
     if (!enabled) return ACCEPT;
 
+    if (processIntermediatePathUseMode(packet))
+        return ACCEPT;
+
     refreshSessionIfMatch(packet);
     return ACCEPT;
 }
@@ -149,10 +153,38 @@ Ptr<const CpnPathHeader> CprpProcessorBase::getCpnPathHeader(Packet *packet) {
 
     B offset = getPayloadOffset(packet);
     if (offset < B(0)) return nullptr;
-    if (b(offset) >= packet->getDataLength()) return nullptr;
+    if (b(offset + CPN_PATH_HEADER_BASE_LENGTH) > packet->getDataLength()) return nullptr;
 
     auto chunk = packet->peekDataAt<Chunk>(offset, b(-1), OPTIONAL_CHUNK_PEEK_FLAGS);
-    return dynamicPtrCast<const CpnPathHeader>(chunk);
+    auto pathHeader = dynamicPtrCast<const CpnPathHeader>(chunk);
+
+    auto isValidPathHeader = [this, packet, offset](const Ptr<const CpnPathHeader>& header) {
+        if (header == nullptr)
+            return false;
+        int mode = header->getMode();
+        if (mode != PATH_RECORD_MODE && mode != PATH_USE_MODE)
+            return false;
+        B headerLength = B(header->getChunkLength());
+        if (headerLength < getCpnPathHeaderLength(*header))
+            return false;
+        if (b(offset + headerLength) > packet->getDataLength())
+            return false;
+        return true;
+    };
+
+    if (isValidPathHeader(pathHeader))
+        return pathHeader;
+
+    try {
+        pathHeader = packet->peekDataAt<CpnPathHeader>(offset, b(-1), OPTIONAL_REINTERPRET_TYPED_PEEK_FLAGS);
+        if (isValidPathHeader(pathHeader))
+            return pathHeader;
+    }
+    catch (const cRuntimeError& e) {
+        EV_DEBUG << "getCpnPathHeader: no typed CpnPathHeader at UDP payload front: " << e.what() << endl;
+    }
+
+    return nullptr;
 }
 
 INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *packet) {
@@ -180,16 +212,10 @@ INetfilter::IHook::Result CprpProcessorBase::datagramPostRoutingHook(Packet *pac
         }
     }
     else {
-        // 检查是否存在物理 Header (转发节点)
+        // 物理Header的PATH_USE_MODE由datagramPreRoutingHook处理，避免在同一跳重复消费SID。
         auto pathHeader = getCpnPathHeader(packet);
-        if (pathHeader != nullptr) {
-            int mode = pathHeader->getMode();
-            if (mode == PATH_RECORD_MODE) {
-                processPathRecordMode(packet);
-            }
-            else if (mode == PATH_USE_MODE) {
-                processPathUseMode(packet);
-            }
+        if (pathHeader != nullptr && pathHeader->getMode() == PATH_RECORD_MODE) {
+            processPathRecordMode(packet);
         }
     }
 
@@ -211,9 +237,6 @@ INetfilter::IHook::Result CprpProcessorBase::datagramLocalInHook(Packet *packet)
     if (!enabled) return ACCEPT;
 
     if (!isCprpPacket(packet)) return ACCEPT;
-
-    // 1. 剥离路径头部并转换为 Tag (针对到达本地的包)
-    stripPathHeader(packet);
 
     if (strcmp(packet->getName(), "CPRP_CANCEL") == 0) {
         return processCancelMsg(packet);
@@ -244,6 +267,106 @@ void CprpProcessorBase::refreshSessionIfMatch(Packet *packet) {
             EV_INFO << "Refreshed session for task (" << userId << "," << taskId << ")" << endl;
         }
     }
+}
+
+bool CprpProcessorBase::processIntermediatePathUseMode(Packet *packet) {
+    if (!isCprpPacket(packet)) return false;
+
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    if (!ipv4Header || ipv4Header->getProtocol() != &Protocol::udp)
+        return false;
+
+    if (!isLocalIpv4Address(ipv4Header->getDestAddress()))
+        return false;
+
+    auto pathHeader = getCpnPathHeader(packet);
+    if (pathHeader == nullptr || pathHeader->getMode() != PATH_USE_MODE)
+        return false;
+
+    int currentIndex = pathHeader->getCurrentHopIndex();
+    int sidCount = pathHeader->getSidListArraySize();
+    if (currentIndex < 0 || currentIndex >= sidCount)
+        return false;
+
+    L3Address nextSid = pathHeader->getSidList(currentIndex);
+    if (nextSid.isUnspecified())
+        return false;
+
+    B offset = getPayloadOffset(packet);
+    if (offset < B(0))
+        return false;
+
+    auto newHeader = makeShared<CpnPathHeader>(*pathHeader);
+    newHeader->setCurrentHopIndex(currentIndex + 1);
+    replacePathHeader(packet, offset, newHeader, *pathHeader);
+
+    if (!rewriteIpv4Destination(packet, nextSid))
+        return false;
+
+    clearForwardingDecisionTags(packet);
+
+    EV_INFO << "Intermediate source routing: local SID reached, forwarding to " << nextSid
+            << " (hop " << (currentIndex + 1) << "/" << sidCount << ")" << endl;
+    return true;
+}
+
+bool CprpProcessorBase::isLocalIpv4Address(const Ipv4Address& address) const {
+    if (address.isUnspecified() || interfaceTable == nullptr)
+        return false;
+
+    for (int i = 0; i < interfaceTable->getNumInterfaces(); i++) {
+        auto ie = interfaceTable->getInterface(i);
+        auto ipv4Data = ie->getProtocolData<Ipv4InterfaceData>();
+        if (ipv4Data != nullptr && ipv4Data->getIPAddress() == address)
+            return true;
+    }
+
+    return false;
+}
+
+bool CprpProcessorBase::rewriteIpv4Destination(Packet *packet, const L3Address& destination) {
+    if (destination.getType() != L3Address::IPv4) {
+        EV_WARN << "rewriteIpv4Destination: next SID is not an IPv4 address: " << destination << endl;
+        return false;
+    }
+
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>(B(20), OPTIONAL_REINTERPRET_TYPED_PEEK_FLAGS);
+    if (!ipv4Header)
+        return false;
+    B ipHeaderLength = B(ipv4Header->getHeaderLength());
+    if (ipHeaderLength < B(20) || b(ipHeaderLength) > packet->getDataLength()) {
+        EV_WARN << "rewriteIpv4Destination: invalid IPv4 header length " << ipHeaderLength << endl;
+        return false;
+    }
+    if (B(ipv4Header->getChunkLength()) < ipHeaderLength) {
+        ipv4Header = packet->peekAtFront<Ipv4Header>(ipHeaderLength, OPTIONAL_REINTERPRET_TYPED_PEEK_FLAGS);
+        if (!ipv4Header)
+            return false;
+    }
+    B ipChunkLength = B(ipv4Header->getChunkLength());
+    if (ipChunkLength < B(20) || b(ipChunkLength) > packet->getDataLength()) {
+        EV_WARN << "rewriteIpv4Destination: invalid IPv4 chunk length " << ipChunkLength << endl;
+        return false;
+    }
+
+    auto newIpv4Header = makeShared<Ipv4Header>(*ipv4Header);
+    newIpv4Header->setDestAddress(destination.toIpv4());
+    if (newIpv4Header->getCrcMode() == CRC_COMPUTED)
+        newIpv4Header->updateCrc();
+
+    packet->replaceDataAt(newIpv4Header, B(0), ipChunkLength, Chunk::PF_ALLOW_INCOMPLETE);
+
+    auto networkProtocolInd = packet->addTagIfAbsent<NetworkProtocolInd>();
+    networkProtocolInd->setProtocol(&Protocol::ipv4);
+    networkProtocolInd->setNetworkProtocolHeader(newIpv4Header);
+    packet->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ipv4);
+    return true;
+}
+
+void CprpProcessorBase::clearForwardingDecisionTags(Packet *packet) {
+    packet->removeTagIfPresent<L3AddressReq>();
+    packet->removeTagIfPresent<InterfaceReq>();
+    packet->removeTagIfPresent<NextHopAddressReq>();
 }
 
 INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
@@ -300,7 +423,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
         updatedResp->setAccumulatedDelay(accumulatedDelay);
         updatedResp->setLastHopSendTime(now);
         updatedResp->setLastHopAddress(lastHopAddress);
-        packet->replaceAt(updatedResp, b(respOffset), resp->getChunkLength(), OPTIONAL_TYPED_PEEK_FLAGS);
+        packet->replaceDataAt(updatedResp, respOffset, resp->getChunkLength(), OPTIONAL_TYPED_PEEK_FLAGS);
         adjustIpv4UdpHeaderLengths(packet, B(0));
     }
 
@@ -602,7 +725,7 @@ void CprpProcessorBase::handlePathHeader(Packet *packet) {
         updateCpnPathHeaderLength(pathHeader);
         
         // 插入到 UDP 负载的最前端
-        packet->insertAt(pathHeader, b(offset));
+        packet->insertDataAt(pathHeader, offset);
         adjustIpv4UdpHeaderLengths(packet, pathHeader->getChunkLength());
     }
 }
@@ -629,7 +752,7 @@ void CprpProcessorBase::stripPathHeader(Packet *packet) {
         pathInd->setReservedBandwidth(pathHeader->getRequiredBandwidth());
 
         // 从物理报文中剥离 Header
-        packet->eraseAt(b(offset), pathHeader->getChunkLength());
+        packet->eraseDataAt(offset, pathHeader->getChunkLength());
         adjustIpv4UdpHeaderLengths(packet, B(0) - B(pathHeader->getChunkLength()));
     }
 }
@@ -657,8 +780,8 @@ void CprpProcessorBase::updateCpnPathHeaderLength(const Ptr<CpnPathHeader>& path
 void CprpProcessorBase::replacePathHeader(Packet *packet, B offset, const Ptr<CpnPathHeader>& newHeader, const CpnPathHeader& oldHeader) {
     updateCpnPathHeaderLength(newHeader);
     B delta = B(newHeader->getChunkLength()) - B(oldHeader.getChunkLength());
-    packet->eraseAt(b(offset), oldHeader.getChunkLength());
-    packet->insertAt(newHeader, b(offset));
+    packet->eraseDataAt(offset, oldHeader.getChunkLength());
+    packet->insertDataAt(newHeader, offset);
     adjustIpv4UdpHeaderLengths(packet, delta);
 }
 
@@ -723,9 +846,9 @@ void CprpProcessorBase::adjustIpv4UdpHeaderLengths(Packet *packet, B delta) {
         return;
 
     if (ipLengthChanged)
-        packet->replaceAt(newIpv4Header, b(0), ipv4Header->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+        packet->replaceDataAt(newIpv4Header, B(0), ipv4Header->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
     if (udpLengthChanged || udpChecksumReset)
-        packet->replaceAt(newUdpHeader, b(ipHeaderLength), udpHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+        packet->replaceDataAt(newUdpHeader, ipHeaderLength, udpHeader->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
 
     EV_INFO << "Updated IPv4/UDP headers after CPRP payload change: delta=" << delta
             << ", oldIpTotal=" << oldIpTotalLength
