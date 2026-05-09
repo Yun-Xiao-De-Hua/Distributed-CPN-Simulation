@@ -15,7 +15,7 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.distributed_computing_power_network.applications.UserGatewayApp.UserGatewayApp;
-import inet.distributed_computing_power_network.router.UserGatewayProcessor;
+import inet.distributed_computing_power_network.routing.UserGatewayProcessor;
 import inet.node.ospfv2.OspfRouter;
 
 module UserGateway extends OspfRouter

@@ -1,7 +1,7 @@
 #ifndef __INET_USERGATEWAYPROCESSOR_H_
 #define __INET_USERGATEWAYPROCESSOR_H_
 
-#include "inet/distributed_computing_power_network/router/CprpProcessorBase.h"
+#include "inet/distributed_computing_power_network/routing/common/CprpProcessorBase.h"
 
 namespace inet {
 

@@ -5,7 +5,7 @@
 // (at your option) any later version.
 // 
 
-package inet.distributed_computing_power_network.router;
+package inet.distributed_computing_power_network.routing.common;
 
 simple SessionManager
 {

@@ -1,5 +1,5 @@
-#ifndef INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_ROUTER_CPRPPROCESSORBASE_H_
-#define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_ROUTER_CPRPPROCESSORBASE_H_
+#ifndef INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_ROUTING_COMMON_CPRPPROCESSORBASE_H_
+#define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_ROUTING_COMMON_CPRPPROCESSORBASE_H_
 
 #include <omnetpp.h>
 #include <vector>
@@ -14,7 +14,7 @@
 #include "inet/common/InitStages.h"
 #include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 #include "inet/distributed_computing_power_network/message/cpn_message_m.h"
-#include "inet/distributed_computing_power_network/router/SessionManager.h"
+#include "inet/distributed_computing_power_network/routing/common/SessionManager.h"
 
 namespace inet {
 

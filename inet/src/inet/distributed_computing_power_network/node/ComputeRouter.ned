@@ -15,8 +15,8 @@
 
 package inet.distributed_computing_power_network.node;
 import inet.node.ospfv2.OspfRouter;
-import inet.distributed_computing_power_network.router.SessionManager;
-import inet.distributed_computing_power_network.router.ComputeRouterProcessor;
+import inet.distributed_computing_power_network.routing.common.SessionManager;
+import inet.distributed_computing_power_network.routing.ComputeRouterProcessor;
 
 // 算力路由器模块
 // 支持请求会话软状态管理、算力路由选择算法、浅度包检测
