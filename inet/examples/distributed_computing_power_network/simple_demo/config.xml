@@ -55,6 +55,13 @@
     <multicast-route hosts="computeNode2" groups="225.0.1.2" children=">computeGateway1"/>
     <multicast-route hosts="computeNode3" groups="225.0.1.2" children=">computeGateway2"/>
     <multicast-route hosts="computeNode4" groups="225.0.1.1" children=">computeGateway2"/>
+
+    <!-- 4. 边缘主机默认单播路由 -->
+    <route hosts="user1" destination="*" netmask="*" gateway="10.0.0.2" interface="ppp0" metric="0"/>
+    <route hosts="computeNode1" destination="*" netmask="*" gateway="10.0.4.1" interface="ppp0" metric="0"/>
+    <route hosts="computeNode2" destination="*" netmask="*" gateway="10.0.6.1" interface="ppp0" metric="0"/>
+    <route hosts="computeNode3" destination="*" netmask="*" gateway="10.0.5.1" interface="ppp0" metric="0"/>
+    <route hosts="computeNode4" destination="*" netmask="*" gateway="10.0.7.1" interface="ppp0" metric="0"/>
 </config>
 
 
