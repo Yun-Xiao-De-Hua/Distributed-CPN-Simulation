@@ -18,22 +18,22 @@ import inet.applications.contract.IApp;
 
 simple ComputeNodeApp like IApp
 {
-   parameters:
-       int computeNodeId = default(0);			// 算力节点编号
-       int computeGatewayId = default(0);       // 算力网关编号       
-     
-       string localAddress = default("");		
-       int localPort = default(5000);			
-       string computeGatewayAddress = default("");		
-       int computeGatewayPort = default(5000);			
-       
-       int computingType = default(0);						// 算力类型，0 表示 CPU，1 表示 GPU
-	   double computingCapacity = default(1e10);            // 计算能力(GFlOPS)
-       double storageCapacity = default(0);  				// 存储空间
-       
-       string multicastAddress = default("");	// 算力节点组播组地址
-      
-   gates:	
+    parameters:
+        int computeNodeId = default(0);                     // 算力节点编号
+        int computeGatewayId = default(0);                  // 算力网关编号
+        string localAddress = default("");
+        int localPort = default(5000);
+        int userNodePort = default(5000);
+        string computeGatewayAddress = default("");
+        int computeGatewayPort = default(5000);
+        int computingType = default(0);                     // 算力类型，0 表示 CPU，1 表示 GPU
+        double computingCapacity = default(1e10);           // 计算能力(FLOPs/s)
+        double storageCapacity = default(0);                // 存储资源(MB)
+        double maxNetworkBandwidth = default(100);          // 最大可用网络带宽(Mbps)
+        double computeCost = default(0);                    // 使用成本(￥/s)
+        string multicastAddress = default("");             // 算力节点组播组地址
+
+    gates:
        input socketIn;
        output socketOut;
 }

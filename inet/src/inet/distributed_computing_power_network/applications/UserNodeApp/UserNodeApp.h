@@ -19,6 +19,7 @@ struct UserTaskContext {
     double transferAmount;
     simtime_t totalDelayRequirement;
     double budget;
+    double userMaxBandwidth;
 };
 
 class UserNodeApp: public ApplicationBase, public UdpSocket::ICallback {
@@ -30,6 +31,14 @@ protected:
     L3Address userGatewayAddress;
     int userGatewayPort;
     double maxTransmissionBandwidth;  // 用户最大传输带宽
+
+    int taskId;
+    int taskComputingType;
+    double taskRequiredStorage;
+    double taskDataSize;
+    double taskComputingAmount;
+    simtime_t taskDelayTolerance;
+    double taskBudget;
 
     std::map<int, UserTaskContext> taskContextCache;
 
@@ -51,6 +60,7 @@ protected:
 
   void sendTaskRequest();
   void sendCprpConfirm(Packet *packet);
+  void processTaskCompletion(Packet *packet);
 
 public:
   UserNodeApp();

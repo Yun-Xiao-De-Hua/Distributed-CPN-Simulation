@@ -158,6 +158,8 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.nodeAddress = reportInfo->getComputeNodeAddress();
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
+    cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
+    cib.computeCost = reportInfo->getComputeCost();
     cib.updateTime = reportInfo->getSendTime();
 
     EV_INFO << "CIB has been updated: computingType:" << cib.computingType << std::endl;
@@ -216,11 +218,12 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setComputingType(destNodeInfo.computingType);
     payload->setComputingCapacity(destNodeInfo.computingCapacity);
     payload->setAvailableStorage(destNodeInfo.availableStorage);
+    payload->setMaxNetworkBandwidth(destNodeInfo.maxNetworkBandwidth);
     payload->setSendTime(simTime());
 
-    payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+    payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth() * 1e6);
     payload->setMaxDelayTolerance(requestInfo->getTotalDelayRequirement());
-    payload->setComputeCost(10.0);
+    payload->setComputeCost(destNodeInfo.computeCost);
 
     payload->setLastHopSendTime(simTime());
     payload->setLastHopAddress(localAddress);
@@ -237,7 +240,7 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setUserId(requestInfo->getUserId());
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
-    pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth());
+    pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth() * 1e6);
     // 应用层预先写入上游路径起点：[算力节点, 算力网关]。
     // 后续算力路由器在网络层继续向 hopAddress 末尾追加自身出口地址。
     pathReq->setHopAddressArraySize(2);

@@ -318,6 +318,8 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     cpNodeInfo.computingType = respInfo->getComputingType();
     cpNodeInfo.computingCapacity = respInfo->getComputingCapacity();
     cpNodeInfo.availableStorage = respInfo->getAvailableStorage();
+    cpNodeInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
+    cpNodeInfo.computeCost = respInfo->getComputeCost();
     cpNodeInfo.sendTime = respInfo->getSendTime();
     cpArray.push_back(cpNodeInfo);
 
@@ -339,6 +341,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     pathInfo.totalDelay = totalDelay.dbl();
     pathInfo.computeCost = respInfo->getComputeCost();
     pathInfo.bandwidth = respInfo->getRequiredBandwidth();
+    pathInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
     pathInfo.computeNodeId = respInfo->getComputeNodeId();
     pathInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
     pathInfo.computeNodePort = respInfo->getComputeNodePort();
@@ -472,6 +475,7 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     taskData->setTransferAmount(requestContext.transferAmount);
     taskData->setTotalDelayRequirement(requestContext.totalDelayRequirement);
     taskData->setBudget(requestContext.budget);
+    taskData->setUserMaxBandwidth(requestContext.userMaxBandwidth);
     taskData->setPriority(5);
 
     Packet *pkt = new Packet("TASK_DATA");

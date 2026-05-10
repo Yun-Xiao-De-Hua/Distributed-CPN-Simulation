@@ -12,7 +12,7 @@ UserNodeApp::UserNodeApp() {
 }
 
 UserNodeApp::~UserNodeApp() {
-    // TODO Auto-generated destructor stub
+    cancelAndDelete(selfTaskCreationEvent);
 }
 
 void UserNodeApp::initialize(int stage)
@@ -26,6 +26,13 @@ void UserNodeApp::initialize(int stage)
        this->userGatewayAddress = L3AddressResolver().resolve(par("userGatewayAddress"));
        this->userGatewayPort = par("userGatewayPort");
        this->maxTransmissionBandwidth = par("maxTransmissionBandwidth");
+       this->taskId = par("taskId");
+       this->taskComputingType = par("taskComputingType");
+       this->taskRequiredStorage = par("taskRequiredStorage");
+       this->taskDataSize = par("taskDataSize");
+       this->taskComputingAmount = par("taskComputingAmount");
+       this->taskDelayTolerance = SimTime(par("taskDelayTolerance").doubleValue());
+       this->taskBudget = par("taskBudget");
 
        this->selfTaskCreationEvent = new cMessage("TaskCreationSelfMsg");
     }
@@ -46,6 +53,8 @@ void UserNodeApp::handleMessageWhenUp(cMessage *msg)
         if (strcmp(msg->getName(), "TaskCreationSelfMsg") == 0) {
             EV_INFO << "Received TaskCreationSelfMsg" << std::endl;
             sendTaskRequest();
+            if (msg == selfTaskCreationEvent)
+                selfTaskCreationEvent = nullptr;
             delete msg;
         }
     }
@@ -60,17 +69,17 @@ void UserNodeApp::sendTaskRequest()
     EV_INFO << "User" << userNodeId << " is to send TaskRequestMsg...\n";
 
     auto payload = makeShared<TaskRequestMsg>();
-    // 当前示例场景仅生成一条测试任务，请求字段需要与后续 CPRP_CONFIRM/TASK_DATA 保持一致。
+    // 当前示例场景仅生成一条任务，请求字段需要与后续 CPRP_CONFIRM/TASK_DATA 保持一致。
     payload->setUserId(this->userNodeId);
-    payload->setTaskId(1);  // test，暂时硬编码
+    payload->setTaskId(this->taskId);
     payload->setGenerationTime(simTime());
-    payload->setComputingType(0);   // test，暂时硬编码
-    payload->setRequiredStorage(100);
-    payload->setComputingAmount(1000);
-    payload->setTransferAmount(1000);
-    payload->setTotalDelayRequirement(1);
-    payload->setBudget(100);
-    payload->setUserMaxBandwidth(this->maxTransmissionBandwidth);
+    payload->setComputingType(this->taskComputingType);
+    payload->setRequiredStorage(this->taskRequiredStorage);
+    payload->setComputingAmount(this->taskComputingAmount);
+    payload->setTransferAmount(this->taskDataSize);
+    payload->setTotalDelayRequirement(this->taskDelayTolerance);
+    payload->setBudget(this->taskBudget);
+    payload->setUserMaxBandwidth(this->maxTransmissionBandwidth / 1e6);
 
     UserTaskContext taskContext;
     taskContext.generationTime = payload->getGenerationTime();
@@ -80,6 +89,7 @@ void UserNodeApp::sendTaskRequest()
     taskContext.transferAmount = payload->getTransferAmount();
     taskContext.totalDelayRequirement = payload->getTotalDelayRequirement();
     taskContext.budget = payload->getBudget();
+    taskContext.userMaxBandwidth = payload->getUserMaxBandwidth();
     taskContextCache[payload->getTaskId()] = taskContext;
 
     std::string messageType = payload->getMsgType();
@@ -138,6 +148,7 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
     payload->setTransferAmount(taskContext.transferAmount);
     payload->setTotalDelayRequirement(taskContext.totalDelayRequirement);
     payload->setBudget(taskContext.budget);
+    payload->setUserMaxBandwidth(taskContext.userMaxBandwidth);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -152,11 +163,44 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
     delete packet;
 }
 
+void UserNodeApp::processTaskCompletion(Packet *packet)
+{
+    const auto& completion = packet->popAtFront<TaskCompletionMsg>();
+    if (completion == nullptr) {
+        EV_WARN << "Error: Received a Packet named '" << packet->getName()
+                << "', but it does not contain a TaskCompletionMsg chunk. Discarding.";
+        delete packet;
+        return;
+    }
+
+    int taskId = completion->getTaskId();
+    if (completion->getSuccess()) {
+        EV_INFO << "User" << userNodeId << " received successful TASK_COMPLETION for task("
+                << completion->getUserId() << "," << taskId << ") from "
+                << completion->getComputeNodeAddress()
+                << ", executionTime=" << completion->getExecutionTime()
+                << ", resultSize=" << completion->getTaskResult() << " MB" << endl;
+    }
+    else {
+        EV_WARN << "User" << userNodeId << " received failed TASK_COMPLETION for task("
+                << completion->getUserId() << "," << taskId << ") from "
+                << completion->getComputeNodeAddress()
+                << ", failureCode=" << completion->getFailureCode()
+                << ", reason=" << completion->getFailureReason() << endl;
+    }
+
+    taskContextCache.erase(taskId);
+    delete packet;
+}
+
 // UdpSocket::ICallback
 void UserNodeApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
     if(strcmp(packet->getName(), "RespSummaryMsg") == 0){
         sendCprpConfirm(packet);
+    }
+    else if(strcmp(packet->getName(), "TASK_COMPLETION") == 0){
+        processTaskCompletion(packet);
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;

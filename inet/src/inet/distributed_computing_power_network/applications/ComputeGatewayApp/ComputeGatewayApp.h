@@ -18,6 +18,8 @@ protected:
         int computingType;
         double computingCapacity;
         double availableStorage;
+        double maxNetworkBandwidth;
+        double computeCost;
         simtime_t updateTime;
     };
 

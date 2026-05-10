@@ -35,12 +35,12 @@ class CprpRequestMsg extends inet::FieldsChunk {
  	// 任务数据参数
     simtime_t generationTime;   // 任务产生的时刻
     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间
-    double computingAmount;     // 任务计算量
-    double transferAmount;      // 任务传输量
-    simtime_t totalDelayRequirement; // 总时延要求
+    double requiredStorage;     // 任务所需存储空间(MB)
+    double computingAmount;     // 任务计算量(FLOPs)
+    double transferAmount;      // 任务数据量(MB)
+    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
     double budget;              // 预算
-    double userMaxBandwidth;    // 用户最大传输带宽
+    double userMaxBandwidth;    // 传输带宽(Mbps)
     
     chunkLength = B(12 + 40); // 在构造函数中直接赋值
 }
@@ -57,14 +57,15 @@ class CprpResponseMsg extends inet::FieldsChunk {
 	int computeNodeId;
 	int computeNodePort;			// 算力节点端口号
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    double computingCapacity;	// 算力
-    double availableStorage;     // 可用存储    
+    double computingCapacity;	// 计算能力(FLOPs/s)
+    double availableStorage;     // 可用存储(MB)
+    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
     simtime_t sendTime;   // 发送时间戳
     
     // 资源预留参数
-    double requiredBandwidth;       // 用户最大传输带宽
+    double requiredBandwidth;       // 网络层预留带宽(bps)
     simtime_t maxDelayTolerance;    // 最大时延忍耐值
-    double computeCost;             // 任务计算费用
+    double computeCost;             // 使用成本(￥/s)
     
     // 时延信息
     simtime_t accumulatedDelay;     // 算力网关计算的总时延
@@ -73,7 +74,7 @@ class CprpResponseMsg extends inet::FieldsChunk {
     simtime_t lastHopSendTime;      // 上一跳发送时间戳
     L3Address lastHopAddress;       // 上一跳IP地址
     
-    chunkLength = B(32 + 64);
+    chunkLength = B(32 + 72);
 }
 
 class CprpConfirmMsg extends inet::FieldsChunk {
@@ -92,13 +93,14 @@ class CprpConfirmMsg extends inet::FieldsChunk {
 	// 任务数据参数	
     simtime_t generationTime;   // 任务产生的时刻
     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间
-    double computingAmount;     // 任务计算量
-    double transferAmount;      // 任务传输量
-    simtime_t totalDelayRequirement; // 总时延要求
+    double requiredStorage;     // 任务所需存储空间(MB)
+    double computingAmount;     // 任务计算量(FLOPs)
+    double transferAmount;      // 任务数据量(MB)
+    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
     double budget;              // 预算 
+    double userMaxBandwidth;    // 传输带宽(Mbps)
     
-    chunkLength = B(28 + 32);
+    chunkLength = B(28 + 40);
 }
 
 enum CancelSenderType {
@@ -132,12 +134,12 @@ class TaskRequestMsg extends inet::FieldsChunk {
  	// 任务数据参数
     simtime_t generationTime;   // 任务产生的时刻
     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间
-    double computingAmount;     // 任务计算量
-    double transferAmount;      // 任务传输量
-    simtime_t totalDelayRequirement; // 总时延要求
+    double requiredStorage;     // 任务所需存储空间(MB)
+    double computingAmount;     // 任务计算量(FLOPs)
+    double transferAmount;      // 任务数据量(MB)
+    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
     double budget;              // 预算
-    double userMaxBandwidth;    // 用户最大传输带宽
+    double userMaxBandwidth;    // 传输带宽(Mbps)
     
     chunkLength = B(12 + 40); // 在构造函数中直接赋值
 }
@@ -158,14 +160,15 @@ class TaskDataMsg extends inet::FieldsChunk {
 	// 任务数据参数	
     simtime_t generationTime;   // 任务产生的时刻
     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间
-    double computingAmount;     // 任务计算量
-    double transferAmount;      // 任务传输量
-    simtime_t totalDelayRequirement; // 总时延要求
+    double requiredStorage;     // 任务所需存储空间(MB)
+    double computingAmount;     // 任务计算量(FLOPs)
+    double transferAmount;      // 任务数据量(MB)
+    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
     double budget;              // 预算
+    double userMaxBandwidth;    // 传输带宽(Mbps)
     int priority = 5;           // DSCP优先级，默认EF(5)
     
-    chunkLength = B(16 + 32); // 在构造函数中直接赋值
+    chunkLength = B(16 + 40); // 在构造函数中直接赋值
 }
 
 // 算力应答超时自消息
@@ -180,8 +183,10 @@ struct computeNodeInfo{
     L3Address computeNodeAddress;	// 算力节点地址 
 	int computeNodeId;	
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    double computingCapacity;	// 算力
-    double availableStorage;     // 可用存储    
+    double computingCapacity;	// 计算能力(FLOPs/s)
+    double availableStorage;     // 可用存储(MB)
+    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
+    double computeCost;          // 使用成本(￥/s)
     simtime_t sendTime;   // 发送时间戳   
 }
 
@@ -213,11 +218,13 @@ class CgmpReportMsg extends inet::FieldsChunk {
 	int computeNodeId;	
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     L3Address computeNodeAddress;
-    double computingCapacity;	// 算力
-    double availableStorage;     // 可用存储    
+    double computingCapacity;	// 计算能力(FLOPs/s)
+    double availableStorage;     // 可用存储(MB)
+    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
+    double computeCost;          // 使用成本(￥/s)
     simtime_t sendTime;   // 发送时间戳    
     
-    chunkLength = B(8 + 16); // 在构造函数中直接赋值	    
+    chunkLength = B(8 + 32); // 在构造函数中直接赋值
 }
 
 
@@ -225,17 +232,29 @@ class CgmpReportMsg extends inet::FieldsChunk {
 // ============ 任务完成通告消息 =================
 // ==============================================
 
+enum TaskFailureCode {
+    TASK_OK = 0;
+    TASK_INVALID_COMPUTING_TYPE = 1;
+    TASK_INSUFFICIENT_STORAGE = 2;
+    TASK_INSUFFICIENT_BANDWIDTH = 3;
+    TASK_INVALID_RESOURCE_REQUEST = 4;
+}
+
 class TaskCompletionMsg extends inet::FieldsChunk {
     int userId;                       // 用户ID
     int taskId;                       // 任务ID
     L3Address computeNodeAddress;     // 算力节点地址
     int computeNodePort;              // 算力节点端口
-    L3Address userGatewayAddress;     // 用户网关地址
+    L3Address userNodeAddress;        // 用户节点地址
     simtime_t completionTime;         // 任务完成时间
+    bool success;                     // 任务是否成功完成
+    int failureCode = 0;              // 失败原因(TaskFailureCode)
+    string failureReason;             // 失败原因文本
     double taskResult;                // 任务结果大小
+    double executionTime;             // 实际执行耗时(sec)
     
     string msgType = "TASK_COMPLETION";
-    chunkLength = B(24);
+    chunkLength = B(64);
 }
 
 

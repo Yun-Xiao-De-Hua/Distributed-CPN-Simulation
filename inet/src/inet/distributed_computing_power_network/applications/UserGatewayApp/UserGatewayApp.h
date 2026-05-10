@@ -15,6 +15,7 @@ struct PathInfo {
     double totalDelay;
     double computeCost;
     double bandwidth;
+    double maxNetworkBandwidth;
     int computeNodeId;
     L3Address computeNodeAddress;
     int computeNodePort;
