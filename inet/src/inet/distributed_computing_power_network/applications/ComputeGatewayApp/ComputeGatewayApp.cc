@@ -156,13 +156,22 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.nodeId = reportInfo->getComputeNodeId();
     cib.computingType = reportInfo->getComputingType();
     cib.nodeAddress = reportInfo->getComputeNodeAddress();
+    cib.nodePort = reportInfo->getComputeNodePort();
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
     cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
     cib.computeCost = reportInfo->getComputeCost();
     cib.updateTime = reportInfo->getSendTime();
 
-    EV_INFO << "CIB has been updated: computingType:" << cib.computingType << std::endl;
+    EV_INFO << "CIB has been updated: computingType=" << cib.computingType
+            << ", nodeId=" << cib.nodeId
+            << ", address=" << cib.nodeAddress
+            << ", port=" << cib.nodePort
+            << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
+            << ", computeCost=" << cib.computeCost << " CNY/s"
+            << ", availableStorage=" << cib.availableStorage << " MB"
+            << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+            << ", updateTime=" << cib.updateTime << std::endl;
 
     delete packet;
 }
@@ -214,7 +223,7 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setComputeNodeId(destNodeInfo.nodeId);
 
     payload->setComputeNodeAddress(destNodeInfo.nodeAddress);
-    payload->setComputeNodePort(computeNodePort);
+    payload->setComputeNodePort(destNodeInfo.nodePort);
     payload->setComputingType(destNodeInfo.computingType);
     payload->setComputingCapacity(destNodeInfo.computingCapacity);
     payload->setAvailableStorage(destNodeInfo.availableStorage);

@@ -180,14 +180,15 @@ class RespTimeoutSelfMsg extends cMessage{
 
 // 算力应答汇总消息
 struct computeNodeInfo{
-    L3Address computeNodeAddress;	// 算力节点地址 
+    L3Address computeNodeAddress;	// 算力节点IP地址
 	int computeNodeId;	
+    int computeNodePort;          // 算力节点端口号
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    double computingCapacity;	// 计算能力(FLOPs/s)
+    double computingCapacity;	// 节点计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
-    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
-    double computeCost;          // 使用成本(￥/s)
-    simtime_t sendTime;   // 发送时间戳   
+    double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+    double computeCost;          // 节点使用单价(￥/s)
+    simtime_t sendTime;          // 时间戳
 }
 
 class RespSummaryMsg extends inet::FieldsChunk {
@@ -216,15 +217,16 @@ class CgmpReportMsg extends inet::FieldsChunk {
     string msgType = "CGMP_Report";    
     
 	int computeNodeId;	
+    int computeNodePort;          // 算力节点端口号
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    L3Address computeNodeAddress;
-    double computingCapacity;	// 计算能力(FLOPs/s)
+    L3Address computeNodeAddress; // 算力节点IP地址
+    double computingCapacity;	// 节点计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
-    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
-    double computeCost;          // 使用成本(￥/s)
-    simtime_t sendTime;   // 发送时间戳    
+    double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+    double computeCost;          // 节点使用单价(￥/s)
+    simtime_t sendTime;          // 时间戳
     
-    chunkLength = B(8 + 32); // 在构造函数中直接赋值
+    chunkLength = B(12 + 40); // 在构造函数中直接赋值
 }
 
 

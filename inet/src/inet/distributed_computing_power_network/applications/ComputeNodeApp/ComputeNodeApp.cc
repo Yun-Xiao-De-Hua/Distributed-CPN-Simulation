@@ -63,6 +63,7 @@ void ComputeNodeApp::sendCgmpReport()
 
     auto payload = makeShared<CgmpReportMsg>();
     payload->setComputeNodeId(computeNodeId);
+    payload->setComputeNodePort(localPort);
     payload->setComputingType(computingType);
     payload->setComputeNodeAddress(localAddress);
     payload->setComputingCapacity(computingCapacity);
@@ -82,7 +83,14 @@ void ComputeNodeApp::sendCgmpReport()
 
     socket.sendTo(pkt, multicastAddress, computeGatewayPort);
 
-    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report (TTL=1) to computeGateway" << computeGatewayId << "\n";
+    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report (TTL=1) to computeGateway" << computeGatewayId
+            << ": address=" << localAddress
+            << ", port=" << localPort
+            << ", computingCapacity=" << computingCapacity << " FLOPs/s"
+            << ", computeCost=" << computeCost << " CNY/s"
+            << ", availableStorage=" << availableStorage << " MB"
+            << ", maxNetworkBandwidth=" << maxNetworkBandwidth << " Mbps"
+            << ", sendTime=" << simTime() << "\n";
 }
 
 

@@ -741,6 +741,7 @@ struct INET_API computeNodeInfo
     computeNodeInfo();
     L3Address computeNodeAddress;
     int computeNodeId = 0;
+    int computeNodePort = 0;
     int computingType = 0;
     double computingCapacity = 0;
     double availableStorage = 0;
@@ -757,7 +758,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const computeNodeInfo& obj)
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeNodeInfo& obj) { __doUnpacking(b, obj); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:193</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:194</tt> by opp_msgtool.
  * <pre>
  * class RespSummaryMsg extends inet::FieldsChunk
  * {
@@ -825,7 +826,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const RespSummaryMsg& obj) 
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespSummaryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:209</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:210</tt> by opp_msgtool.
  * <pre>
  * class CgmpQueryMsg extends inet::FieldsChunk
  * {
@@ -863,22 +864,23 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpQueryMsg& obj) {o
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpQueryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:215</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:216</tt> by opp_msgtool.
  * <pre>
  * class CgmpReportMsg extends inet::FieldsChunk
  * {
  *     string msgType = "CGMP_Report";
  * 
  *     int computeNodeId;
+ *     int computeNodePort;          // 算力节点端口号
  *     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
- *     L3Address computeNodeAddress;
- *     double computingCapacity;	// 计算能力(FLOPs/s)
+ *     L3Address computeNodeAddress; // 算力节点IP地址
+ *     double computingCapacity;	// 节点计算能力(FLOPs/s)
  *     double availableStorage;     // 可用存储(MB)
- *     double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
- *     double computeCost;          // 使用成本(￥/s)
- *     simtime_t sendTime;   // 发送时间戳    
+ *     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+ *     double computeCost;          // 节点使用单价(￥/s)
+ *     simtime_t sendTime;          // 时间戳
  * 
- *     chunkLength = B(8 + 32); // 在构造函数中直接赋值
+ *     chunkLength = B(12 + 40); // 在构造函数中直接赋值
  * }
  * 
  * 
@@ -892,6 +894,7 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
   protected:
     ::omnetpp::opp_string msgType = "CGMP_Report";
     int computeNodeId = 0;
+    int computeNodePort = 0;
     int computingType = 0;
     L3Address computeNodeAddress;
     double computingCapacity = 0;
@@ -921,6 +924,9 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
     virtual int getComputeNodeId() const;
     virtual void setComputeNodeId(int computeNodeId);
 
+    virtual int getComputeNodePort() const;
+    virtual void setComputeNodePort(int computeNodePort);
+
     virtual int getComputingType() const;
     virtual void setComputingType(int computingType);
 
@@ -948,7 +954,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpReportMsg& obj) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpReportMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:235</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:237</tt> by opp_msgtool.
  * <pre>
  * enum TaskFailureCode
  * {
@@ -972,7 +978,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskFailureCode& e) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskFailureCode& e) { int n; b->unpack(n); e = static_cast<TaskFailureCode>(n); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:243</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:245</tt> by opp_msgtool.
  * <pre>
  * class TaskCompletionMsg extends inet::FieldsChunk
  * {

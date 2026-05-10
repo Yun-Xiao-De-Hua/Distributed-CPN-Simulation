@@ -315,6 +315,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     computeNodeInfo cpNodeInfo;
     cpNodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
     cpNodeInfo.computeNodeId = respInfo->getComputeNodeId();
+    cpNodeInfo.computeNodePort = respInfo->getComputeNodePort();
     cpNodeInfo.computingType = respInfo->getComputingType();
     cpNodeInfo.computingCapacity = respInfo->getComputingCapacity();
     cpNodeInfo.availableStorage = respInfo->getAvailableStorage();

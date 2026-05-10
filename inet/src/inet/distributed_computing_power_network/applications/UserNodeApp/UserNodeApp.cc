@@ -138,8 +138,7 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
     payload->setTaskId(sumInfo->getTaskId());
     payload->setSelectedNodeId(selectedNode.computeNodeId);
     payload->setSelectedNodeAddress(selectedNode.computeNodeAddress);
-    // 当前示例拓扑中算力节点统一监听 5000 端口。
-    payload->setSelectedNodePort(5000);
+    payload->setSelectedNodePort(selectedNode.computeNodePort);
     payload->setSelectedPathIndex(0);
     payload->setGenerationTime(taskContext.generationTime);
     payload->setComputingType(taskContext.computingType);
@@ -158,7 +157,9 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     EV_INFO << "User node has sent CPRP_CONFIRM for task(" << sumInfo->getUserId()
             << "," << sumInfo->getTaskId() << ") using selectedNodeId="
-            << selectedNode.computeNodeId << "\n";
+            << selectedNode.computeNodeId
+            << ", selectedNodeAddress=" << selectedNode.computeNodeAddress
+            << ", selectedNodePort=" << selectedNode.computeNodePort << "\n";
 
     delete packet;
 }

@@ -4246,6 +4246,7 @@ void __doPacking(omnetpp::cCommBuffer *b, const computeNodeInfo& a)
 {
     doParsimPacking(b,a.computeNodeAddress);
     doParsimPacking(b,a.computeNodeId);
+    doParsimPacking(b,a.computeNodePort);
     doParsimPacking(b,a.computingType);
     doParsimPacking(b,a.computingCapacity);
     doParsimPacking(b,a.availableStorage);
@@ -4258,6 +4259,7 @@ void __doUnpacking(omnetpp::cCommBuffer *b, computeNodeInfo& a)
 {
     doParsimUnpacking(b,a.computeNodeAddress);
     doParsimUnpacking(b,a.computeNodeId);
+    doParsimUnpacking(b,a.computeNodePort);
     doParsimUnpacking(b,a.computingType);
     doParsimUnpacking(b,a.computingCapacity);
     doParsimUnpacking(b,a.availableStorage);
@@ -4273,6 +4275,7 @@ class computeNodeInfoDescriptor : public omnetpp::cClassDescriptor
     enum FieldConstants {
         FIELD_computeNodeAddress,
         FIELD_computeNodeId,
+        FIELD_computeNodePort,
         FIELD_computingType,
         FIELD_computingCapacity,
         FIELD_availableStorage,
@@ -4345,7 +4348,7 @@ const char *computeNodeInfoDescriptor::getProperty(const char *propertyName) con
 int computeNodeInfoDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 8+base->getFieldCount() : 8;
+    return base ? 9+base->getFieldCount() : 9;
 }
 
 unsigned int computeNodeInfoDescriptor::getFieldTypeFlags(int field) const
@@ -4359,6 +4362,7 @@ unsigned int computeNodeInfoDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         0,    // FIELD_computeNodeAddress
         FD_ISEDITABLE,    // FIELD_computeNodeId
+        FD_ISEDITABLE,    // FIELD_computeNodePort
         FD_ISEDITABLE,    // FIELD_computingType
         FD_ISEDITABLE,    // FIELD_computingCapacity
         FD_ISEDITABLE,    // FIELD_availableStorage
@@ -4366,7 +4370,7 @@ unsigned int computeNodeInfoDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_computeCost
         FD_ISEDITABLE,    // FIELD_sendTime
     };
-    return (field >= 0 && field < 8) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 9) ? fieldTypeFlags[field] : 0;
 }
 
 const char *computeNodeInfoDescriptor::getFieldName(int field) const
@@ -4380,6 +4384,7 @@ const char *computeNodeInfoDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "computeNodeAddress",
         "computeNodeId",
+        "computeNodePort",
         "computingType",
         "computingCapacity",
         "availableStorage",
@@ -4387,7 +4392,7 @@ const char *computeNodeInfoDescriptor::getFieldName(int field) const
         "computeCost",
         "sendTime",
     };
-    return (field >= 0 && field < 8) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 9) ? fieldNames[field] : nullptr;
 }
 
 int computeNodeInfoDescriptor::findField(const char *fieldName) const
@@ -4396,12 +4401,13 @@ int computeNodeInfoDescriptor::findField(const char *fieldName) const
     int baseIndex = base ? base->getFieldCount() : 0;
     if (strcmp(fieldName, "computeNodeAddress") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "computeNodeId") == 0) return baseIndex + 1;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 3;
-    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "computeNodePort") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 8;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -4416,6 +4422,7 @@ const char *computeNodeInfoDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "inet::L3Address",    // FIELD_computeNodeAddress
         "int",    // FIELD_computeNodeId
+        "int",    // FIELD_computeNodePort
         "int",    // FIELD_computingType
         "double",    // FIELD_computingCapacity
         "double",    // FIELD_availableStorage
@@ -4423,7 +4430,7 @@ const char *computeNodeInfoDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_computeCost
         "omnetpp::simtime_t",    // FIELD_sendTime
     };
-    return (field >= 0 && field < 8) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 9) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **computeNodeInfoDescriptor::getFieldPropertyNames(int field) const
@@ -4508,6 +4515,7 @@ std::string computeNodeInfoDescriptor::getFieldValueAsString(omnetpp::any_ptr ob
     switch (field) {
         case FIELD_computeNodeAddress: return pp->computeNodeAddress.str();
         case FIELD_computeNodeId: return long2string(pp->computeNodeId);
+        case FIELD_computeNodePort: return long2string(pp->computeNodePort);
         case FIELD_computingType: return long2string(pp->computingType);
         case FIELD_computingCapacity: return double2string(pp->computingCapacity);
         case FIELD_availableStorage: return double2string(pp->availableStorage);
@@ -4531,6 +4539,7 @@ void computeNodeInfoDescriptor::setFieldValueAsString(omnetpp::any_ptr object, i
     computeNodeInfo *pp = omnetpp::fromAnyPtr<computeNodeInfo>(object); (void)pp;
     switch (field) {
         case FIELD_computeNodeId: pp->computeNodeId = string2long(value); break;
+        case FIELD_computeNodePort: pp->computeNodePort = string2long(value); break;
         case FIELD_computingType: pp->computingType = string2long(value); break;
         case FIELD_computingCapacity: pp->computingCapacity = string2double(value); break;
         case FIELD_availableStorage: pp->availableStorage = string2double(value); break;
@@ -4553,6 +4562,7 @@ omnetpp::cValue computeNodeInfoDescriptor::getFieldValue(omnetpp::any_ptr object
     switch (field) {
         case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->computeNodeAddress); break;
         case FIELD_computeNodeId: return pp->computeNodeId;
+        case FIELD_computeNodePort: return pp->computeNodePort;
         case FIELD_computingType: return pp->computingType;
         case FIELD_computingCapacity: return pp->computingCapacity;
         case FIELD_availableStorage: return pp->availableStorage;
@@ -4576,6 +4586,7 @@ void computeNodeInfoDescriptor::setFieldValue(omnetpp::any_ptr object, int field
     computeNodeInfo *pp = omnetpp::fromAnyPtr<computeNodeInfo>(object); (void)pp;
     switch (field) {
         case FIELD_computeNodeId: pp->computeNodeId = omnetpp::checked_int_cast<int>(value.intValue()); break;
+        case FIELD_computeNodePort: pp->computeNodePort = omnetpp::checked_int_cast<int>(value.intValue()); break;
         case FIELD_computingType: pp->computingType = omnetpp::checked_int_cast<int>(value.intValue()); break;
         case FIELD_computingCapacity: pp->computingCapacity = value.doubleValue(); break;
         case FIELD_availableStorage: pp->availableStorage = value.doubleValue(); break;
@@ -5486,7 +5497,7 @@ Register_Class(CgmpReportMsg)
 
 CgmpReportMsg::CgmpReportMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(8 + 32));
+    this->setChunkLength(B(12 + 40));
 
 }
 
@@ -5511,6 +5522,7 @@ void CgmpReportMsg::copy(const CgmpReportMsg& other)
 {
     this->msgType = other.msgType;
     this->computeNodeId = other.computeNodeId;
+    this->computeNodePort = other.computeNodePort;
     this->computingType = other.computingType;
     this->computeNodeAddress = other.computeNodeAddress;
     this->computingCapacity = other.computingCapacity;
@@ -5525,6 +5537,7 @@ void CgmpReportMsg::parsimPack(omnetpp::cCommBuffer *b) const
     ::inet::FieldsChunk::parsimPack(b);
     doParsimPacking(b,this->msgType);
     doParsimPacking(b,this->computeNodeId);
+    doParsimPacking(b,this->computeNodePort);
     doParsimPacking(b,this->computingType);
     doParsimPacking(b,this->computeNodeAddress);
     doParsimPacking(b,this->computingCapacity);
@@ -5539,6 +5552,7 @@ void CgmpReportMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     ::inet::FieldsChunk::parsimUnpack(b);
     doParsimUnpacking(b,this->msgType);
     doParsimUnpacking(b,this->computeNodeId);
+    doParsimUnpacking(b,this->computeNodePort);
     doParsimUnpacking(b,this->computingType);
     doParsimUnpacking(b,this->computeNodeAddress);
     doParsimUnpacking(b,this->computingCapacity);
@@ -5568,6 +5582,17 @@ void CgmpReportMsg::setComputeNodeId(int computeNodeId)
 {
     handleChange();
     this->computeNodeId = computeNodeId;
+}
+
+int CgmpReportMsg::getComputeNodePort() const
+{
+    return this->computeNodePort;
+}
+
+void CgmpReportMsg::setComputeNodePort(int computeNodePort)
+{
+    handleChange();
+    this->computeNodePort = computeNodePort;
 }
 
 int CgmpReportMsg::getComputingType() const
@@ -5654,6 +5679,7 @@ class CgmpReportMsgDescriptor : public omnetpp::cClassDescriptor
     enum FieldConstants {
         FIELD_msgType,
         FIELD_computeNodeId,
+        FIELD_computeNodePort,
         FIELD_computingType,
         FIELD_computeNodeAddress,
         FIELD_computingCapacity,
@@ -5727,7 +5753,7 @@ const char *CgmpReportMsgDescriptor::getProperty(const char *propertyName) const
 int CgmpReportMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 9+base->getFieldCount() : 9;
+    return base ? 10+base->getFieldCount() : 10;
 }
 
 unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
@@ -5741,6 +5767,7 @@ unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,    // FIELD_msgType
         FD_ISEDITABLE,    // FIELD_computeNodeId
+        FD_ISEDITABLE,    // FIELD_computeNodePort
         FD_ISEDITABLE,    // FIELD_computingType
         0,    // FIELD_computeNodeAddress
         FD_ISEDITABLE,    // FIELD_computingCapacity
@@ -5749,7 +5776,7 @@ unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_computeCost
         FD_ISEDITABLE,    // FIELD_sendTime
     };
-    return (field >= 0 && field < 9) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 10) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CgmpReportMsgDescriptor::getFieldName(int field) const
@@ -5763,6 +5790,7 @@ const char *CgmpReportMsgDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "msgType",
         "computeNodeId",
+        "computeNodePort",
         "computingType",
         "computeNodeAddress",
         "computingCapacity",
@@ -5771,7 +5799,7 @@ const char *CgmpReportMsgDescriptor::getFieldName(int field) const
         "computeCost",
         "sendTime",
     };
-    return (field >= 0 && field < 9) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 10) ? fieldNames[field] : nullptr;
 }
 
 int CgmpReportMsgDescriptor::findField(const char *fieldName) const
@@ -5780,13 +5808,14 @@ int CgmpReportMsgDescriptor::findField(const char *fieldName) const
     int baseIndex = base ? base->getFieldCount() : 0;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "computeNodeId") == 0) return baseIndex + 1;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "computeNodeAddress") == 0) return baseIndex + 3;
-    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "computeNodePort") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "computeNodeAddress") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 9;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -5801,6 +5830,7 @@ const char *CgmpReportMsgDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "string",    // FIELD_msgType
         "int",    // FIELD_computeNodeId
+        "int",    // FIELD_computeNodePort
         "int",    // FIELD_computingType
         "inet::L3Address",    // FIELD_computeNodeAddress
         "double",    // FIELD_computingCapacity
@@ -5809,7 +5839,7 @@ const char *CgmpReportMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_computeCost
         "omnetpp::simtime_t",    // FIELD_sendTime
     };
-    return (field >= 0 && field < 9) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 10) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CgmpReportMsgDescriptor::getFieldPropertyNames(int field) const
@@ -5894,6 +5924,7 @@ std::string CgmpReportMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obje
     switch (field) {
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
         case FIELD_computeNodeId: return long2string(pp->getComputeNodeId());
+        case FIELD_computeNodePort: return long2string(pp->getComputeNodePort());
         case FIELD_computingType: return long2string(pp->getComputingType());
         case FIELD_computeNodeAddress: return pp->getComputeNodeAddress().str();
         case FIELD_computingCapacity: return double2string(pp->getComputingCapacity());
@@ -5919,6 +5950,7 @@ void CgmpReportMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int
     switch (field) {
         case FIELD_msgType: pp->setMsgType((value)); break;
         case FIELD_computeNodeId: pp->setComputeNodeId(string2long(value)); break;
+        case FIELD_computeNodePort: pp->setComputeNodePort(string2long(value)); break;
         case FIELD_computingType: pp->setComputingType(string2long(value)); break;
         case FIELD_computingCapacity: pp->setComputingCapacity(string2double(value)); break;
         case FIELD_availableStorage: pp->setAvailableStorage(string2double(value)); break;
@@ -5941,6 +5973,7 @@ omnetpp::cValue CgmpReportMsgDescriptor::getFieldValue(omnetpp::any_ptr object, 
     switch (field) {
         case FIELD_msgType: return pp->getMsgType();
         case FIELD_computeNodeId: return pp->getComputeNodeId();
+        case FIELD_computeNodePort: return pp->getComputeNodePort();
         case FIELD_computingType: return pp->getComputingType();
         case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->getComputeNodeAddress()); break;
         case FIELD_computingCapacity: return pp->getComputingCapacity();
@@ -5966,6 +5999,7 @@ void CgmpReportMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, 
     switch (field) {
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
         case FIELD_computeNodeId: pp->setComputeNodeId(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_computeNodePort: pp->setComputeNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_computingType: pp->setComputingType(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_computingCapacity: pp->setComputingCapacity(value.doubleValue()); break;
         case FIELD_availableStorage: pp->setAvailableStorage(value.doubleValue()); break;

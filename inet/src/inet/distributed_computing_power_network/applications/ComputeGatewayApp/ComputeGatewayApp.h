@@ -15,6 +15,7 @@ protected:
     struct CIB{
         int nodeId;
         L3Address nodeAddress;
+        int nodePort;
         int computingType;
         double computingCapacity;
         double availableStorage;
