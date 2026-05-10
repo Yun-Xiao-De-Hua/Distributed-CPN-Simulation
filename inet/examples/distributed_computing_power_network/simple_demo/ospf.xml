@@ -1,35 +1,15 @@
 <?xml version="1.0"?>
 <OSPFASConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="OSPF.xsd">
-  
-    <!-- 
-    <AddressRange address="10.0.0.0" mask="255.255.255.0" /> 
-    <AddressRange address="10.0.4.0" mask="255.255.255.0" /> 
-    <AddressRange address="10.0.6.0" mask="255.255.255.0" /> 
-    <AddressRange address="10.0.5.0" mask="255.255.255.0" /> 
-    <AddressRange address="10.0.7.0" mask="255.255.255.0" /> 
-      -->
-  
-  
   <Area id="0.0.0.0">
-
-	<!-- User Subnets -->
-	<AddressRange address="user1" mask="user1" />
-	
-	<!-- Compute Subnets -->
-	<AddressRange address="computeNode1" mask="computeNode1" />
-	<AddressRange address="computeNode2" mask="computeNode2" />
-	<AddressRange address="computeNode3" mask="computeNode3" />
-	<AddressRange address="computeNode4" mask="computeNode4" />
-	
-	<!-- Core Network Links -->
-	<AddressRange address="userGateway1>router1" mask="userGateway1>router1" />
-	<AddressRange address="router1>userGateway1" mask="router1>userGateway1" />
-	
-	<AddressRange address="router1>computeGateway1" mask="router1>computeGateway1" />
-	<AddressRange address="computeGateway1>router1" mask="computeGateway1>router1" />
-	<AddressRange address="router1>computeGateway2" mask="router1>computeGateway2" />
-	<AddressRange address="computeGateway2>router1" mask="computeGateway2>router1" />
-	
+    <!-- OSPF area address ranges are explicit subnets to avoid resolver ambiguity. -->
+    <AddressRange address="10.0.0.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.1.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.2.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.3.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.4.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.5.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.6.0" mask="255.255.255.0"/>
+    <AddressRange address="10.0.7.0" mask="255.255.255.0"/>
   </Area>
   
   
@@ -43,21 +23,21 @@
   <!-- 用户网关 -->
   <Router name="userGateway1" RFC1583Compatible="true">
     <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
-    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1" passive="true"/>    
+    <HostInterface ifName="ppp0" areaID="0.0.0.0" attachedHost="10.0.0.1" linkCost="1"/>
   </Router>
 
   <!-- 算力网关 1 -->
   <Router name="computeGateway1" RFC1583Compatible="true">
-    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1" passive="true"/>
+    <HostInterface ifName="ppp0" areaID="0.0.0.0" attachedHost="10.0.4.2" linkCost="1"/>
     <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
-    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="1" passive="true"/>        
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.0.6.2" linkCost="1"/>
   </Router>
 
   <!-- 算力网关 2 -->
   <Router name="computeGateway2" RFC1583Compatible="true">
-    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1" passive="true"/>
+    <HostInterface ifName="ppp0" areaID="0.0.0.0" attachedHost="10.0.5.2" linkCost="1"/>
     <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
-    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="1" passive="true"/>        
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.0.7.2" linkCost="1"/>
   </Router>
 
 </OSPFASConfig>
