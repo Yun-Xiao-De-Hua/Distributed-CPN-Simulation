@@ -21,6 +21,9 @@ protected:
         double availableStorage;
         double maxNetworkBandwidth;
         double computeCost;
+        simtime_t querySendTime;
+        simtime_t reportSendTime;
+        double networkDelayMs;
         simtime_t updateTime;
     };
 
@@ -37,6 +40,7 @@ protected:
     std::map<L3Address, std::vector<int>> multicastRoutesMap;  // 组播地址 -> 转发接口ID列表
 
     void parseMulticastRoutes(const char *routesConfig);
+    void logCurrentCib() const;
 
     cMessage *SelfCibUpdateEvent = nullptr;    // CIB状态更新自消息
     UdpSocket socket;

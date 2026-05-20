@@ -5142,7 +5142,7 @@ Register_Class(CgmpQueryMsg)
 
 CgmpQueryMsg::CgmpQueryMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(1));
+    this->setChunkLength(B(8));
 
 }
 
@@ -5166,18 +5166,21 @@ CgmpQueryMsg& CgmpQueryMsg::operator=(const CgmpQueryMsg& other)
 void CgmpQueryMsg::copy(const CgmpQueryMsg& other)
 {
     this->msgType = other.msgType;
+    this->sendTime = other.sendTime;
 }
 
 void CgmpQueryMsg::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::inet::FieldsChunk::parsimPack(b);
     doParsimPacking(b,this->msgType);
+    doParsimPacking(b,this->sendTime);
 }
 
 void CgmpQueryMsg::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::inet::FieldsChunk::parsimUnpack(b);
     doParsimUnpacking(b,this->msgType);
+    doParsimUnpacking(b,this->sendTime);
 }
 
 const char * CgmpQueryMsg::getMsgType() const
@@ -5191,12 +5194,24 @@ void CgmpQueryMsg::setMsgType(const char * msgType)
     this->msgType = msgType;
 }
 
+::omnetpp::simtime_t CgmpQueryMsg::getSendTime() const
+{
+    return this->sendTime;
+}
+
+void CgmpQueryMsg::setSendTime(::omnetpp::simtime_t sendTime)
+{
+    handleChange();
+    this->sendTime = sendTime;
+}
+
 class CgmpQueryMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
     mutable const char **propertyNames;
     enum FieldConstants {
         FIELD_msgType,
+        FIELD_sendTime,
     };
   public:
     CgmpQueryMsgDescriptor();
@@ -5263,7 +5278,7 @@ const char *CgmpQueryMsgDescriptor::getProperty(const char *propertyName) const
 int CgmpQueryMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 1+base->getFieldCount() : 1;
+    return base ? 2+base->getFieldCount() : 2;
 }
 
 unsigned int CgmpQueryMsgDescriptor::getFieldTypeFlags(int field) const
@@ -5276,8 +5291,9 @@ unsigned int CgmpQueryMsgDescriptor::getFieldTypeFlags(int field) const
     }
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,    // FIELD_msgType
+        FD_ISEDITABLE,    // FIELD_sendTime
     };
-    return (field >= 0 && field < 1) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 2) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CgmpQueryMsgDescriptor::getFieldName(int field) const
@@ -5290,8 +5306,9 @@ const char *CgmpQueryMsgDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "msgType",
+        "sendTime",
     };
-    return (field >= 0 && field < 1) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 2) ? fieldNames[field] : nullptr;
 }
 
 int CgmpQueryMsgDescriptor::findField(const char *fieldName) const
@@ -5299,6 +5316,7 @@ int CgmpQueryMsgDescriptor::findField(const char *fieldName) const
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
     int baseIndex = base ? base->getFieldCount() : 0;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 1;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -5312,8 +5330,9 @@ const char *CgmpQueryMsgDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "string",    // FIELD_msgType
+        "omnetpp::simtime_t",    // FIELD_sendTime
     };
-    return (field >= 0 && field < 1) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 2) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CgmpQueryMsgDescriptor::getFieldPropertyNames(int field) const
@@ -5397,6 +5416,7 @@ std::string CgmpQueryMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr objec
     CgmpQueryMsg *pp = omnetpp::fromAnyPtr<CgmpQueryMsg>(object); (void)pp;
     switch (field) {
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
+        case FIELD_sendTime: return simtime2string(pp->getSendTime());
         default: return "";
     }
 }
@@ -5414,6 +5434,7 @@ void CgmpQueryMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int 
     CgmpQueryMsg *pp = omnetpp::fromAnyPtr<CgmpQueryMsg>(object); (void)pp;
     switch (field) {
         case FIELD_msgType: pp->setMsgType((value)); break;
+        case FIELD_sendTime: pp->setSendTime(string2simtime(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CgmpQueryMsg'", field);
     }
 }
@@ -5429,6 +5450,7 @@ omnetpp::cValue CgmpQueryMsgDescriptor::getFieldValue(omnetpp::any_ptr object, i
     CgmpQueryMsg *pp = omnetpp::fromAnyPtr<CgmpQueryMsg>(object); (void)pp;
     switch (field) {
         case FIELD_msgType: return pp->getMsgType();
+        case FIELD_sendTime: return pp->getSendTime().dbl();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CgmpQueryMsg' as cValue -- field index out of range?", field);
     }
 }
@@ -5446,6 +5468,7 @@ void CgmpQueryMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, i
     CgmpQueryMsg *pp = omnetpp::fromAnyPtr<CgmpQueryMsg>(object); (void)pp;
     switch (field) {
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        case FIELD_sendTime: pp->setSendTime(value.doubleValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CgmpQueryMsg'", field);
     }
 }
@@ -5497,7 +5520,7 @@ Register_Class(CgmpReportMsg)
 
 CgmpReportMsg::CgmpReportMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(12 + 40));
+    this->setChunkLength(B(12 + 48));
 
 }
 
@@ -5529,6 +5552,7 @@ void CgmpReportMsg::copy(const CgmpReportMsg& other)
     this->availableStorage = other.availableStorage;
     this->maxNetworkBandwidth = other.maxNetworkBandwidth;
     this->computeCost = other.computeCost;
+    this->querySendTime = other.querySendTime;
     this->sendTime = other.sendTime;
 }
 
@@ -5544,6 +5568,7 @@ void CgmpReportMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->availableStorage);
     doParsimPacking(b,this->maxNetworkBandwidth);
     doParsimPacking(b,this->computeCost);
+    doParsimPacking(b,this->querySendTime);
     doParsimPacking(b,this->sendTime);
 }
 
@@ -5559,6 +5584,7 @@ void CgmpReportMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->availableStorage);
     doParsimUnpacking(b,this->maxNetworkBandwidth);
     doParsimUnpacking(b,this->computeCost);
+    doParsimUnpacking(b,this->querySendTime);
     doParsimUnpacking(b,this->sendTime);
 }
 
@@ -5661,6 +5687,17 @@ void CgmpReportMsg::setComputeCost(double computeCost)
     this->computeCost = computeCost;
 }
 
+::omnetpp::simtime_t CgmpReportMsg::getQuerySendTime() const
+{
+    return this->querySendTime;
+}
+
+void CgmpReportMsg::setQuerySendTime(::omnetpp::simtime_t querySendTime)
+{
+    handleChange();
+    this->querySendTime = querySendTime;
+}
+
 ::omnetpp::simtime_t CgmpReportMsg::getSendTime() const
 {
     return this->sendTime;
@@ -5686,6 +5723,7 @@ class CgmpReportMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_availableStorage,
         FIELD_maxNetworkBandwidth,
         FIELD_computeCost,
+        FIELD_querySendTime,
         FIELD_sendTime,
     };
   public:
@@ -5753,7 +5791,7 @@ const char *CgmpReportMsgDescriptor::getProperty(const char *propertyName) const
 int CgmpReportMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 10+base->getFieldCount() : 10;
+    return base ? 11+base->getFieldCount() : 11;
 }
 
 unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
@@ -5774,9 +5812,10 @@ unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_availableStorage
         FD_ISEDITABLE,    // FIELD_maxNetworkBandwidth
         FD_ISEDITABLE,    // FIELD_computeCost
+        FD_ISEDITABLE,    // FIELD_querySendTime
         FD_ISEDITABLE,    // FIELD_sendTime
     };
-    return (field >= 0 && field < 10) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 11) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CgmpReportMsgDescriptor::getFieldName(int field) const
@@ -5797,9 +5836,10 @@ const char *CgmpReportMsgDescriptor::getFieldName(int field) const
         "availableStorage",
         "maxNetworkBandwidth",
         "computeCost",
+        "querySendTime",
         "sendTime",
     };
-    return (field >= 0 && field < 10) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 11) ? fieldNames[field] : nullptr;
 }
 
 int CgmpReportMsgDescriptor::findField(const char *fieldName) const
@@ -5815,7 +5855,8 @@ int CgmpReportMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 6;
     if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 7;
     if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "querySendTime") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 10;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -5837,9 +5878,10 @@ const char *CgmpReportMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_availableStorage
         "double",    // FIELD_maxNetworkBandwidth
         "double",    // FIELD_computeCost
+        "omnetpp::simtime_t",    // FIELD_querySendTime
         "omnetpp::simtime_t",    // FIELD_sendTime
     };
-    return (field >= 0 && field < 10) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 11) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CgmpReportMsgDescriptor::getFieldPropertyNames(int field) const
@@ -5931,6 +5973,7 @@ std::string CgmpReportMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obje
         case FIELD_availableStorage: return double2string(pp->getAvailableStorage());
         case FIELD_maxNetworkBandwidth: return double2string(pp->getMaxNetworkBandwidth());
         case FIELD_computeCost: return double2string(pp->getComputeCost());
+        case FIELD_querySendTime: return simtime2string(pp->getQuerySendTime());
         case FIELD_sendTime: return simtime2string(pp->getSendTime());
         default: return "";
     }
@@ -5956,6 +5999,7 @@ void CgmpReportMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int
         case FIELD_availableStorage: pp->setAvailableStorage(string2double(value)); break;
         case FIELD_maxNetworkBandwidth: pp->setMaxNetworkBandwidth(string2double(value)); break;
         case FIELD_computeCost: pp->setComputeCost(string2double(value)); break;
+        case FIELD_querySendTime: pp->setQuerySendTime(string2simtime(value)); break;
         case FIELD_sendTime: pp->setSendTime(string2simtime(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CgmpReportMsg'", field);
     }
@@ -5980,6 +6024,7 @@ omnetpp::cValue CgmpReportMsgDescriptor::getFieldValue(omnetpp::any_ptr object, 
         case FIELD_availableStorage: return pp->getAvailableStorage();
         case FIELD_maxNetworkBandwidth: return pp->getMaxNetworkBandwidth();
         case FIELD_computeCost: return pp->getComputeCost();
+        case FIELD_querySendTime: return pp->getQuerySendTime().dbl();
         case FIELD_sendTime: return pp->getSendTime().dbl();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CgmpReportMsg' as cValue -- field index out of range?", field);
     }
@@ -6005,6 +6050,7 @@ void CgmpReportMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, 
         case FIELD_availableStorage: pp->setAvailableStorage(value.doubleValue()); break;
         case FIELD_maxNetworkBandwidth: pp->setMaxNetworkBandwidth(value.doubleValue()); break;
         case FIELD_computeCost: pp->setComputeCost(value.doubleValue()); break;
+        case FIELD_querySendTime: pp->setQuerySendTime(value.doubleValue()); break;
         case FIELD_sendTime: pp->setSendTime(value.doubleValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CgmpReportMsg'", field);
     }

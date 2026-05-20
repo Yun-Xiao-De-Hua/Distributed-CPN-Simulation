@@ -57,7 +57,7 @@ void ComputeNodeApp::initialize(int stage)
 }
 
 // 发送组成员报告
-void ComputeNodeApp::sendCgmpReport()
+void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
 {
     EV_INFO << "Start sending CGMP_Report...\n";
 
@@ -70,6 +70,7 @@ void ComputeNodeApp::sendCgmpReport()
     payload->setAvailableStorage(availableStorage);
     payload->setMaxNetworkBandwidth(maxNetworkBandwidth);
     payload->setComputeCost(computeCost);
+    payload->setQuerySendTime(querySendTime);
     payload->setSendTime(simTime());
 
     std::string messageType = payload->getMsgType();
@@ -90,6 +91,7 @@ void ComputeNodeApp::sendCgmpReport()
             << ", computeCost=" << computeCost << " CNY/s"
             << ", availableStorage=" << availableStorage << " MB"
             << ", maxNetworkBandwidth=" << maxNetworkBandwidth << " Mbps"
+            << ", querySendTime=" << querySendTime
             << ", sendTime=" << simTime() << "\n";
 }
 
@@ -117,7 +119,13 @@ void ComputeNodeApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
     if (std::strcmp(packet->getName(), "CGMP_Query") == 0) {
         EV_INFO << "Received CGMP_Query. To send CGMP_Report...\n";
-        sendCgmpReport();
+        const auto& queryInfo = packet->popAtFront<CgmpQueryMsg>();
+        if (queryInfo == nullptr) {
+            EV_WARN << "ComputeNode" << computeNodeId << " received CGMP_Query without CgmpQueryMsg payload." << endl;
+            delete packet;
+            return;
+        }
+        sendCgmpReport(queryInfo->getSendTime());
         delete packet;
     }
     else if (std::strcmp(packet->getName(), "TASK_DATA") == 0 || std::strcmp(packet->getName(), "TaskDataMsg") == 0) {

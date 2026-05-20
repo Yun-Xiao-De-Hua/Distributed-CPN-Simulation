@@ -209,8 +209,9 @@ class RespSummaryMsg extends inet::FieldsChunk {
 
 class CgmpQueryMsg extends inet::FieldsChunk {
     string msgType = "CGMP_Query";    
+    simtime_t sendTime;          // 查询发送时间戳
     
-    chunkLength = B(1); // 在构造函数中直接赋值	    
+    chunkLength = B(8); // 在构造函数中直接赋值
 }
 
 class CgmpReportMsg extends inet::FieldsChunk {
@@ -224,9 +225,10 @@ class CgmpReportMsg extends inet::FieldsChunk {
     double availableStorage;     // 可用存储(MB)
     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
     double computeCost;          // 节点使用单价(￥/s)
+    simtime_t querySendTime;     // 查询发送时间戳
     simtime_t sendTime;          // 时间戳
     
-    chunkLength = B(12 + 40); // 在构造函数中直接赋值
+    chunkLength = B(12 + 48); // 在构造函数中直接赋值
 }
 
 

@@ -6,6 +6,7 @@
 #include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include "ComputeGatewayApp.h"
@@ -94,7 +95,7 @@ void ComputeGatewayApp::handleMessageWhenUp(cMessage *msg)
 }
 
 // 发送组成员查询消息
-void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
+void ComputeGatewayApp::sendCgmpQuery()
 {
     EV_INFO << "Start Sending CGMP_Query for CIB updating..." << std::endl;
 
@@ -105,6 +106,7 @@ void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
             EV_WARN << "No forwarding interfaces configured for multicast group " << cpGroupAddress
                     << ", using default sendTo" << endl;
             auto payload = makeShared<CgmpQueryMsg>();
+            payload->setSendTime(simTime());
             std::string messageType = payload->getMsgType();
             Packet *pkt = new Packet(messageType.c_str());
             pkt->insertAtBack(payload);
@@ -119,6 +121,7 @@ void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
 
         for (int interfaceId : interfaceIds) {
             auto payload = makeShared<CgmpQueryMsg>();
+            payload->setSendTime(simTime());
             std::string messageType = payload->getMsgType();
             Packet *pkt = new Packet(messageType.c_str());
             pkt->insertAtBack(payload);
@@ -130,6 +133,47 @@ void ComputeGatewayApp::ComputeGatewayApp::sendCgmpQuery()
 
             EV_INFO << "CGMP_Query sent to group " << cpGroupAddress
                     << " via interfaceId=" << interfaceId << endl;
+        }
+    }
+}
+
+void ComputeGatewayApp::logCurrentCib() const
+{
+    EV_INFO << "Current CIB on ComputeGateway" << computeGatewayId << ":" << std::endl;
+
+    if (cibInfoMap.empty()) {
+        EV_INFO << "  <empty>" << std::endl;
+        return;
+    }
+
+    std::vector<int> computingTypes;
+    for (const auto& typeEntry : cibInfoMap)
+        computingTypes.push_back(typeEntry.first);
+    std::sort(computingTypes.begin(), computingTypes.end());
+
+    for (int computingType : computingTypes) {
+        const auto& groupMap = cibInfoMap.at(computingType);
+        std::vector<int> nodeIds;
+        for (const auto& nodeEntry : groupMap)
+            nodeIds.push_back(nodeEntry.first);
+        std::sort(nodeIds.begin(), nodeIds.end());
+
+        for (int nodeId : nodeIds) {
+            const CIB& cib = groupMap.at(nodeId);
+            EV_INFO << "  CIBEntry{"
+                    << "computingType=" << cib.computingType
+                    << ", nodeId=" << cib.nodeId
+                    << ", address=" << cib.nodeAddress
+                    << ", port=" << cib.nodePort
+                    << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
+                    << ", computeCost=" << cib.computeCost << " CNY/s"
+                    << ", availableStorage=" << cib.availableStorage << " MB"
+                    << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                    << ", querySendTime=" << cib.querySendTime
+                    << ", reportSendTime=" << cib.reportSendTime
+                    << ", networkDelay=" << cib.networkDelayMs << " ms"
+                    << ", updateTime=" << cib.updateTime
+                    << "}" << std::endl;
         }
     }
 }
@@ -150,6 +194,18 @@ void ComputeGatewayApp::updateCib(Packet *packet)
         return;
     }
 
+    simtime_t receiveTime = simTime();
+    simtime_t querySendTime = reportInfo->getQuerySendTime();
+    double networkDelayMs = 0;
+    if (receiveTime < querySendTime) {
+        EV_WARN << "CGMP_Report has a future querySendTime=" << querySendTime
+                << ", receiveTime=" << receiveTime
+                << "; networkDelay is clamped to 0 ms." << std::endl;
+    }
+    else {
+        networkDelayMs = (receiveTime - querySendTime).dbl() * 1000.0;
+    }
+
     // 算力组 CIB 更新
     auto& groupMap = cibInfoMap[reportInfo->getComputingType()];
     CIB& cib = groupMap[reportInfo->getComputeNodeId()];
@@ -161,7 +217,10 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.availableStorage = reportInfo->getAvailableStorage();
     cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
     cib.computeCost = reportInfo->getComputeCost();
-    cib.updateTime = reportInfo->getSendTime();
+    cib.querySendTime = querySendTime;
+    cib.reportSendTime = reportInfo->getSendTime();
+    cib.networkDelayMs = networkDelayMs;
+    cib.updateTime = receiveTime;
 
     EV_INFO << "CIB has been updated: computingType=" << cib.computingType
             << ", nodeId=" << cib.nodeId
@@ -171,7 +230,10 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", computeCost=" << cib.computeCost << " CNY/s"
             << ", availableStorage=" << cib.availableStorage << " MB"
             << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+            << ", networkDelay=" << cib.networkDelayMs << " ms"
             << ", updateTime=" << cib.updateTime << std::endl;
+
+    logCurrentCib();
 
     delete packet;
 }

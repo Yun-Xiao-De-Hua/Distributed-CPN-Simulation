@@ -81,7 +81,7 @@ protected:
     virtual void socketClosed(UdpSocket *socket) override;
 
     // 发送组成员报告消息
-    void sendCgmpReport();
+    void sendCgmpReport(simtime_t querySendTime);
     void processTaskData(Packet *packet);
     void enqueueTask(const Ptr<const TaskDataMsg>& taskData);
     void tryStartNextTask();
