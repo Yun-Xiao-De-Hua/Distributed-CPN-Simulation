@@ -21,6 +21,7 @@ protected:
         double availableStorage;
         double maxNetworkBandwidth;
         double computeCost;
+        simtime_t queueingTime;
         simtime_t querySendTime;
         simtime_t reportSendTime;
         double networkDelayMs;

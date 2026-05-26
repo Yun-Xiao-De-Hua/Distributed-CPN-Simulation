@@ -169,6 +169,7 @@ void ComputeGatewayApp::logCurrentCib() const
                     << ", computeCost=" << cib.computeCost << " CNY/s"
                     << ", availableStorage=" << cib.availableStorage << " MB"
                     << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                    << ", queueingTime=" << cib.queueingTime
                     << ", querySendTime=" << cib.querySendTime
                     << ", reportSendTime=" << cib.reportSendTime
                     << ", networkDelay=" << cib.networkDelayMs << " ms"
@@ -217,6 +218,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.availableStorage = reportInfo->getAvailableStorage();
     cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
     cib.computeCost = reportInfo->getComputeCost();
+    cib.queueingTime = reportInfo->getQueueingTime();
     cib.querySendTime = querySendTime;
     cib.reportSendTime = reportInfo->getSendTime();
     cib.networkDelayMs = networkDelayMs;
@@ -230,6 +232,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", computeCost=" << cib.computeCost << " CNY/s"
             << ", availableStorage=" << cib.availableStorage << " MB"
             << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+            << ", queueingTime=" << cib.queueingTime
             << ", networkDelay=" << cib.networkDelayMs << " ms"
             << ", updateTime=" << cib.updateTime << std::endl;
 

@@ -883,10 +883,11 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpQueryMsg& obj) {obj.p
  *     double availableStorage;     // 可用存储(MB)
  *     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
  *     double computeCost;          // 节点使用单价(￥/s)
+ *     simtime_t queueingTime;      // 节点等待队列预计排队时间
  *     simtime_t querySendTime;     // 查询发送时间戳
  *     simtime_t sendTime;          // 时间戳
  * 
- *     chunkLength = B(12 + 48); // 在构造函数中直接赋值
+ *     chunkLength = B(12 + 56); // 在构造函数中直接赋值
  * }
  * 
  * 
@@ -907,6 +908,7 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
     double availableStorage = 0;
     double maxNetworkBandwidth = 0;
     double computeCost = 0;
+    ::omnetpp::simtime_t queueingTime = SIMTIME_ZERO;
     ::omnetpp::simtime_t querySendTime = SIMTIME_ZERO;
     ::omnetpp::simtime_t sendTime = SIMTIME_ZERO;
 
@@ -953,6 +955,9 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
     virtual double getComputeCost() const;
     virtual void setComputeCost(double computeCost);
 
+    virtual ::omnetpp::simtime_t getQueueingTime() const;
+    virtual void setQueueingTime(::omnetpp::simtime_t queueingTime);
+
     virtual ::omnetpp::simtime_t getQuerySendTime() const;
     virtual void setQuerySendTime(::omnetpp::simtime_t querySendTime);
 
@@ -964,7 +969,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpReportMsg& obj) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpReportMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:239</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:240</tt> by opp_msgtool.
  * <pre>
  * enum TaskFailureCode
  * {
@@ -988,7 +993,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskFailureCode& e) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskFailureCode& e) { int n; b->unpack(n); e = static_cast<TaskFailureCode>(n); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:247</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:248</tt> by opp_msgtool.
  * <pre>
  * class TaskCompletionMsg extends inet::FieldsChunk
  * {

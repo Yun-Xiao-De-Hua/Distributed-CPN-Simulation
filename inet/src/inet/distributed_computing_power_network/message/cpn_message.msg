@@ -225,10 +225,11 @@ class CgmpReportMsg extends inet::FieldsChunk {
     double availableStorage;     // 可用存储(MB)
     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
     double computeCost;          // 节点使用单价(￥/s)
+    simtime_t queueingTime;      // 节点等待队列预计排队时间
     simtime_t querySendTime;     // 查询发送时间戳
     simtime_t sendTime;          // 时间戳
     
-    chunkLength = B(12 + 48); // 在构造函数中直接赋值
+    chunkLength = B(12 + 56); // 在构造函数中直接赋值
 }
 
 

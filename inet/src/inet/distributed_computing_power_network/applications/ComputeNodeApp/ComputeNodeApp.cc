@@ -61,6 +61,8 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
 {
     EV_INFO << "Start sending CGMP_Report...\n";
 
+    simtime_t queueingTime = computeQueueingTime();
+
     auto payload = makeShared<CgmpReportMsg>();
     payload->setComputeNodeId(computeNodeId);
     payload->setComputeNodePort(localPort);
@@ -70,6 +72,7 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
     payload->setAvailableStorage(availableStorage);
     payload->setMaxNetworkBandwidth(maxNetworkBandwidth);
     payload->setComputeCost(computeCost);
+    payload->setQueueingTime(queueingTime);
     payload->setQuerySendTime(querySendTime);
     payload->setSendTime(simTime());
 
@@ -91,8 +94,33 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
             << ", computeCost=" << computeCost << " CNY/s"
             << ", availableStorage=" << availableStorage << " MB"
             << ", maxNetworkBandwidth=" << maxNetworkBandwidth << " Mbps"
+            << ", queueingTime=" << queueingTime
             << ", querySendTime=" << querySendTime
             << ", sendTime=" << simTime() << "\n";
+}
+
+simtime_t ComputeNodeApp::computeQueueingTime() const
+{
+    if (computingCapacity <= 0)
+        return SIMTIME_ZERO;
+
+    simtime_t queueingTime = SIMTIME_ZERO;
+    if (busy && activeTask.taskId >= 0 && activeTask.computingAmount > 0) {
+        simtime_t executionTime = SimTime(activeTask.computingAmount / computingCapacity);
+        simtime_t elapsedExecutionTime = simTime() - activeTask.executionStartTime;
+        simtime_t remainingExecutionTime = executionTime - elapsedExecutionTime;
+        if (remainingExecutionTime > SIMTIME_ZERO)
+            queueingTime += remainingExecutionTime;
+    }
+
+    std::queue<QueuedTask> pendingTasks = taskQueue;
+    while (!pendingTasks.empty()) {
+        const QueuedTask& task = pendingTasks.front();
+        if (task.computingAmount > 0)
+            queueingTime += SimTime(task.computingAmount / computingCapacity);
+        pendingTasks.pop();
+    }
+    return queueingTime;
 }
 
 

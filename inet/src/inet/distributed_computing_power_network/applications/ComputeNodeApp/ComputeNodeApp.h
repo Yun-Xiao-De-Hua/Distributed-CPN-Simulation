@@ -82,6 +82,7 @@ protected:
 
     // 发送组成员报告消息
     void sendCgmpReport(simtime_t querySendTime);
+    simtime_t computeQueueingTime() const;
     void processTaskData(Packet *packet);
     void enqueueTask(const Ptr<const TaskDataMsg>& taskData);
     void tryStartNextTask();
