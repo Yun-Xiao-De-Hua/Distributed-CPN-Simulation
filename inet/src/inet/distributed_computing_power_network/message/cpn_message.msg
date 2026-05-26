@@ -31,8 +31,11 @@ class CprpRequestMsg extends inet::FieldsChunk {
     // REQ 专用字段
     string msgType = "CPRP_REQ";    
 	L3Address userGatewayAddress;
+    L3Address userNodeAddress;       // 产生任务的用户节点地址
+    simtime_t userAccessRtt;         // 用户节点到用户网关的估计往返网络时延
+    simtime_t userGatewayForwardTime; // 用户网关转发 CPRP_REQ 的时间戳
  
- 	// 任务数据参数
+    // 任务数据参数
     simtime_t generationTime;   // 任务产生的时刻
     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
     double requiredStorage;     // 任务所需存储空间(MB)
@@ -42,7 +45,7 @@ class CprpRequestMsg extends inet::FieldsChunk {
     double budget;              // 预算
     double userMaxBandwidth;    // 传输带宽(Mbps)
     
-    chunkLength = B(12 + 40); // 在构造函数中直接赋值
+    chunkLength = B(28 + 56); // 在构造函数中直接赋值
 }
 
 class CprpResponseMsg extends inet::FieldsChunk {

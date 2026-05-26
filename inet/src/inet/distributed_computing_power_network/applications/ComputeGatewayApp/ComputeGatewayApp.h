@@ -28,6 +28,12 @@ protected:
         simtime_t updateTime;
     };
 
+    struct CandidateEvaluation {
+        CIB cib;
+        double userGatewayToComputeGatewayRttMs = 0;
+        double userToComputeNodeRttMs = 0;
+    };
+
     int computeGatewayId;
 
     int localPort;
@@ -42,6 +48,7 @@ protected:
 
     void parseMulticastRoutes(const char *routesConfig);
     void logCurrentCib() const;
+    std::vector<CandidateEvaluation> evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap) const;
 
     cMessage *SelfCibUpdateEvent = nullptr;    // CIB状态更新自消息
     UdpSocket socket;

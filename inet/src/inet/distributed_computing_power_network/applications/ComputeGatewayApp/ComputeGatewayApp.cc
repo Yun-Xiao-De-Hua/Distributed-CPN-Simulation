@@ -179,6 +179,55 @@ void ComputeGatewayApp::logCurrentCib() const
     }
 }
 
+std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap) const
+{
+    std::vector<CandidateEvaluation> candidates;
+
+    simtime_t userGatewayToComputeGatewayOneWay = simTime() - requestInfo.getUserGatewayForwardTime();
+    if (userGatewayToComputeGatewayOneWay < SIMTIME_ZERO) {
+        EV_WARN << "CPRP_REQ has a future userGatewayForwardTime=" << requestInfo.getUserGatewayForwardTime()
+                << "; userGatewayToComputeGatewayRtt is clamped to 0 ms." << std::endl;
+        userGatewayToComputeGatewayOneWay = SIMTIME_ZERO;
+    }
+
+    double userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayOneWay.dbl() * 2000.0;
+    double userAccessRttMs = requestInfo.getUserAccessRtt().dbl() * 1000.0;
+
+    std::vector<int> nodeIds;
+    for (const auto& entry : groupMap)
+        nodeIds.push_back(entry.first);
+    std::sort(nodeIds.begin(), nodeIds.end());
+
+    EV_INFO << "Candidate RTT evaluation for task(" << requestInfo.getUserId() << "," << requestInfo.getTaskId()
+            << ") userNode=" << requestInfo.getUserNodeAddress()
+            << ", userAccessRtt=" << userAccessRttMs << " ms"
+            << ", userGatewayToComputeGatewayRtt=" << userGatewayToComputeGatewayRttMs << " ms" << std::endl;
+
+    for (int nodeId : nodeIds) {
+        const CIB& cib = groupMap.at(nodeId);
+        CandidateEvaluation evaluation;
+        evaluation.cib = cib;
+        evaluation.userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayRttMs;
+        evaluation.userToComputeNodeRttMs = userAccessRttMs + userGatewayToComputeGatewayRttMs + cib.networkDelayMs;
+        candidates.push_back(evaluation);
+
+        EV_INFO << "  Candidate{"
+                << "nodeId=" << cib.nodeId
+                << ", address=" << cib.nodeAddress
+                << ", port=" << cib.nodePort
+                << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
+                << ", queueingTime=" << cib.queueingTime
+                << ", computeCost=" << cib.computeCost << " CNY/s"
+                << ", availableStorage=" << cib.availableStorage << " MB"
+                << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                << ", computeGatewayToComputeNodeRtt=" << cib.networkDelayMs << " ms"
+                << ", userToComputeNodeRtt=" << evaluation.userToComputeNodeRttMs << " ms"
+                << "}" << std::endl;
+    }
+
+    return candidates;
+}
+
 // 更新CIB
 void ComputeGatewayApp::updateCib(Packet *packet)
 {
@@ -269,6 +318,14 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
         EV_WARN << "ComputeGateway" << computeGatewayId
                 << " has an empty CIB group for computingType: "
                 << requestInfo->getComputingType() << std::endl;
+        delete packet;
+        return;
+    }
+
+    std::vector<CandidateEvaluation> candidates = evaluateCandidateNodes(*requestInfo, groupMap);
+    if (candidates.empty()) {
+        EV_WARN << "ComputeGateway" << computeGatewayId << " has no candidate evaluation result for task("
+                << requestInfo->getUserId() << "," << requestInfo->getTaskId() << ")." << std::endl;
         delete packet;
         return;
     }

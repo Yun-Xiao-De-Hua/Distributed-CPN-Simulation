@@ -180,10 +180,21 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     }
 
     // 创建算力请求载荷
+    L3Address userNodeAddress = userNodeIpMap.at(requestInfo->getUserId());
+    simtime_t userAccessOneWayDelay = simTime() - requestInfo->getGenerationTime();
+    if (userAccessOneWayDelay < SIMTIME_ZERO) {
+        EV_WARN << "TaskRequestMsg generationTime is later than UserGateway receive time; userAccessRtt is clamped to 0." << endl;
+        userAccessOneWayDelay = SIMTIME_ZERO;
+    }
+    simtime_t userAccessRtt = userAccessOneWayDelay * 2;
+
     auto payload = makeShared<CprpRequestMsg>();
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
     payload->setUserGatewayAddress(localAddress);
+    payload->setUserNodeAddress(userNodeAddress);
+    payload->setUserAccessRtt(userAccessRtt);
+    payload->setUserGatewayForwardTime(simTime());
     payload->setGenerationTime(requestInfo->getGenerationTime());
     payload->setComputingType(requestInfo->getComputingType());
     payload->setRequiredStorage(requestInfo->getRequiredStorage());
@@ -194,7 +205,7 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     payload->setUserMaxBandwidth(requestInfo->getUserMaxBandwidth());
 
     RequestContext requestContext;
-    requestContext.userNodeAddress = userNodeIpMap.at(requestInfo->getUserId());
+    requestContext.userNodeAddress = userNodeAddress;
     requestContext.generationTime = requestInfo->getGenerationTime();
     requestContext.computingType = requestInfo->getComputingType();
     requestContext.requiredStorage = requestInfo->getRequiredStorage();
@@ -230,6 +241,9 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     
     EV_INFO << "Forwarding CPRP request for task(" << payload->getUserId() << "-" << payload->getTaskId() 
             << ") computingType=" << computingType 
+            << ", userNodeAddress=" << userNodeAddress
+            << ", userAccessRtt=" << userAccessRtt
+            << ", userGatewayForwardTime=" << payload->getUserGatewayForwardTime()
             << " to multicast group " << groupAddr 
             << " via " << interfaceIds.size() << " interface(s)" << endl;
 
