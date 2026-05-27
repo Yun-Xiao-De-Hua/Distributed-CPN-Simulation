@@ -7,6 +7,7 @@
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <sstream>
 #include "ComputeGatewayApp.h"
@@ -165,6 +166,7 @@ void ComputeGatewayApp::logCurrentCib() const
                     << ", nodeId=" << cib.nodeId
                     << ", address=" << cib.nodeAddress
                     << ", port=" << cib.nodePort
+                    << ", interfaceId=" << cib.interfaceId
                     << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
                     << ", computeCost=" << cib.computeCost << " CNY/s"
                     << ", availableStorage=" << cib.availableStorage << " MB"
@@ -179,9 +181,10 @@ void ComputeGatewayApp::logCurrentCib() const
     }
 }
 
-std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap) const
+std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap)
 {
     std::vector<CandidateEvaluation> candidates;
+    IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
 
     simtime_t userGatewayToComputeGatewayOneWay = simTime() - requestInfo.getUserGatewayForwardTime();
     if (userGatewayToComputeGatewayOneWay < SIMTIME_ZERO) {
@@ -192,6 +195,7 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
 
     double userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayOneWay.dbl() * 2000.0;
     double userAccessRttMs = requestInfo.getUserAccessRtt().dbl() * 1000.0;
+    double userMaxBandwidthMbps = requestInfo.getUserMaxBandwidth();
 
     std::vector<int> nodeIds;
     for (const auto& entry : groupMap)
@@ -209,23 +213,88 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
         evaluation.cib = cib;
         evaluation.userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayRttMs;
         evaluation.userToComputeNodeRttMs = userAccessRttMs + userGatewayToComputeGatewayRttMs + cib.networkDelayMs;
+
+        NetworkInterface *nodeInterface = ift != nullptr && cib.interfaceId >= 0 ? ift->getInterfaceById(cib.interfaceId) : nullptr;
+        double gatewayLinkBandwidthBps = nodeInterface != nullptr ? nodeInterface->getDatarate() : 0;
+        evaluation.gatewayLinkBandwidthMbps = gatewayLinkBandwidthBps / 1e6;
+
+        evaluation.transmissionDelay = userMaxBandwidthMbps > 0 ? requestInfo.getTransferAmount() * 8.0 / userMaxBandwidthMbps : std::numeric_limits<double>::infinity();
+        evaluation.propagationDelay = evaluation.userToComputeNodeRttMs / 1000.0;
+        evaluation.computationDelay = cib.computingCapacity > 0 ? requestInfo.getComputingAmount() / cib.computingCapacity : std::numeric_limits<double>::infinity();
+        evaluation.queueingDelay = cib.queueingTime.dbl();
+        evaluation.totalDelay = evaluation.transmissionDelay + evaluation.propagationDelay + evaluation.computationDelay + evaluation.queueingDelay;
+
+        if (cib.computingType != requestInfo.getComputingType())
+            evaluation.rejectReason = "computing type mismatch";
+        else if (requestInfo.getTransferAmount() >= cib.availableStorage)
+            evaluation.rejectReason = "task data size exceeds available storage";
+        else if (gatewayLinkBandwidthBps <= 0)
+            evaluation.rejectReason = "gateway link bandwidth is unavailable";
+        else if (evaluation.gatewayLinkBandwidthMbps < userMaxBandwidthMbps)
+            evaluation.rejectReason = "gateway link bandwidth is lower than user maximum bandwidth";
+        else if (cib.maxNetworkBandwidth < userMaxBandwidthMbps)
+            evaluation.rejectReason = "compute node network bandwidth is lower than user maximum bandwidth";
+        else if (evaluation.totalDelay >= requestInfo.getTotalDelayRequirement().dbl())
+            evaluation.rejectReason = "total delay exceeds user delay tolerance";
+        else
+            evaluation.eligible = true;
+
         candidates.push_back(evaluation);
 
         EV_INFO << "  Candidate{"
                 << "nodeId=" << cib.nodeId
                 << ", address=" << cib.nodeAddress
                 << ", port=" << cib.nodePort
+                << ", interfaceId=" << cib.interfaceId
                 << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
                 << ", queueingTime=" << cib.queueingTime
                 << ", computeCost=" << cib.computeCost << " CNY/s"
                 << ", availableStorage=" << cib.availableStorage << " MB"
                 << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                << ", gatewayLinkBandwidth=" << evaluation.gatewayLinkBandwidthMbps << " Mbps"
                 << ", computeGatewayToComputeNodeRtt=" << cib.networkDelayMs << " ms"
                 << ", userToComputeNodeRtt=" << evaluation.userToComputeNodeRttMs << " ms"
+                << ", transmissionDelay=" << evaluation.transmissionDelay << " s"
+                << ", propagationDelay=" << evaluation.propagationDelay << " s"
+                << ", computationDelay=" << evaluation.computationDelay << " s"
+                << ", queueingDelay=" << evaluation.queueingDelay << " s"
+                << ", totalDelay=" << evaluation.totalDelay << " s"
+                << ", delayTolerance=" << requestInfo.getTotalDelayRequirement() << " s"
+                << ", eligible=" << (evaluation.eligible ? "true" : "false")
+                << (evaluation.eligible ? "" : (std::string(", rejectReason=") + evaluation.rejectReason))
                 << "}" << std::endl;
     }
 
     return candidates;
+}
+
+bool ComputeGatewayApp::selectBestCandidate(const std::vector<CandidateEvaluation>& candidates, CandidateEvaluation& bestCandidate) const
+{
+    bool found = false;
+    double bestDelay = std::numeric_limits<double>::infinity();
+
+    for (const auto& candidate : candidates) {
+        if (!candidate.eligible)
+            continue;
+        if (candidate.totalDelay < bestDelay) {
+            bestDelay = candidate.totalDelay;
+            bestCandidate = candidate;
+            found = true;
+        }
+    }
+
+    if (found) {
+        EV_INFO << "Selected compute node candidate: nodeId=" << bestCandidate.cib.nodeId
+                << ", address=" << bestCandidate.cib.nodeAddress
+                << ", port=" << bestCandidate.cib.nodePort
+                << ", totalDelay=" << bestCandidate.totalDelay << " s"
+                << ", userToComputeNodeRtt=" << bestCandidate.userToComputeNodeRttMs << " ms" << std::endl;
+    }
+    else {
+        EV_WARN << "No eligible compute node candidate found." << std::endl;
+    }
+
+    return found;
 }
 
 // 更新CIB
@@ -263,6 +332,8 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.computingType = reportInfo->getComputingType();
     cib.nodeAddress = reportInfo->getComputeNodeAddress();
     cib.nodePort = reportInfo->getComputeNodePort();
+    auto interfaceInd = packet->findTag<InterfaceInd>();
+    cib.interfaceId = interfaceInd != nullptr ? interfaceInd->getInterfaceId() : -1;
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
     cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
@@ -277,6 +348,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", nodeId=" << cib.nodeId
             << ", address=" << cib.nodeAddress
             << ", port=" << cib.nodePort
+            << ", interfaceId=" << cib.interfaceId
             << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
             << ", computeCost=" << cib.computeCost << " CNY/s"
             << ", availableStorage=" << cib.availableStorage << " MB"
@@ -330,14 +402,13 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
         return;
     }
 
-    int selectedNodeId = 1; // TODO: replace with a real selection algorithm
+    CandidateEvaluation bestCandidate;
+    if (!selectBestCandidate(candidates, bestCandidate)) {
+        delete packet;
+        return;
+    }
 
-    CIB destNodeInfo;
-    auto selectedIt = groupMap.find(selectedNodeId);
-    if (selectedIt != groupMap.end())
-        destNodeInfo = selectedIt->second;
-    else
-        destNodeInfo = groupMap.begin()->second;
+    CIB destNodeInfo = bestCandidate.cib;
 
     auto payload = makeShared<CprpResponseMsg>();
     payload->setUserId(requestInfo->getUserId());
@@ -358,9 +429,12 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     payload->setLastHopSendTime(simTime());
     payload->setLastHopAddress(localAddress);
-    // 网关侧尚未引入更细粒度的固定时延模型，先以 0 作为累计时延初值，
-    // 后续由沿途网络层节点继续叠加路径相关时延。
-    payload->setAccumulatedDelay(SIMTIME_ZERO);
+    double initialAccumulatedDelay = bestCandidate.totalDelay - bestCandidate.userGatewayToComputeGatewayRttMs / 1000.0;
+    if (initialAccumulatedDelay < 0)
+        initialAccumulatedDelay = 0;
+    // RESP 返回用户网关时，网络层会继续叠加算力网关到用户网关的路径 RTT。
+    // 因此这里写入的初值需要扣除这段 RTT，避免与沿途 CPRP 处理重复计入。
+    payload->setAccumulatedDelay(SimTime(initialAccumulatedDelay));
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());

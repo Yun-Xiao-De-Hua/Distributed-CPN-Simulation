@@ -2,6 +2,7 @@
 #define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_APPLICATIONS_COMPUTEGATEWAYAPP_COMPUTEGATEWAYAPP_H_
 
 #include<vector>
+#include <string>
 #include <unordered_map>
 #include <omnetpp.h>
 #include "inet/applications/base/ApplicationBase.h"
@@ -16,6 +17,7 @@ protected:
         int nodeId;
         L3Address nodeAddress;
         int nodePort;
+        int interfaceId;
         int computingType;
         double computingCapacity;
         double availableStorage;
@@ -32,6 +34,14 @@ protected:
         CIB cib;
         double userGatewayToComputeGatewayRttMs = 0;
         double userToComputeNodeRttMs = 0;
+        double transmissionDelay = 0;
+        double propagationDelay = 0;
+        double computationDelay = 0;
+        double queueingDelay = 0;
+        double totalDelay = 0;
+        double gatewayLinkBandwidthMbps = 0;
+        bool eligible = false;
+        std::string rejectReason;
     };
 
     int computeGatewayId;
@@ -48,7 +58,8 @@ protected:
 
     void parseMulticastRoutes(const char *routesConfig);
     void logCurrentCib() const;
-    std::vector<CandidateEvaluation> evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap) const;
+    std::vector<CandidateEvaluation> evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap);
+    bool selectBestCandidate(const std::vector<CandidateEvaluation>& candidates, CandidateEvaluation& bestCandidate) const;
 
     cMessage *SelfCibUpdateEvent = nullptr;    // CIB状态更新自消息
     UdpSocket socket;

@@ -156,7 +156,7 @@ Register_Class(CprpRequestMsg)
 
 CprpRequestMsg::CprpRequestMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(12 + 40));
+    this->setChunkLength(B(28 + 56));
 
 }
 
@@ -183,6 +183,9 @@ void CprpRequestMsg::copy(const CprpRequestMsg& other)
     this->taskId = other.taskId;
     this->msgType = other.msgType;
     this->userGatewayAddress = other.userGatewayAddress;
+    this->userNodeAddress = other.userNodeAddress;
+    this->userAccessRtt = other.userAccessRtt;
+    this->userGatewayForwardTime = other.userGatewayForwardTime;
     this->generationTime = other.generationTime;
     this->computingType = other.computingType;
     this->requiredStorage = other.requiredStorage;
@@ -200,6 +203,9 @@ void CprpRequestMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->taskId);
     doParsimPacking(b,this->msgType);
     doParsimPacking(b,this->userGatewayAddress);
+    doParsimPacking(b,this->userNodeAddress);
+    doParsimPacking(b,this->userAccessRtt);
+    doParsimPacking(b,this->userGatewayForwardTime);
     doParsimPacking(b,this->generationTime);
     doParsimPacking(b,this->computingType);
     doParsimPacking(b,this->requiredStorage);
@@ -217,6 +223,9 @@ void CprpRequestMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->taskId);
     doParsimUnpacking(b,this->msgType);
     doParsimUnpacking(b,this->userGatewayAddress);
+    doParsimUnpacking(b,this->userNodeAddress);
+    doParsimUnpacking(b,this->userAccessRtt);
+    doParsimUnpacking(b,this->userGatewayForwardTime);
     doParsimUnpacking(b,this->generationTime);
     doParsimUnpacking(b,this->computingType);
     doParsimUnpacking(b,this->requiredStorage);
@@ -269,6 +278,39 @@ void CprpRequestMsg::setUserGatewayAddress(const L3Address& userGatewayAddress)
 {
     handleChange();
     this->userGatewayAddress = userGatewayAddress;
+}
+
+const L3Address& CprpRequestMsg::getUserNodeAddress() const
+{
+    return this->userNodeAddress;
+}
+
+void CprpRequestMsg::setUserNodeAddress(const L3Address& userNodeAddress)
+{
+    handleChange();
+    this->userNodeAddress = userNodeAddress;
+}
+
+::omnetpp::simtime_t CprpRequestMsg::getUserAccessRtt() const
+{
+    return this->userAccessRtt;
+}
+
+void CprpRequestMsg::setUserAccessRtt(::omnetpp::simtime_t userAccessRtt)
+{
+    handleChange();
+    this->userAccessRtt = userAccessRtt;
+}
+
+::omnetpp::simtime_t CprpRequestMsg::getUserGatewayForwardTime() const
+{
+    return this->userGatewayForwardTime;
+}
+
+void CprpRequestMsg::setUserGatewayForwardTime(::omnetpp::simtime_t userGatewayForwardTime)
+{
+    handleChange();
+    this->userGatewayForwardTime = userGatewayForwardTime;
 }
 
 ::omnetpp::simtime_t CprpRequestMsg::getGenerationTime() const
@@ -368,6 +410,9 @@ class CprpRequestMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_taskId,
         FIELD_msgType,
         FIELD_userGatewayAddress,
+        FIELD_userNodeAddress,
+        FIELD_userAccessRtt,
+        FIELD_userGatewayForwardTime,
         FIELD_generationTime,
         FIELD_computingType,
         FIELD_requiredStorage,
@@ -442,7 +487,7 @@ const char *CprpRequestMsgDescriptor::getProperty(const char *propertyName) cons
 int CprpRequestMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 12+base->getFieldCount() : 12;
+    return base ? 15+base->getFieldCount() : 15;
 }
 
 unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
@@ -458,6 +503,9 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_taskId
         FD_ISEDITABLE,    // FIELD_msgType
         0,    // FIELD_userGatewayAddress
+        0,    // FIELD_userNodeAddress
+        FD_ISEDITABLE,    // FIELD_userAccessRtt
+        FD_ISEDITABLE,    // FIELD_userGatewayForwardTime
         FD_ISEDITABLE,    // FIELD_generationTime
         FD_ISEDITABLE,    // FIELD_computingType
         FD_ISEDITABLE,    // FIELD_requiredStorage
@@ -467,7 +515,7 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_budget
         FD_ISEDITABLE,    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 12) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 15) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CprpRequestMsgDescriptor::getFieldName(int field) const
@@ -483,6 +531,9 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "taskId",
         "msgType",
         "userGatewayAddress",
+        "userNodeAddress",
+        "userAccessRtt",
+        "userGatewayForwardTime",
         "generationTime",
         "computingType",
         "requiredStorage",
@@ -492,7 +543,7 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "budget",
         "userMaxBandwidth",
     };
-    return (field >= 0 && field < 12) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 15) ? fieldNames[field] : nullptr;
 }
 
 int CprpRequestMsgDescriptor::findField(const char *fieldName) const
@@ -503,14 +554,17 @@ int CprpRequestMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 2;
     if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 3;
-    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "budget") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "userNodeAddress") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "userAccessRtt") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "userGatewayForwardTime") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 10;
+    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "budget") == 0) return baseIndex + 13;
+    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 14;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -527,6 +581,9 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "int",    // FIELD_taskId
         "string",    // FIELD_msgType
         "inet::L3Address",    // FIELD_userGatewayAddress
+        "inet::L3Address",    // FIELD_userNodeAddress
+        "omnetpp::simtime_t",    // FIELD_userAccessRtt
+        "omnetpp::simtime_t",    // FIELD_userGatewayForwardTime
         "omnetpp::simtime_t",    // FIELD_generationTime
         "int",    // FIELD_computingType
         "double",    // FIELD_requiredStorage
@@ -536,7 +593,7 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_budget
         "double",    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 12) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 15) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CprpRequestMsgDescriptor::getFieldPropertyNames(int field) const
@@ -623,6 +680,9 @@ std::string CprpRequestMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_taskId: return long2string(pp->getTaskId());
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
         case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
+        case FIELD_userNodeAddress: return pp->getUserNodeAddress().str();
+        case FIELD_userAccessRtt: return simtime2string(pp->getUserAccessRtt());
+        case FIELD_userGatewayForwardTime: return simtime2string(pp->getUserGatewayForwardTime());
         case FIELD_generationTime: return simtime2string(pp->getGenerationTime());
         case FIELD_computingType: return long2string(pp->getComputingType());
         case FIELD_requiredStorage: return double2string(pp->getRequiredStorage());
@@ -650,6 +710,8 @@ void CprpRequestMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, in
         case FIELD_userId: pp->setUserId(string2long(value)); break;
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_msgType: pp->setMsgType((value)); break;
+        case FIELD_userAccessRtt: pp->setUserAccessRtt(string2simtime(value)); break;
+        case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(string2simtime(value)); break;
         case FIELD_generationTime: pp->setGenerationTime(string2simtime(value)); break;
         case FIELD_computingType: pp->setComputingType(string2long(value)); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(string2double(value)); break;
@@ -676,6 +738,9 @@ omnetpp::cValue CprpRequestMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_taskId: return pp->getTaskId();
         case FIELD_msgType: return pp->getMsgType();
         case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        case FIELD_userNodeAddress: return omnetpp::toAnyPtr(&pp->getUserNodeAddress()); break;
+        case FIELD_userAccessRtt: return pp->getUserAccessRtt().dbl();
+        case FIELD_userGatewayForwardTime: return pp->getUserGatewayForwardTime().dbl();
         case FIELD_generationTime: return pp->getGenerationTime().dbl();
         case FIELD_computingType: return pp->getComputingType();
         case FIELD_requiredStorage: return pp->getRequiredStorage();
@@ -703,6 +768,8 @@ void CprpRequestMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field,
         case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        case FIELD_userAccessRtt: pp->setUserAccessRtt(value.doubleValue()); break;
+        case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(value.doubleValue()); break;
         case FIELD_generationTime: pp->setGenerationTime(value.doubleValue()); break;
         case FIELD_computingType: pp->setComputingType(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(value.doubleValue()); break;
@@ -739,6 +806,7 @@ omnetpp::any_ptr CprpRequestMsgDescriptor::getFieldStructValuePointer(omnetpp::a
     CprpRequestMsg *pp = omnetpp::fromAnyPtr<CprpRequestMsg>(object); (void)pp;
     switch (field) {
         case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        case FIELD_userNodeAddress: return omnetpp::toAnyPtr(&pp->getUserNodeAddress()); break;
         default: return omnetpp::any_ptr(nullptr);
     }
 }
