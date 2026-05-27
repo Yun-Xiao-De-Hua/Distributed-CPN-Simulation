@@ -325,6 +325,21 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     int uid = respInfo->getUserId();
     int tid = respInfo->getTaskId();
 
+    EV_INFO << "Parsed CPRP_RESP for task(" << uid << "," << tid << "): "
+            << "computeNodeId=" << respInfo->getComputeNodeId()
+            << ", computeNodeAddress=" << respInfo->getComputeNodeAddress()
+            << ", computeNodePort=" << respInfo->getComputeNodePort()
+            << ", computingType=" << respInfo->getComputingType()
+            << ", computingCapacity=" << respInfo->getComputingCapacity() << " FLOPs/s"
+            << ", availableStorage=" << respInfo->getAvailableStorage() << " MB"
+            << ", maxNetworkBandwidth=" << respInfo->getMaxNetworkBandwidth() << " Mbps"
+            << ", computeCost=" << respInfo->getComputeCost() << " CNY/s"
+            << ", requiredBandwidth=" << respInfo->getRequiredBandwidth() << " bps"
+            << ", maxDelayTolerance=" << respInfo->getMaxDelayTolerance()
+            << ", accumulatedDelay=" << respInfo->getAccumulatedDelay()
+            << ", sendTime=" << respInfo->getSendTime()
+            << endl;
+
     auto& cpArray = cpMap[{uid,tid}];
     computeNodeInfo cpNodeInfo;
     cpNodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
@@ -348,6 +363,29 @@ void UserGatewayApp::processCprpResp(Packet *packet)
             pathInfo.sidPath.push_back(pathInd->getHopAddress(i));
         }
         std::reverse(pathInfo.sidPath.begin(), pathInfo.sidPath.end());
+    }
+
+    if (pathInd != nullptr) {
+        EV_INFO << "CPRP route info for task(" << uid << "," << tid << "): "
+                << "hopCount=" << pathInd->getHopCount()
+                << ", reservedBandwidth=" << pathInd->getReservedBandwidth()
+                << " bps, recordedPath(upstreamToUserGateway)=[";
+        for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
+            if (i > 0)
+                EV_INFO << " -> ";
+            EV_INFO << pathInd->getHopAddress(i);
+        }
+        EV_INFO << "], sidPath(userGatewayToComputeNode)=[";
+        for (size_t i = 0; i < pathInfo.sidPath.size(); i++) {
+            if (i > 0)
+                EV_INFO << " -> ";
+            EV_INFO << pathInfo.sidPath[i];
+        }
+        EV_INFO << "]" << endl;
+    }
+    else {
+        EV_WARN << "CPRP_RESP for task(" << uid << "," << tid
+                << ") has no CpnPathInd tag; route information is unavailable." << endl;
     }
 
     // 当前 RESP 已直接携带网关侧累计时延，应用层不再拆分计算/排队/传输分项时延。
