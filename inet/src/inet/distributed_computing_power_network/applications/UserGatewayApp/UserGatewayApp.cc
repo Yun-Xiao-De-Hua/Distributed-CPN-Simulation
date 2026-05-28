@@ -272,17 +272,15 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
 {
     EV_INFO << "Preparing RespSummaryMsg for user" << uid << " task(" << uid << "," << tid << ").\n";
 
-    auto cpIt = cpMap.find({uid, tid});
-    auto pathIt = pathCache.find({uid, tid});
-    if (cpIt == cpMap.end() || pathIt == pathCache.end()) {
+    auto candidateIt = candidateCache.find({uid, tid});
+    if (candidateIt == candidateCache.end()) {
         EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
-                << "): node info or route info is missing." << endl;
+                << "): candidate cache is missing." << endl;
         return;
     }
 
-    auto& cpArray = cpIt->second;
-    auto& pathArray = pathIt->second;
-    size_t candidateCount = std::min(cpArray.size(), pathArray.size());
+    auto& candidates = candidateIt->second;
+    size_t candidateCount = candidates.size();
     if (candidateCount == 0) {
         EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
                 << "): no candidate entries available." << endl;
@@ -293,19 +291,19 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
     payload->setCandidateInfoArraySize(candidateCount);
     for (size_t i = 0; i < candidateCount; i++) {
         computeCandidateInfo candidate;
-        candidate.nodeInfo = cpArray[i];
+        candidate.nodeInfo = candidates[i].nodeInfo;
 
         std::ostringstream sidPathStream;
-        for (size_t j = 0; j < pathArray[i].sidPath.size(); j++) {
+        for (size_t j = 0; j < candidates[i].sidPath.size(); j++) {
             if (j > 0)
                 sidPathStream << " -> ";
-            sidPathStream << pathArray[i].sidPath[j];
+            sidPathStream << candidates[i].sidPath[j];
         }
         std::string sidPath = sidPathStream.str();
         candidate.pathInfo.sidPath = sidPath.c_str();
-        candidate.pathInfo.totalDelay = SimTime(pathArray[i].totalDelay);
-        candidate.pathInfo.reservedBandwidth = pathArray[i].bandwidth;
-        candidate.pathInfo.timestamp = pathArray[i].timestamp;
+        candidate.pathInfo.totalDelay = SimTime(candidates[i].totalDelay);
+        candidate.pathInfo.reservedBandwidth = candidates[i].reservedBandwidth;
+        candidate.pathInfo.timestamp = candidates[i].timestamp;
 
         payload->setCandidateInfo(i, candidate);
 
@@ -377,29 +375,25 @@ void UserGatewayApp::processCprpResp(Packet *packet)
             << ", sendTime=" << respInfo->getSendTime()
             << endl;
 
-    auto& cpArray = cpMap[{uid,tid}];
-    computeNodeInfo cpNodeInfo;
-    cpNodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
-    cpNodeInfo.computeNodeId = respInfo->getComputeNodeId();
-    cpNodeInfo.computeNodePort = respInfo->getComputeNodePort();
-    cpNodeInfo.computingType = respInfo->getComputingType();
-    cpNodeInfo.computingCapacity = respInfo->getComputingCapacity();
-    cpNodeInfo.availableStorage = respInfo->getAvailableStorage();
-    cpNodeInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
-    cpNodeInfo.computeCost = respInfo->getComputeCost();
-    cpNodeInfo.sendTime = respInfo->getSendTime();
-    cpArray.push_back(cpNodeInfo);
-
     auto pathInd = packet->findTag<CpnPathInd>();
-    PathInfo pathInfo;
+    ResponseCandidate candidate;
+    candidate.nodeInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
+    candidate.nodeInfo.computeNodeId = respInfo->getComputeNodeId();
+    candidate.nodeInfo.computeNodePort = respInfo->getComputeNodePort();
+    candidate.nodeInfo.computingType = respInfo->getComputingType();
+    candidate.nodeInfo.computingCapacity = respInfo->getComputingCapacity();
+    candidate.nodeInfo.availableStorage = respInfo->getAvailableStorage();
+    candidate.nodeInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
+    candidate.nodeInfo.computeCost = respInfo->getComputeCost();
+    candidate.nodeInfo.sendTime = respInfo->getSendTime();
 
     if (pathInd != nullptr) {
         // 网络层记录的 hopAddress 顺序是从上游向用户网关累积的。
         // 应用层在下发 TASK_DATA 时需要从用户网关到算力节点的方向，因此在此反转。
         for (int i = 0; i < pathInd->getHopAddressArraySize(); i++) {
-            pathInfo.sidPath.push_back(pathInd->getHopAddress(i));
+            candidate.sidPath.push_back(pathInd->getHopAddress(i));
         }
-        std::reverse(pathInfo.sidPath.begin(), pathInfo.sidPath.end());
+        std::reverse(candidate.sidPath.begin(), candidate.sidPath.end());
     }
 
     if (pathInd != nullptr) {
@@ -413,10 +407,10 @@ void UserGatewayApp::processCprpResp(Packet *packet)
             EV_INFO << pathInd->getHopAddress(i);
         }
         EV_INFO << "], sidPath(userGatewayToComputeNode)=[";
-        for (size_t i = 0; i < pathInfo.sidPath.size(); i++) {
+        for (size_t i = 0; i < candidate.sidPath.size(); i++) {
             if (i > 0)
                 EV_INFO << " -> ";
-            EV_INFO << pathInfo.sidPath[i];
+            EV_INFO << candidate.sidPath[i];
         }
         EV_INFO << "]" << endl;
     }
@@ -428,22 +422,32 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     // 当前 RESP 已直接携带网关侧累计时延，应用层不再拆分计算/排队/传输分项时延。
     simtime_t totalDelay = respInfo->getAccumulatedDelay();
 
-    pathInfo.totalDelay = totalDelay.dbl();
-    pathInfo.computeCost = respInfo->getComputeCost();
-    pathInfo.bandwidth = respInfo->getRequiredBandwidth();
-    pathInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
-    pathInfo.computeNodeId = respInfo->getComputeNodeId();
-    pathInfo.computeNodeAddress = respInfo->getComputeNodeAddress();
-    pathInfo.computeNodePort = respInfo->getComputeNodePort();
-    pathInfo.timestamp = simTime();
+    if (candidate.sidPath.empty()) {
+        EV_WARN << "Dropping CPRP_RESP candidate for task(" << uid << "," << tid
+                << "): route SID path is empty." << endl;
+        delete packet;
+        return;
+    }
+    if (candidate.sidPath.back() != respInfo->getComputeNodeAddress()) {
+        EV_WARN << "Dropping CPRP_RESP candidate for task(" << uid << "," << tid
+                << "): route endpoint " << candidate.sidPath.back()
+                << " does not match compute node " << respInfo->getComputeNodeAddress() << "." << endl;
+        delete packet;
+        return;
+    }
 
-    pathCache[{uid, tid}].push_back(pathInfo);
+    candidate.totalDelay = totalDelay.dbl();
+    candidate.reservedBandwidth = respInfo->getRequiredBandwidth();
+    candidate.timestamp = simTime();
+
+    candidateCache[{uid, tid}].push_back(candidate);
 
     EV_INFO << "Recorded path for task (" << uid << "," << tid
             << ") with totalDelay=" << totalDelay
-            << " pathHops=" << pathInfo.sidPath.size() << endl;
+            << " pathHops=" << candidate.sidPath.size() << endl;
 
-    EV_INFO << "Node info of CPRP_RESP has been recorded\n";
+    EV_INFO << "Complete CPRP_RESP candidate has been recorded. candidateIndex="
+            << (candidateCache[{uid, tid}].size() - 1) << "\n";
 
     delete packet;
 }
@@ -522,9 +526,9 @@ void UserGatewayApp::processCprpConfirm(Packet *packet)
 // 转发任务数据消息
 void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex)
 {
-    auto it = pathCache.find({userId, taskId});
-    if (it == pathCache.end() || it->second.empty()) {
-        EV_ERROR << "No path found for task (" << userId << "," << taskId << ")" << endl;
+    auto candidateIt = candidateCache.find({userId, taskId});
+    if (candidateIt == candidateCache.end() || candidateIt->second.empty()) {
+        EV_ERROR << "No response candidate found for task (" << userId << "," << taskId << ")" << endl;
         return;
     }
 
@@ -534,31 +538,32 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
         return;
     }
 
-    std::vector<PathInfo>* paths = &it->second;
+    std::vector<ResponseCandidate>* candidates = &candidateIt->second;
     const RequestContext& requestContext = requestIt->second;
 
-    if (selectedPathIndex < 0 || selectedPathIndex >= (int)paths->size()) {
+    if (selectedPathIndex < 0 || selectedPathIndex >= (int)candidates->size()) {
         EV_ERROR << "Selected path index " << selectedPathIndex << " is out of range for task ("
-                 << userId << "," << taskId << "), pathCount=" << paths->size() << endl;
+                 << userId << "," << taskId << "), candidateCount=" << candidates->size() << endl;
         return;
     }
 
-    PathInfo* selectedPath = &paths->at(selectedPathIndex);
-    if (selectedPath->computeNodeId != selectedNodeId || selectedPath->computeNodeAddress != selectedNodeAddress) {
+    ResponseCandidate* selectedCandidate = &candidates->at(selectedPathIndex);
+    if (selectedCandidate->nodeInfo.computeNodeId != selectedNodeId || selectedCandidate->nodeInfo.computeNodeAddress != selectedNodeAddress || selectedCandidate->nodeInfo.computeNodePort != selectedNodePort) {
         EV_ERROR << "Selected path does not match CPRP_CONFIRM node for task (" << userId << "," << taskId
-                 << "): pathNode=" << selectedPath->computeNodeId << "@" << selectedPath->computeNodeAddress
-                 << ", confirmNode=" << selectedNodeId << "@" << selectedNodeAddress << endl;
+                 << "): candidateNode=" << selectedCandidate->nodeInfo.computeNodeId << "@" << selectedCandidate->nodeInfo.computeNodeAddress
+                 << ":" << selectedCandidate->nodeInfo.computeNodePort
+                 << ", confirmNode=" << selectedNodeId << "@" << selectedNodeAddress << ":" << selectedNodePort << endl;
         return;
     }
 
-    if (!selectedPath || selectedPath->sidPath.empty()) {
-        EV_ERROR << "Selected node path not found or path is empty" << endl;
+    if (selectedCandidate->sidPath.empty()) {
+        EV_ERROR << "Selected candidate path is empty" << endl;
         return;
     }
 
     EV_INFO << "Selected cached CPRP path index=" << selectedPathIndex
-            << " delay=" << selectedPath->totalDelay
-            << " hops=" << selectedPath->sidPath.size() << endl;
+            << " delay=" << selectedCandidate->totalDelay
+            << " hops=" << selectedCandidate->sidPath.size() << endl;
 
     auto taskData = makeShared<TaskDataMsg>();
     taskData->setUserId(userId);
@@ -581,21 +586,22 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     pathReq->setMode(PATH_USE_MODE);
     pathReq->setUserId(userId);
     pathReq->setTaskId(taskId);
-    pathReq->setSidListArraySize(selectedPath->sidPath.size());
-    for (size_t i = 0; i < selectedPath->sidPath.size(); i++) {
-        pathReq->setSidList(i, selectedPath->sidPath[i]);
+    pathReq->setSidListArraySize(selectedCandidate->sidPath.size());
+    for (size_t i = 0; i < selectedCandidate->sidPath.size(); i++) {
+        pathReq->setSidList(i, selectedCandidate->sidPath[i]);
     }
     pathReq->setCurrentHopIndex(0);
 
     pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
 
-    L3Address firstHop = selectedPath->sidPath[0];
+    L3Address firstHop = selectedCandidate->sidPath[0];
     // 数据包通过源路由逐跳转发到目标算力节点，因此这里的 UDP 目的端口必须与目标节点监听端口一致。
-    socket.sendTo(pkt, firstHop, selectedNodePort > 0 ? selectedNodePort : selectedPath->computeNodePort);
+    socket.sendTo(pkt, firstHop, selectedNodePort > 0 ? selectedNodePort : selectedCandidate->nodeInfo.computeNodePort);
 
     EV_INFO << "Forwarding TASK_DATA via selected path to " << firstHop << endl;
 
-    pathCache.erase({userId, taskId});
+    candidateCache.erase({userId, taskId});
+    requestContextCache.erase({userId, taskId});
 }
 
 

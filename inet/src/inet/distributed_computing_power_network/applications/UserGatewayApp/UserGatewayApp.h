@@ -10,15 +10,11 @@
 
 namespace inet {
 
-struct PathInfo {
+struct ResponseCandidate {
+    computeNodeInfo nodeInfo;
     std::vector<L3Address> sidPath;
     double totalDelay;
-    double computeCost;
-    double bandwidth;
-    double maxNetworkBandwidth;
-    int computeNodeId;
-    L3Address computeNodeAddress;
-    int computeNodePort;
+    double reservedBandwidth;
     simtime_t timestamp;
 };
 
@@ -46,9 +42,7 @@ protected:
     L3Address localAddress;
 
     std::map<int, inet::L3Address> userNodeIpMap;
-    std::map<std::pair<int,int>,std::vector<computeNodeInfo>> cpMap;
-
-    std::map<std::pair<int, int>, std::vector<PathInfo>> pathCache;
+    std::map<std::pair<int, int>, std::vector<ResponseCandidate>> candidateCache;
     std::map<std::pair<int, int>, RequestContext> requestContextCache;
 
     UdpSocket socket;
