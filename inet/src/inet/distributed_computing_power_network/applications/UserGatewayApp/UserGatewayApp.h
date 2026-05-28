@@ -69,7 +69,7 @@ protected:
     virtual void socketErrorArrived(UdpSocket *socket, Indication *indication) override;
     virtual void socketClosed(UdpSocket *socket) override;
 
-    void sendCollectedNodeInfo(int userId, int taskId);
+    void sendResponseSummary(int userId, int taskId);
     void sendCprpRequest(Packet *packet);
     void startCprpRequestTimer(int userId, int taskId);
     void processCprpResp(Packet *packet);

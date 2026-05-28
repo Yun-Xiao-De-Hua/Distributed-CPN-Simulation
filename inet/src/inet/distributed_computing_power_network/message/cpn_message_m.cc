@@ -4709,6 +4709,682 @@ void computeNodeInfoDescriptor::setFieldStructValuePointer(omnetpp::any_ptr obje
     }
 }
 
+routeInfo::routeInfo()
+{
+}
+
+void __doPacking(omnetpp::cCommBuffer *b, const routeInfo& a)
+{
+    doParsimPacking(b,a.sidPath);
+    doParsimPacking(b,a.totalDelay);
+    doParsimPacking(b,a.reservedBandwidth);
+    doParsimPacking(b,a.timestamp);
+}
+
+void __doUnpacking(omnetpp::cCommBuffer *b, routeInfo& a)
+{
+    doParsimUnpacking(b,a.sidPath);
+    doParsimUnpacking(b,a.totalDelay);
+    doParsimUnpacking(b,a.reservedBandwidth);
+    doParsimUnpacking(b,a.timestamp);
+}
+
+class routeInfoDescriptor : public omnetpp::cClassDescriptor
+{
+  private:
+    mutable const char **propertyNames;
+    enum FieldConstants {
+        FIELD_sidPath,
+        FIELD_totalDelay,
+        FIELD_reservedBandwidth,
+        FIELD_timestamp,
+    };
+  public:
+    routeInfoDescriptor();
+    virtual ~routeInfoDescriptor();
+
+    virtual bool doesSupport(omnetpp::cObject *obj) const override;
+    virtual const char **getPropertyNames() const override;
+    virtual const char *getProperty(const char *propertyName) const override;
+    virtual int getFieldCount() const override;
+    virtual const char *getFieldName(int field) const override;
+    virtual int findField(const char *fieldName) const override;
+    virtual unsigned int getFieldTypeFlags(int field) const override;
+    virtual const char *getFieldTypeString(int field) const override;
+    virtual const char **getFieldPropertyNames(int field) const override;
+    virtual const char *getFieldProperty(int field, const char *propertyName) const override;
+    virtual int getFieldArraySize(omnetpp::any_ptr object, int field) const override;
+    virtual void setFieldArraySize(omnetpp::any_ptr object, int field, int size) const override;
+
+    virtual const char *getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual std::string getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const override;
+    virtual omnetpp::cValue getFieldValue(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const override;
+
+    virtual const char *getFieldStructName(int field) const override;
+    virtual omnetpp::any_ptr getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const override;
+};
+
+Register_ClassDescriptor(routeInfoDescriptor)
+
+routeInfoDescriptor::routeInfoDescriptor() : omnetpp::cClassDescriptor(omnetpp::opp_typename(typeid(inet::routeInfo)), "")
+{
+    propertyNames = nullptr;
+}
+
+routeInfoDescriptor::~routeInfoDescriptor()
+{
+    delete[] propertyNames;
+}
+
+bool routeInfoDescriptor::doesSupport(omnetpp::cObject *obj) const
+{
+    return dynamic_cast<routeInfo *>(obj)!=nullptr;
+}
+
+const char **routeInfoDescriptor::getPropertyNames() const
+{
+    if (!propertyNames) {
+        static const char *names[] = {  nullptr };
+        omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+        const char **baseNames = base ? base->getPropertyNames() : nullptr;
+        propertyNames = mergeLists(baseNames, names);
+    }
+    return propertyNames;
+}
+
+const char *routeInfoDescriptor::getProperty(const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? base->getProperty(propertyName) : nullptr;
+}
+
+int routeInfoDescriptor::getFieldCount() const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? 4+base->getFieldCount() : 4;
+}
+
+unsigned int routeInfoDescriptor::getFieldTypeFlags(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeFlags(field);
+        field -= base->getFieldCount();
+    }
+    static unsigned int fieldTypeFlags[] = {
+        FD_ISEDITABLE,    // FIELD_sidPath
+        FD_ISEDITABLE,    // FIELD_totalDelay
+        FD_ISEDITABLE,    // FIELD_reservedBandwidth
+        FD_ISEDITABLE,    // FIELD_timestamp
+    };
+    return (field >= 0 && field < 4) ? fieldTypeFlags[field] : 0;
+}
+
+const char *routeInfoDescriptor::getFieldName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldName(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldNames[] = {
+        "sidPath",
+        "totalDelay",
+        "reservedBandwidth",
+        "timestamp",
+    };
+    return (field >= 0 && field < 4) ? fieldNames[field] : nullptr;
+}
+
+int routeInfoDescriptor::findField(const char *fieldName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    int baseIndex = base ? base->getFieldCount() : 0;
+    if (strcmp(fieldName, "sidPath") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "totalDelay") == 0) return baseIndex + 1;
+    if (strcmp(fieldName, "reservedBandwidth") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "timestamp") == 0) return baseIndex + 3;
+    return base ? base->findField(fieldName) : -1;
+}
+
+const char *routeInfoDescriptor::getFieldTypeString(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeString(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldTypeStrings[] = {
+        "string",    // FIELD_sidPath
+        "omnetpp::simtime_t",    // FIELD_totalDelay
+        "double",    // FIELD_reservedBandwidth
+        "omnetpp::simtime_t",    // FIELD_timestamp
+    };
+    return (field >= 0 && field < 4) ? fieldTypeStrings[field] : nullptr;
+}
+
+const char **routeInfoDescriptor::getFieldPropertyNames(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldPropertyNames(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+const char *routeInfoDescriptor::getFieldProperty(int field, const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldProperty(field, propertyName);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+int routeInfoDescriptor::getFieldArraySize(omnetpp::any_ptr object, int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldArraySize(object, field);
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        default: return 0;
+    }
+}
+
+void routeInfoDescriptor::setFieldArraySize(omnetpp::any_ptr object, int field, int size) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldArraySize(object, field, size);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'routeInfo'", field);
+    }
+}
+
+const char *routeInfoDescriptor::getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldDynamicTypeString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+std::string routeInfoDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValueAsString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_sidPath: return oppstring2string(pp->sidPath);
+        case FIELD_totalDelay: return simtime2string(pp->totalDelay);
+        case FIELD_reservedBandwidth: return double2string(pp->reservedBandwidth);
+        case FIELD_timestamp: return simtime2string(pp->timestamp);
+        default: return "";
+    }
+}
+
+void routeInfoDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValueAsString(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_sidPath: pp->sidPath = (value); break;
+        case FIELD_totalDelay: pp->totalDelay = string2simtime(value); break;
+        case FIELD_reservedBandwidth: pp->reservedBandwidth = string2double(value); break;
+        case FIELD_timestamp: pp->timestamp = string2simtime(value); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'routeInfo'", field);
+    }
+}
+
+omnetpp::cValue routeInfoDescriptor::getFieldValue(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValue(object,field,i);
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_sidPath: return pp->sidPath;
+        case FIELD_totalDelay: return pp->totalDelay.dbl();
+        case FIELD_reservedBandwidth: return pp->reservedBandwidth;
+        case FIELD_timestamp: return pp->timestamp.dbl();
+        default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'routeInfo' as cValue -- field index out of range?", field);
+    }
+}
+
+void routeInfoDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValue(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_sidPath: pp->sidPath = value.stringValue(); break;
+        case FIELD_totalDelay: pp->totalDelay = value.doubleValue(); break;
+        case FIELD_reservedBandwidth: pp->reservedBandwidth = value.doubleValue(); break;
+        case FIELD_timestamp: pp->timestamp = value.doubleValue(); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'routeInfo'", field);
+    }
+}
+
+const char *routeInfoDescriptor::getFieldStructName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructName(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    };
+}
+
+omnetpp::any_ptr routeInfoDescriptor::getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructValuePointer(object, field, i);
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        default: return omnetpp::any_ptr(nullptr);
+    }
+}
+
+void routeInfoDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldStructValuePointer(object, field, i, ptr);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    routeInfo *pp = omnetpp::fromAnyPtr<routeInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'routeInfo'", field);
+    }
+}
+
+computeCandidateInfo::computeCandidateInfo()
+{
+}
+
+void __doPacking(omnetpp::cCommBuffer *b, const computeCandidateInfo& a)
+{
+    doParsimPacking(b,a.nodeInfo);
+    doParsimPacking(b,a.pathInfo);
+}
+
+void __doUnpacking(omnetpp::cCommBuffer *b, computeCandidateInfo& a)
+{
+    doParsimUnpacking(b,a.nodeInfo);
+    doParsimUnpacking(b,a.pathInfo);
+}
+
+class computeCandidateInfoDescriptor : public omnetpp::cClassDescriptor
+{
+  private:
+    mutable const char **propertyNames;
+    enum FieldConstants {
+        FIELD_nodeInfo,
+        FIELD_pathInfo,
+    };
+  public:
+    computeCandidateInfoDescriptor();
+    virtual ~computeCandidateInfoDescriptor();
+
+    virtual bool doesSupport(omnetpp::cObject *obj) const override;
+    virtual const char **getPropertyNames() const override;
+    virtual const char *getProperty(const char *propertyName) const override;
+    virtual int getFieldCount() const override;
+    virtual const char *getFieldName(int field) const override;
+    virtual int findField(const char *fieldName) const override;
+    virtual unsigned int getFieldTypeFlags(int field) const override;
+    virtual const char *getFieldTypeString(int field) const override;
+    virtual const char **getFieldPropertyNames(int field) const override;
+    virtual const char *getFieldProperty(int field, const char *propertyName) const override;
+    virtual int getFieldArraySize(omnetpp::any_ptr object, int field) const override;
+    virtual void setFieldArraySize(omnetpp::any_ptr object, int field, int size) const override;
+
+    virtual const char *getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual std::string getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const override;
+    virtual omnetpp::cValue getFieldValue(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const override;
+
+    virtual const char *getFieldStructName(int field) const override;
+    virtual omnetpp::any_ptr getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const override;
+};
+
+Register_ClassDescriptor(computeCandidateInfoDescriptor)
+
+computeCandidateInfoDescriptor::computeCandidateInfoDescriptor() : omnetpp::cClassDescriptor(omnetpp::opp_typename(typeid(inet::computeCandidateInfo)), "")
+{
+    propertyNames = nullptr;
+}
+
+computeCandidateInfoDescriptor::~computeCandidateInfoDescriptor()
+{
+    delete[] propertyNames;
+}
+
+bool computeCandidateInfoDescriptor::doesSupport(omnetpp::cObject *obj) const
+{
+    return dynamic_cast<computeCandidateInfo *>(obj)!=nullptr;
+}
+
+const char **computeCandidateInfoDescriptor::getPropertyNames() const
+{
+    if (!propertyNames) {
+        static const char *names[] = {  nullptr };
+        omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+        const char **baseNames = base ? base->getPropertyNames() : nullptr;
+        propertyNames = mergeLists(baseNames, names);
+    }
+    return propertyNames;
+}
+
+const char *computeCandidateInfoDescriptor::getProperty(const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? base->getProperty(propertyName) : nullptr;
+}
+
+int computeCandidateInfoDescriptor::getFieldCount() const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? 2+base->getFieldCount() : 2;
+}
+
+unsigned int computeCandidateInfoDescriptor::getFieldTypeFlags(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeFlags(field);
+        field -= base->getFieldCount();
+    }
+    static unsigned int fieldTypeFlags[] = {
+        FD_ISCOMPOUND,    // FIELD_nodeInfo
+        FD_ISCOMPOUND,    // FIELD_pathInfo
+    };
+    return (field >= 0 && field < 2) ? fieldTypeFlags[field] : 0;
+}
+
+const char *computeCandidateInfoDescriptor::getFieldName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldName(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldNames[] = {
+        "nodeInfo",
+        "pathInfo",
+    };
+    return (field >= 0 && field < 2) ? fieldNames[field] : nullptr;
+}
+
+int computeCandidateInfoDescriptor::findField(const char *fieldName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    int baseIndex = base ? base->getFieldCount() : 0;
+    if (strcmp(fieldName, "nodeInfo") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "pathInfo") == 0) return baseIndex + 1;
+    return base ? base->findField(fieldName) : -1;
+}
+
+const char *computeCandidateInfoDescriptor::getFieldTypeString(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeString(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldTypeStrings[] = {
+        "inet::computeNodeInfo",    // FIELD_nodeInfo
+        "inet::routeInfo",    // FIELD_pathInfo
+    };
+    return (field >= 0 && field < 2) ? fieldTypeStrings[field] : nullptr;
+}
+
+const char **computeCandidateInfoDescriptor::getFieldPropertyNames(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldPropertyNames(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+const char *computeCandidateInfoDescriptor::getFieldProperty(int field, const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldProperty(field, propertyName);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+int computeCandidateInfoDescriptor::getFieldArraySize(omnetpp::any_ptr object, int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldArraySize(object, field);
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: return 0;
+    }
+}
+
+void computeCandidateInfoDescriptor::setFieldArraySize(omnetpp::any_ptr object, int field, int size) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldArraySize(object, field, size);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'computeCandidateInfo'", field);
+    }
+}
+
+const char *computeCandidateInfoDescriptor::getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldDynamicTypeString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+std::string computeCandidateInfoDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValueAsString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_nodeInfo: return "";
+        case FIELD_pathInfo: return "";
+        default: return "";
+    }
+}
+
+void computeCandidateInfoDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValueAsString(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'computeCandidateInfo'", field);
+    }
+}
+
+omnetpp::cValue computeCandidateInfoDescriptor::getFieldValue(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValue(object,field,i);
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_nodeInfo: return omnetpp::toAnyPtr(&pp->nodeInfo); break;
+        case FIELD_pathInfo: return omnetpp::toAnyPtr(&pp->pathInfo); break;
+        default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'computeCandidateInfo' as cValue -- field index out of range?", field);
+    }
+}
+
+void computeCandidateInfoDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValue(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'computeCandidateInfo'", field);
+    }
+}
+
+const char *computeCandidateInfoDescriptor::getFieldStructName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructName(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        case FIELD_nodeInfo: return omnetpp::opp_typename(typeid(computeNodeInfo));
+        case FIELD_pathInfo: return omnetpp::opp_typename(typeid(routeInfo));
+        default: return nullptr;
+    };
+}
+
+omnetpp::any_ptr computeCandidateInfoDescriptor::getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructValuePointer(object, field, i);
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        case FIELD_nodeInfo: return omnetpp::toAnyPtr(&pp->nodeInfo); break;
+        case FIELD_pathInfo: return omnetpp::toAnyPtr(&pp->pathInfo); break;
+        default: return omnetpp::any_ptr(nullptr);
+    }
+}
+
+void computeCandidateInfoDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldStructValuePointer(object, field, i, ptr);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    computeCandidateInfo *pp = omnetpp::fromAnyPtr<computeCandidateInfo>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'computeCandidateInfo'", field);
+    }
+}
+
 Register_Class(RespSummaryMsg)
 
 RespSummaryMsg::RespSummaryMsg() : ::inet::FieldsChunk()
@@ -4724,7 +5400,7 @@ RespSummaryMsg::RespSummaryMsg(const RespSummaryMsg& other) : ::inet::FieldsChun
 
 RespSummaryMsg::~RespSummaryMsg()
 {
-    delete [] this->nodeInfo;
+    delete [] this->candidateInfo;
 }
 
 RespSummaryMsg& RespSummaryMsg::operator=(const RespSummaryMsg& other)
@@ -4740,11 +5416,11 @@ void RespSummaryMsg::copy(const RespSummaryMsg& other)
     this->userId = other.userId;
     this->taskId = other.taskId;
     this->msgType = other.msgType;
-    delete [] this->nodeInfo;
-    this->nodeInfo = (other.nodeInfo_arraysize==0) ? nullptr : new computeNodeInfo[other.nodeInfo_arraysize];
-    nodeInfo_arraysize = other.nodeInfo_arraysize;
-    for (size_t i = 0; i < nodeInfo_arraysize; i++) {
-        this->nodeInfo[i] = other.nodeInfo[i];
+    delete [] this->candidateInfo;
+    this->candidateInfo = (other.candidateInfo_arraysize==0) ? nullptr : new computeCandidateInfo[other.candidateInfo_arraysize];
+    candidateInfo_arraysize = other.candidateInfo_arraysize;
+    for (size_t i = 0; i < candidateInfo_arraysize; i++) {
+        this->candidateInfo[i] = other.candidateInfo[i];
     }
 }
 
@@ -4754,8 +5430,8 @@ void RespSummaryMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->userId);
     doParsimPacking(b,this->taskId);
     doParsimPacking(b,this->msgType);
-    b->pack(nodeInfo_arraysize);
-    doParsimArrayPacking(b,this->nodeInfo,nodeInfo_arraysize);
+    b->pack(candidateInfo_arraysize);
+    doParsimArrayPacking(b,this->candidateInfo,candidateInfo_arraysize);
 }
 
 void RespSummaryMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -4764,13 +5440,13 @@ void RespSummaryMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->userId);
     doParsimUnpacking(b,this->taskId);
     doParsimUnpacking(b,this->msgType);
-    delete [] this->nodeInfo;
-    b->unpack(nodeInfo_arraysize);
-    if (nodeInfo_arraysize == 0) {
-        this->nodeInfo = nullptr;
+    delete [] this->candidateInfo;
+    b->unpack(candidateInfo_arraysize);
+    if (candidateInfo_arraysize == 0) {
+        this->candidateInfo = nullptr;
     } else {
-        this->nodeInfo = new computeNodeInfo[nodeInfo_arraysize];
-        doParsimArrayUnpacking(b,this->nodeInfo,nodeInfo_arraysize);
+        this->candidateInfo = new computeCandidateInfo[candidateInfo_arraysize];
+        doParsimArrayUnpacking(b,this->candidateInfo,candidateInfo_arraysize);
     }
 }
 
@@ -4807,72 +5483,72 @@ void RespSummaryMsg::setMsgType(const char * msgType)
     this->msgType = msgType;
 }
 
-size_t RespSummaryMsg::getNodeInfoArraySize() const
+size_t RespSummaryMsg::getCandidateInfoArraySize() const
 {
-    return nodeInfo_arraysize;
+    return candidateInfo_arraysize;
 }
 
-const computeNodeInfo& RespSummaryMsg::getNodeInfo(size_t k) const
+const computeCandidateInfo& RespSummaryMsg::getCandidateInfo(size_t k) const
 {
-    if (k >= nodeInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)nodeInfo_arraysize, (unsigned long)k);
-    return this->nodeInfo[k];
+    if (k >= candidateInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)candidateInfo_arraysize, (unsigned long)k);
+    return this->candidateInfo[k];
 }
 
-void RespSummaryMsg::setNodeInfoArraySize(size_t newSize)
+void RespSummaryMsg::setCandidateInfoArraySize(size_t newSize)
 {
     handleChange();
-    computeNodeInfo *nodeInfo2 = (newSize==0) ? nullptr : new computeNodeInfo[newSize];
-    size_t minSize = nodeInfo_arraysize < newSize ? nodeInfo_arraysize : newSize;
+    computeCandidateInfo *candidateInfo2 = (newSize==0) ? nullptr : new computeCandidateInfo[newSize];
+    size_t minSize = candidateInfo_arraysize < newSize ? candidateInfo_arraysize : newSize;
     for (size_t i = 0; i < minSize; i++)
-        nodeInfo2[i] = this->nodeInfo[i];
-    delete [] this->nodeInfo;
-    this->nodeInfo = nodeInfo2;
-    nodeInfo_arraysize = newSize;
+        candidateInfo2[i] = this->candidateInfo[i];
+    delete [] this->candidateInfo;
+    this->candidateInfo = candidateInfo2;
+    candidateInfo_arraysize = newSize;
 }
 
-void RespSummaryMsg::setNodeInfo(size_t k, const computeNodeInfo& nodeInfo)
+void RespSummaryMsg::setCandidateInfo(size_t k, const computeCandidateInfo& candidateInfo)
 {
-    if (k >= nodeInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)nodeInfo_arraysize, (unsigned long)k);
+    if (k >= candidateInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)candidateInfo_arraysize, (unsigned long)k);
     handleChange();
-    this->nodeInfo[k] = nodeInfo;
+    this->candidateInfo[k] = candidateInfo;
 }
 
-void RespSummaryMsg::insertNodeInfo(size_t k, const computeNodeInfo& nodeInfo)
+void RespSummaryMsg::insertCandidateInfo(size_t k, const computeCandidateInfo& candidateInfo)
 {
-    if (k > nodeInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)nodeInfo_arraysize, (unsigned long)k);
+    if (k > candidateInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)candidateInfo_arraysize, (unsigned long)k);
     handleChange();
-    size_t newSize = nodeInfo_arraysize + 1;
-    computeNodeInfo *nodeInfo2 = new computeNodeInfo[newSize];
+    size_t newSize = candidateInfo_arraysize + 1;
+    computeCandidateInfo *candidateInfo2 = new computeCandidateInfo[newSize];
     size_t i;
     for (i = 0; i < k; i++)
-        nodeInfo2[i] = this->nodeInfo[i];
-    nodeInfo2[k] = nodeInfo;
+        candidateInfo2[i] = this->candidateInfo[i];
+    candidateInfo2[k] = candidateInfo;
     for (i = k + 1; i < newSize; i++)
-        nodeInfo2[i] = this->nodeInfo[i-1];
-    delete [] this->nodeInfo;
-    this->nodeInfo = nodeInfo2;
-    nodeInfo_arraysize = newSize;
+        candidateInfo2[i] = this->candidateInfo[i-1];
+    delete [] this->candidateInfo;
+    this->candidateInfo = candidateInfo2;
+    candidateInfo_arraysize = newSize;
 }
 
-void RespSummaryMsg::appendNodeInfo(const computeNodeInfo& nodeInfo)
+void RespSummaryMsg::appendCandidateInfo(const computeCandidateInfo& candidateInfo)
 {
-    insertNodeInfo(nodeInfo_arraysize, nodeInfo);
+    insertCandidateInfo(candidateInfo_arraysize, candidateInfo);
 }
 
-void RespSummaryMsg::eraseNodeInfo(size_t k)
+void RespSummaryMsg::eraseCandidateInfo(size_t k)
 {
-    if (k >= nodeInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)nodeInfo_arraysize, (unsigned long)k);
+    if (k >= candidateInfo_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)candidateInfo_arraysize, (unsigned long)k);
     handleChange();
-    size_t newSize = nodeInfo_arraysize - 1;
-    computeNodeInfo *nodeInfo2 = (newSize == 0) ? nullptr : new computeNodeInfo[newSize];
+    size_t newSize = candidateInfo_arraysize - 1;
+    computeCandidateInfo *candidateInfo2 = (newSize == 0) ? nullptr : new computeCandidateInfo[newSize];
     size_t i;
     for (i = 0; i < k; i++)
-        nodeInfo2[i] = this->nodeInfo[i];
+        candidateInfo2[i] = this->candidateInfo[i];
     for (i = k; i < newSize; i++)
-        nodeInfo2[i] = this->nodeInfo[i+1];
-    delete [] this->nodeInfo;
-    this->nodeInfo = nodeInfo2;
-    nodeInfo_arraysize = newSize;
+        candidateInfo2[i] = this->candidateInfo[i+1];
+    delete [] this->candidateInfo;
+    this->candidateInfo = candidateInfo2;
+    candidateInfo_arraysize = newSize;
 }
 
 class RespSummaryMsgDescriptor : public omnetpp::cClassDescriptor
@@ -4883,7 +5559,7 @@ class RespSummaryMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_userId,
         FIELD_taskId,
         FIELD_msgType,
-        FIELD_nodeInfo,
+        FIELD_candidateInfo,
     };
   public:
     RespSummaryMsgDescriptor();
@@ -4965,7 +5641,7 @@ unsigned int RespSummaryMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_userId
         FD_ISEDITABLE,    // FIELD_taskId
         FD_ISEDITABLE,    // FIELD_msgType
-        FD_ISARRAY | FD_ISCOMPOUND | FD_ISRESIZABLE,    // FIELD_nodeInfo
+        FD_ISARRAY | FD_ISCOMPOUND | FD_ISRESIZABLE,    // FIELD_candidateInfo
     };
     return (field >= 0 && field < 4) ? fieldTypeFlags[field] : 0;
 }
@@ -4982,7 +5658,7 @@ const char *RespSummaryMsgDescriptor::getFieldName(int field) const
         "userId",
         "taskId",
         "msgType",
-        "nodeInfo",
+        "candidateInfo",
     };
     return (field >= 0 && field < 4) ? fieldNames[field] : nullptr;
 }
@@ -4994,7 +5670,7 @@ int RespSummaryMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "userId") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "nodeInfo") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "candidateInfo") == 0) return baseIndex + 3;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -5010,7 +5686,7 @@ const char *RespSummaryMsgDescriptor::getFieldTypeString(int field) const
         "int",    // FIELD_userId
         "int",    // FIELD_taskId
         "string",    // FIELD_msgType
-        "inet::computeNodeInfo",    // FIELD_nodeInfo
+        "inet::computeCandidateInfo",    // FIELD_candidateInfo
     };
     return (field >= 0 && field < 4) ? fieldTypeStrings[field] : nullptr;
 }
@@ -5051,7 +5727,7 @@ int RespSummaryMsgDescriptor::getFieldArraySize(omnetpp::any_ptr object, int fie
     }
     RespSummaryMsg *pp = omnetpp::fromAnyPtr<RespSummaryMsg>(object); (void)pp;
     switch (field) {
-        case FIELD_nodeInfo: return pp->getNodeInfoArraySize();
+        case FIELD_candidateInfo: return pp->getCandidateInfoArraySize();
         default: return 0;
     }
 }
@@ -5068,7 +5744,7 @@ void RespSummaryMsgDescriptor::setFieldArraySize(omnetpp::any_ptr object, int fi
     }
     RespSummaryMsg *pp = omnetpp::fromAnyPtr<RespSummaryMsg>(object); (void)pp;
     switch (field) {
-        case FIELD_nodeInfo: pp->setNodeInfoArraySize(size); break;
+        case FIELD_candidateInfo: pp->setCandidateInfoArraySize(size); break;
         default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'RespSummaryMsg'", field);
     }
 }
@@ -5100,7 +5776,7 @@ std::string RespSummaryMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_userId: return long2string(pp->getUserId());
         case FIELD_taskId: return long2string(pp->getTaskId());
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
-        case FIELD_nodeInfo: return "";
+        case FIELD_candidateInfo: return "";
         default: return "";
     }
 }
@@ -5137,7 +5813,7 @@ omnetpp::cValue RespSummaryMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_userId: return pp->getUserId();
         case FIELD_taskId: return pp->getTaskId();
         case FIELD_msgType: return pp->getMsgType();
-        case FIELD_nodeInfo: return omnetpp::toAnyPtr(&pp->getNodeInfo(i)); break;
+        case FIELD_candidateInfo: return omnetpp::toAnyPtr(&pp->getCandidateInfo(i)); break;
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'RespSummaryMsg' as cValue -- field index out of range?", field);
     }
 }
@@ -5170,7 +5846,7 @@ const char *RespSummaryMsgDescriptor::getFieldStructName(int field) const
         field -= base->getFieldCount();
     }
     switch (field) {
-        case FIELD_nodeInfo: return omnetpp::opp_typename(typeid(computeNodeInfo));
+        case FIELD_candidateInfo: return omnetpp::opp_typename(typeid(computeCandidateInfo));
         default: return nullptr;
     };
 }
@@ -5185,7 +5861,7 @@ omnetpp::any_ptr RespSummaryMsgDescriptor::getFieldStructValuePointer(omnetpp::a
     }
     RespSummaryMsg *pp = omnetpp::fromAnyPtr<RespSummaryMsg>(object); (void)pp;
     switch (field) {
-        case FIELD_nodeInfo: return omnetpp::toAnyPtr(&pp->getNodeInfo(i)); break;
+        case FIELD_candidateInfo: return omnetpp::toAnyPtr(&pp->getCandidateInfo(i)); break;
         default: return omnetpp::any_ptr(nullptr);
     }
 }

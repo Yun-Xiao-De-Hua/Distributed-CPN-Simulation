@@ -115,8 +115,8 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    if (sumInfo->getNodeInfoArraySize() == 0) {
-        EV_WARN << "RespSummaryMsg contains no candidate node information." << std::endl;
+    if (sumInfo->getCandidateInfoArraySize() == 0) {
+        EV_WARN << "RespSummaryMsg contains no candidate information." << std::endl;
         delete packet;
         return;
     }
@@ -128,8 +128,16 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    const auto& selectedNode = sumInfo->getNodeInfo(0);
+    const auto& selectedCandidate = sumInfo->getCandidateInfo(0);
+    const auto& selectedNode = selectedCandidate.nodeInfo;
     const auto& taskContext = taskIt->second;
+
+    EV_INFO << "User" << userNodeId << " selected candidate from RespSummaryMsg: nodeId="
+            << selectedNode.computeNodeId
+            << ", nodeAddress=" << selectedNode.computeNodeAddress
+            << ", nodePort=" << selectedNode.computeNodePort
+            << ", totalDelay=" << selectedCandidate.pathInfo.totalDelay
+            << ", sidPath=[" << selectedCandidate.pathInfo.sidPath << "]" << endl;
 
     // CPRP_CONFIRM 必须带上最终选定节点以及任务参数，
     // 这样用户网关在转发 TASK_DATA 时才能恢复完整业务上下文。

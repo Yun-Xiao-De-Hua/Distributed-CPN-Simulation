@@ -194,6 +194,18 @@ struct computeNodeInfo{
     simtime_t sendTime;          // 时间戳
 }
 
+struct routeInfo{
+    string sidPath;              // 用户网关到算力节点的源路由路径
+    simtime_t totalDelay;        // 候选路径总时延
+    double reservedBandwidth;    // 路径预留带宽(bps)
+    simtime_t timestamp;         // 路由记录时间
+}
+
+struct computeCandidateInfo{
+    computeNodeInfo nodeInfo;
+    routeInfo pathInfo;
+}
+
 class RespSummaryMsg extends inet::FieldsChunk {
     // 通用字段
     int userId;           // 用户ID
@@ -201,7 +213,7 @@ class RespSummaryMsg extends inet::FieldsChunk {
 
     string msgType = "RespSummaryMsg";    
  
-	computeNodeInfo nodeInfo[];
+    computeCandidateInfo candidateInfo[];
 
     chunkLength = B(12 + 32); // 在构造函数中直接赋值
 }

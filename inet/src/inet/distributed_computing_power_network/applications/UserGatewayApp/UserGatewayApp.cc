@@ -152,9 +152,9 @@ void UserGatewayApp::handleMessageWhenUp(cMessage *msg)
             int uid = timer->getUserId();
             int tid = timer->getTaskId();
 
-            EV_INFO << "Received RespTimeoutSelfMsg. To Send collected computeNode info to userNode for task(" << uid << "-" << tid << ")\n";
+            EV_INFO << "Received RespTimeoutSelfMsg. Sending response summary to user node for task(" << uid << "," << tid << ").\n";
             // 发送可用算力信息至对应用户节点
-            sendCollectedNodeInfo(uid,tid);
+            sendResponseSummary(uid, tid);
             delete msg;
         }
     }
@@ -268,17 +268,53 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     delete packet;
 }
 
-void UserGatewayApp::sendCollectedNodeInfo(int uid, int tid)
+void UserGatewayApp::sendResponseSummary(int uid, int tid)
 {
-    EV_INFO << "Start sending collected computeNode info to userNode" << uid << " for task(" << uid << "-" << tid << ")\n";
+    EV_INFO << "Preparing RespSummaryMsg for user" << uid << " task(" << uid << "," << tid << ").\n";
 
-    auto& cpArray = cpMap.at({uid,tid});
+    auto cpIt = cpMap.find({uid, tid});
+    auto pathIt = pathCache.find({uid, tid});
+    if (cpIt == cpMap.end() || pathIt == pathCache.end()) {
+        EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
+                << "): node info or route info is missing." << endl;
+        return;
+    }
+
+    auto& cpArray = cpIt->second;
+    auto& pathArray = pathIt->second;
+    size_t candidateCount = std::min(cpArray.size(), pathArray.size());
+    if (candidateCount == 0) {
+        EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
+                << "): no candidate entries available." << endl;
+        return;
+    }
 
     auto payload = makeShared<RespSummaryMsg>();
-    payload->setNodeInfoArraySize(cpArray.size());
-    // 汇总消息中的 nodeInfo 按候选节点一一写入，保持与 cpMap 中的候选顺序一致。
-    for (int i = 0; i < (int)cpArray.size(); i++) {
-        payload->setNodeInfo(i, cpArray[i]);
+    payload->setCandidateInfoArraySize(candidateCount);
+    for (size_t i = 0; i < candidateCount; i++) {
+        computeCandidateInfo candidate;
+        candidate.nodeInfo = cpArray[i];
+
+        std::ostringstream sidPathStream;
+        for (size_t j = 0; j < pathArray[i].sidPath.size(); j++) {
+            if (j > 0)
+                sidPathStream << " -> ";
+            sidPathStream << pathArray[i].sidPath[j];
+        }
+        std::string sidPath = sidPathStream.str();
+        candidate.pathInfo.sidPath = sidPath.c_str();
+        candidate.pathInfo.totalDelay = SimTime(pathArray[i].totalDelay);
+        candidate.pathInfo.reservedBandwidth = pathArray[i].bandwidth;
+        candidate.pathInfo.timestamp = pathArray[i].timestamp;
+
+        payload->setCandidateInfo(i, candidate);
+
+        EV_INFO << "RespSummary candidate[" << i << "]: nodeId=" << candidate.nodeInfo.computeNodeId
+                << ", nodeAddress=" << candidate.nodeInfo.computeNodeAddress
+                << ", nodePort=" << candidate.nodeInfo.computeNodePort
+                << ", totalDelay=" << candidate.pathInfo.totalDelay
+                << ", reservedBandwidth=" << candidate.pathInfo.reservedBandwidth
+                << " bps, sidPath=[" << candidate.pathInfo.sidPath << "]" << endl;
     }
 
     payload->setUserId(uid);
@@ -291,7 +327,8 @@ void UserGatewayApp::sendCollectedNodeInfo(int uid, int tid)
     L3Address userAddress = userNodeIpMap.at(uid);
     socket.sendTo(pkt, userAddress, userNodePort);
 
-    EV_INFO << "UserGateway" << userGatewayId << " has sent RespSummaryMsg to user" << uid << std::endl;
+    EV_INFO << "UserGateway" << userGatewayId << " sent RespSummaryMsg with " << candidateCount
+            << " candidate(s) to user" << uid << " for task(" << uid << "," << tid << ")." << std::endl;
 }
 
 // 启动算力请求计时器

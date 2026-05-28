@@ -38,6 +38,8 @@ class TaskRequestMsg;
 class TaskDataMsg;
 class RespTimeoutSelfMsg;
 struct computeNodeInfo;
+struct routeInfo;
+struct computeCandidateInfo;
 class RespSummaryMsg;
 class CgmpQueryMsg;
 class CgmpReportMsg;
@@ -774,7 +776,43 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const computeNodeInfo& obj)
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeNodeInfo& obj) { __doUnpacking(b, obj); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:197</tt> by opp_msgtool.
+ * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:197 by opp_msgtool.
+ */
+struct INET_API routeInfo
+{
+    routeInfo();
+    ::omnetpp::opp_string sidPath;
+    ::omnetpp::simtime_t totalDelay = SIMTIME_ZERO;
+    double reservedBandwidth = 0;
+    ::omnetpp::simtime_t timestamp = SIMTIME_ZERO;
+};
+
+// helpers for local use
+void INET_API __doPacking(omnetpp::cCommBuffer *b, const routeInfo& a);
+void INET_API __doUnpacking(omnetpp::cCommBuffer *b, routeInfo& a);
+
+inline void doParsimPacking(omnetpp::cCommBuffer *b, const routeInfo& obj) { __doPacking(b, obj); }
+inline void doParsimUnpacking(omnetpp::cCommBuffer *b, routeInfo& obj) { __doUnpacking(b, obj); }
+
+/**
+ * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:204 by opp_msgtool.
+ */
+struct INET_API computeCandidateInfo
+{
+    computeCandidateInfo();
+    computeNodeInfo nodeInfo;
+    routeInfo pathInfo;
+};
+
+// helpers for local use
+void INET_API __doPacking(omnetpp::cCommBuffer *b, const computeCandidateInfo& a);
+void INET_API __doUnpacking(omnetpp::cCommBuffer *b, computeCandidateInfo& a);
+
+inline void doParsimPacking(omnetpp::cCommBuffer *b, const computeCandidateInfo& obj) { __doPacking(b, obj); }
+inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeCandidateInfo& obj) { __doUnpacking(b, obj); }
+
+/**
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:209</tt> by opp_msgtool.
  * <pre>
  * class RespSummaryMsg extends inet::FieldsChunk
  * {
@@ -784,7 +822,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeNodeInfo& obj) { _
  * 
  *     string msgType = "RespSummaryMsg";
  * 
- *     computeNodeInfo nodeInfo[];
+ *     computeCandidateInfo candidateInfo[];
  * 
  *     chunkLength = B(12 + 32); // 在构造函数中直接赋值
  * }
@@ -800,8 +838,8 @@ class INET_API RespSummaryMsg : public ::inet::FieldsChunk
     int userId = 0;
     int taskId = 0;
     ::omnetpp::opp_string msgType = "RespSummaryMsg";
-    computeNodeInfo *nodeInfo = nullptr;
-    size_t nodeInfo_arraysize = 0;
+    computeCandidateInfo *candidateInfo = nullptr;
+    size_t candidateInfo_arraysize = 0;
 
   private:
     void copy(const RespSummaryMsg& other);
@@ -827,22 +865,22 @@ class INET_API RespSummaryMsg : public ::inet::FieldsChunk
     virtual const char * getMsgType() const;
     virtual void setMsgType(const char * msgType);
 
-    virtual void setNodeInfoArraySize(size_t size);
-    virtual size_t getNodeInfoArraySize() const;
-    virtual const computeNodeInfo& getNodeInfo(size_t k) const;
-    virtual computeNodeInfo& getNodeInfoForUpdate(size_t k) { handleChange();return const_cast<computeNodeInfo&>(const_cast<RespSummaryMsg*>(this)->getNodeInfo(k));}
-    virtual void setNodeInfo(size_t k, const computeNodeInfo& nodeInfo);
-    virtual void insertNodeInfo(size_t k, const computeNodeInfo& nodeInfo);
-    [[deprecated]] void insertNodeInfo(const computeNodeInfo& nodeInfo) {appendNodeInfo(nodeInfo);}
-    virtual void appendNodeInfo(const computeNodeInfo& nodeInfo);
-    virtual void eraseNodeInfo(size_t k);
+    virtual void setCandidateInfoArraySize(size_t size);
+    virtual size_t getCandidateInfoArraySize() const;
+    virtual const computeCandidateInfo& getCandidateInfo(size_t k) const;
+    virtual computeCandidateInfo& getCandidateInfoForUpdate(size_t k) { handleChange();return const_cast<computeCandidateInfo&>(const_cast<RespSummaryMsg*>(this)->getCandidateInfo(k));}
+    virtual void setCandidateInfo(size_t k, const computeCandidateInfo& candidateInfo);
+    virtual void insertCandidateInfo(size_t k, const computeCandidateInfo& candidateInfo);
+    [[deprecated]] void insertCandidateInfo(const computeCandidateInfo& candidateInfo) {appendCandidateInfo(candidateInfo);}
+    virtual void appendCandidateInfo(const computeCandidateInfo& candidateInfo);
+    virtual void eraseCandidateInfo(size_t k);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const RespSummaryMsg& obj) {obj.parsimPack(b);}
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespSummaryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:213</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:225</tt> by opp_msgtool.
  * <pre>
  * class CgmpQueryMsg extends inet::FieldsChunk
  * {
@@ -885,7 +923,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpQueryMsg& obj) {o
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpQueryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:220</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:232</tt> by opp_msgtool.
  * <pre>
  * class CgmpReportMsg extends inet::FieldsChunk
  * {
@@ -985,7 +1023,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpReportMsg& obj) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpReportMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:243</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:255</tt> by opp_msgtool.
  * <pre>
  * enum TaskFailureCode
  * {
@@ -1009,7 +1047,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskFailureCode& e) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskFailureCode& e) { int n; b->unpack(n); e = static_cast<TaskFailureCode>(n); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:251</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:263</tt> by opp_msgtool.
  * <pre>
  * class TaskCompletionMsg extends inet::FieldsChunk
  * {
@@ -1118,6 +1156,10 @@ template<> inline inet::TaskDataMsg *fromAnyPtr(any_ptr ptr) { return check_and_
 template<> inline inet::RespTimeoutSelfMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::RespTimeoutSelfMsg*>(ptr.get<cObject>()); }
 inline any_ptr toAnyPtr(const inet::computeNodeInfo *p) {return any_ptr(p);}
 template<> inline inet::computeNodeInfo *fromAnyPtr(any_ptr ptr) { return ptr.get<inet::computeNodeInfo>(); }
+inline any_ptr toAnyPtr(const inet::routeInfo *p) {return any_ptr(p);}
+template<> inline inet::routeInfo *fromAnyPtr(any_ptr ptr) { return ptr.get<inet::routeInfo>(); }
+inline any_ptr toAnyPtr(const inet::computeCandidateInfo *p) {return any_ptr(p);}
+template<> inline inet::computeCandidateInfo *fromAnyPtr(any_ptr ptr) { return ptr.get<inet::computeCandidateInfo>(); }
 template<> inline inet::RespSummaryMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::RespSummaryMsg*>(ptr.get<cObject>()); }
 template<> inline inet::CgmpQueryMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CgmpQueryMsg*>(ptr.get<cObject>()); }
 template<> inline inet::CgmpReportMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CgmpReportMsg*>(ptr.get<cObject>()); }
