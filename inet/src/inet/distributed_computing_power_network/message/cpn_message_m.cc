@@ -1552,7 +1552,7 @@ Register_Class(CprpConfirmMsg)
 
 CprpConfirmMsg::CprpConfirmMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(28 + 40));
+    this->setChunkLength(B(28));
 
 }
 
@@ -1582,14 +1582,6 @@ void CprpConfirmMsg::copy(const CprpConfirmMsg& other)
     this->selectedNodeAddress = other.selectedNodeAddress;
     this->selectedNodePort = other.selectedNodePort;
     this->selectedPathIndex = other.selectedPathIndex;
-    this->generationTime = other.generationTime;
-    this->computingType = other.computingType;
-    this->requiredStorage = other.requiredStorage;
-    this->computingAmount = other.computingAmount;
-    this->transferAmount = other.transferAmount;
-    this->totalDelayRequirement = other.totalDelayRequirement;
-    this->budget = other.budget;
-    this->userMaxBandwidth = other.userMaxBandwidth;
 }
 
 void CprpConfirmMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -1602,14 +1594,6 @@ void CprpConfirmMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->selectedNodeAddress);
     doParsimPacking(b,this->selectedNodePort);
     doParsimPacking(b,this->selectedPathIndex);
-    doParsimPacking(b,this->generationTime);
-    doParsimPacking(b,this->computingType);
-    doParsimPacking(b,this->requiredStorage);
-    doParsimPacking(b,this->computingAmount);
-    doParsimPacking(b,this->transferAmount);
-    doParsimPacking(b,this->totalDelayRequirement);
-    doParsimPacking(b,this->budget);
-    doParsimPacking(b,this->userMaxBandwidth);
 }
 
 void CprpConfirmMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -1622,14 +1606,6 @@ void CprpConfirmMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->selectedNodeAddress);
     doParsimUnpacking(b,this->selectedNodePort);
     doParsimUnpacking(b,this->selectedPathIndex);
-    doParsimUnpacking(b,this->generationTime);
-    doParsimUnpacking(b,this->computingType);
-    doParsimUnpacking(b,this->requiredStorage);
-    doParsimUnpacking(b,this->computingAmount);
-    doParsimUnpacking(b,this->transferAmount);
-    doParsimUnpacking(b,this->totalDelayRequirement);
-    doParsimUnpacking(b,this->budget);
-    doParsimUnpacking(b,this->userMaxBandwidth);
 }
 
 int CprpConfirmMsg::getUserId() const
@@ -1709,94 +1685,6 @@ void CprpConfirmMsg::setSelectedPathIndex(int selectedPathIndex)
     this->selectedPathIndex = selectedPathIndex;
 }
 
-::omnetpp::simtime_t CprpConfirmMsg::getGenerationTime() const
-{
-    return this->generationTime;
-}
-
-void CprpConfirmMsg::setGenerationTime(::omnetpp::simtime_t generationTime)
-{
-    handleChange();
-    this->generationTime = generationTime;
-}
-
-int CprpConfirmMsg::getComputingType() const
-{
-    return this->computingType;
-}
-
-void CprpConfirmMsg::setComputingType(int computingType)
-{
-    handleChange();
-    this->computingType = computingType;
-}
-
-double CprpConfirmMsg::getRequiredStorage() const
-{
-    return this->requiredStorage;
-}
-
-void CprpConfirmMsg::setRequiredStorage(double requiredStorage)
-{
-    handleChange();
-    this->requiredStorage = requiredStorage;
-}
-
-double CprpConfirmMsg::getComputingAmount() const
-{
-    return this->computingAmount;
-}
-
-void CprpConfirmMsg::setComputingAmount(double computingAmount)
-{
-    handleChange();
-    this->computingAmount = computingAmount;
-}
-
-double CprpConfirmMsg::getTransferAmount() const
-{
-    return this->transferAmount;
-}
-
-void CprpConfirmMsg::setTransferAmount(double transferAmount)
-{
-    handleChange();
-    this->transferAmount = transferAmount;
-}
-
-::omnetpp::simtime_t CprpConfirmMsg::getTotalDelayRequirement() const
-{
-    return this->totalDelayRequirement;
-}
-
-void CprpConfirmMsg::setTotalDelayRequirement(::omnetpp::simtime_t totalDelayRequirement)
-{
-    handleChange();
-    this->totalDelayRequirement = totalDelayRequirement;
-}
-
-double CprpConfirmMsg::getBudget() const
-{
-    return this->budget;
-}
-
-void CprpConfirmMsg::setBudget(double budget)
-{
-    handleChange();
-    this->budget = budget;
-}
-
-double CprpConfirmMsg::getUserMaxBandwidth() const
-{
-    return this->userMaxBandwidth;
-}
-
-void CprpConfirmMsg::setUserMaxBandwidth(double userMaxBandwidth)
-{
-    handleChange();
-    this->userMaxBandwidth = userMaxBandwidth;
-}
-
 class CprpConfirmMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -1809,14 +1697,6 @@ class CprpConfirmMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_selectedNodeAddress,
         FIELD_selectedNodePort,
         FIELD_selectedPathIndex,
-        FIELD_generationTime,
-        FIELD_computingType,
-        FIELD_requiredStorage,
-        FIELD_computingAmount,
-        FIELD_transferAmount,
-        FIELD_totalDelayRequirement,
-        FIELD_budget,
-        FIELD_userMaxBandwidth,
     };
   public:
     CprpConfirmMsgDescriptor();
@@ -1883,7 +1763,7 @@ const char *CprpConfirmMsgDescriptor::getProperty(const char *propertyName) cons
 int CprpConfirmMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 15+base->getFieldCount() : 15;
+    return base ? 7+base->getFieldCount() : 7;
 }
 
 unsigned int CprpConfirmMsgDescriptor::getFieldTypeFlags(int field) const
@@ -1902,16 +1782,8 @@ unsigned int CprpConfirmMsgDescriptor::getFieldTypeFlags(int field) const
         0,    // FIELD_selectedNodeAddress
         FD_ISEDITABLE,    // FIELD_selectedNodePort
         FD_ISEDITABLE,    // FIELD_selectedPathIndex
-        FD_ISEDITABLE,    // FIELD_generationTime
-        FD_ISEDITABLE,    // FIELD_computingType
-        FD_ISEDITABLE,    // FIELD_requiredStorage
-        FD_ISEDITABLE,    // FIELD_computingAmount
-        FD_ISEDITABLE,    // FIELD_transferAmount
-        FD_ISEDITABLE,    // FIELD_totalDelayRequirement
-        FD_ISEDITABLE,    // FIELD_budget
-        FD_ISEDITABLE,    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 15) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 7) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CprpConfirmMsgDescriptor::getFieldName(int field) const
@@ -1930,16 +1802,8 @@ const char *CprpConfirmMsgDescriptor::getFieldName(int field) const
         "selectedNodeAddress",
         "selectedNodePort",
         "selectedPathIndex",
-        "generationTime",
-        "computingType",
-        "requiredStorage",
-        "computingAmount",
-        "transferAmount",
-        "totalDelayRequirement",
-        "budget",
-        "userMaxBandwidth",
     };
-    return (field >= 0 && field < 15) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 7) ? fieldNames[field] : nullptr;
 }
 
 int CprpConfirmMsgDescriptor::findField(const char *fieldName) const
@@ -1953,14 +1817,6 @@ int CprpConfirmMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "selectedNodeAddress") == 0) return baseIndex + 4;
     if (strcmp(fieldName, "selectedNodePort") == 0) return baseIndex + 5;
     if (strcmp(fieldName, "selectedPathIndex") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 11;
-    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 12;
-    if (strcmp(fieldName, "budget") == 0) return baseIndex + 13;
-    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 14;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -1980,16 +1836,8 @@ const char *CprpConfirmMsgDescriptor::getFieldTypeString(int field) const
         "inet::L3Address",    // FIELD_selectedNodeAddress
         "int",    // FIELD_selectedNodePort
         "int",    // FIELD_selectedPathIndex
-        "omnetpp::simtime_t",    // FIELD_generationTime
-        "int",    // FIELD_computingType
-        "double",    // FIELD_requiredStorage
-        "double",    // FIELD_computingAmount
-        "double",    // FIELD_transferAmount
-        "omnetpp::simtime_t",    // FIELD_totalDelayRequirement
-        "double",    // FIELD_budget
-        "double",    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 15) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 7) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CprpConfirmMsgDescriptor::getFieldPropertyNames(int field) const
@@ -2079,14 +1927,6 @@ std::string CprpConfirmMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_selectedNodeAddress: return pp->getSelectedNodeAddress().str();
         case FIELD_selectedNodePort: return long2string(pp->getSelectedNodePort());
         case FIELD_selectedPathIndex: return long2string(pp->getSelectedPathIndex());
-        case FIELD_generationTime: return simtime2string(pp->getGenerationTime());
-        case FIELD_computingType: return long2string(pp->getComputingType());
-        case FIELD_requiredStorage: return double2string(pp->getRequiredStorage());
-        case FIELD_computingAmount: return double2string(pp->getComputingAmount());
-        case FIELD_transferAmount: return double2string(pp->getTransferAmount());
-        case FIELD_totalDelayRequirement: return simtime2string(pp->getTotalDelayRequirement());
-        case FIELD_budget: return double2string(pp->getBudget());
-        case FIELD_userMaxBandwidth: return double2string(pp->getUserMaxBandwidth());
         default: return "";
     }
 }
@@ -2109,14 +1949,6 @@ void CprpConfirmMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, in
         case FIELD_selectedNodeId: pp->setSelectedNodeId(string2long(value)); break;
         case FIELD_selectedNodePort: pp->setSelectedNodePort(string2long(value)); break;
         case FIELD_selectedPathIndex: pp->setSelectedPathIndex(string2long(value)); break;
-        case FIELD_generationTime: pp->setGenerationTime(string2simtime(value)); break;
-        case FIELD_computingType: pp->setComputingType(string2long(value)); break;
-        case FIELD_requiredStorage: pp->setRequiredStorage(string2double(value)); break;
-        case FIELD_computingAmount: pp->setComputingAmount(string2double(value)); break;
-        case FIELD_transferAmount: pp->setTransferAmount(string2double(value)); break;
-        case FIELD_totalDelayRequirement: pp->setTotalDelayRequirement(string2simtime(value)); break;
-        case FIELD_budget: pp->setBudget(string2double(value)); break;
-        case FIELD_userMaxBandwidth: pp->setUserMaxBandwidth(string2double(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CprpConfirmMsg'", field);
     }
 }
@@ -2138,14 +1970,6 @@ omnetpp::cValue CprpConfirmMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_selectedNodeAddress: return omnetpp::toAnyPtr(&pp->getSelectedNodeAddress()); break;
         case FIELD_selectedNodePort: return pp->getSelectedNodePort();
         case FIELD_selectedPathIndex: return pp->getSelectedPathIndex();
-        case FIELD_generationTime: return pp->getGenerationTime().dbl();
-        case FIELD_computingType: return pp->getComputingType();
-        case FIELD_requiredStorage: return pp->getRequiredStorage();
-        case FIELD_computingAmount: return pp->getComputingAmount();
-        case FIELD_transferAmount: return pp->getTransferAmount();
-        case FIELD_totalDelayRequirement: return pp->getTotalDelayRequirement().dbl();
-        case FIELD_budget: return pp->getBudget();
-        case FIELD_userMaxBandwidth: return pp->getUserMaxBandwidth();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CprpConfirmMsg' as cValue -- field index out of range?", field);
     }
 }
@@ -2168,14 +1992,6 @@ void CprpConfirmMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field,
         case FIELD_selectedNodeId: pp->setSelectedNodeId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_selectedNodePort: pp->setSelectedNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_selectedPathIndex: pp->setSelectedPathIndex(omnetpp::checked_int_cast<int>(value.intValue())); break;
-        case FIELD_generationTime: pp->setGenerationTime(value.doubleValue()); break;
-        case FIELD_computingType: pp->setComputingType(omnetpp::checked_int_cast<int>(value.intValue())); break;
-        case FIELD_requiredStorage: pp->setRequiredStorage(value.doubleValue()); break;
-        case FIELD_computingAmount: pp->setComputingAmount(value.doubleValue()); break;
-        case FIELD_transferAmount: pp->setTransferAmount(value.doubleValue()); break;
-        case FIELD_totalDelayRequirement: pp->setTotalDelayRequirement(value.doubleValue()); break;
-        case FIELD_budget: pp->setBudget(value.doubleValue()); break;
-        case FIELD_userMaxBandwidth: pp->setUserMaxBandwidth(value.doubleValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CprpConfirmMsg'", field);
     }
 }

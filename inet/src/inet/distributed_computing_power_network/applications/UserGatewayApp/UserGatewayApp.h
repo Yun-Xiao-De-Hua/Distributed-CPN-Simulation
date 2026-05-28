@@ -75,7 +75,7 @@ protected:
     void processCprpResp(Packet *packet);
     void stripCpnPathHeader(Packet *packet);
     void processCprpConfirm(Packet *packet);
-    void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int computingType);
+    void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);
 

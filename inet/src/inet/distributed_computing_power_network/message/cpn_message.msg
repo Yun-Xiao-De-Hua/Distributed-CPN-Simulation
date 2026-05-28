@@ -91,19 +91,9 @@ class CprpConfirmMsg extends inet::FieldsChunk {
 	int selectedNodeId;	// 最终选定的算力节点
 	L3Address selectedNodeAddress;  // 选定算力节点IP
 	int selectedNodePort;           // 选定算力节点端口
-	int selectedPathIndex = 0;      // 用户选定的路径索引(可选)
-	
-	// 任务数据参数	
-    simtime_t generationTime;   // 任务产生的时刻
-    int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间(MB)
-    double computingAmount;     // 任务计算量(FLOPs)
-    double transferAmount;      // 任务数据量(MB)
-    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
-    double budget;              // 预算 
-    double userMaxBandwidth;    // 传输带宽(Mbps)
+	int selectedPathIndex = 0;      // 用户选定的路径索引
     
-    chunkLength = B(28 + 40);
+    chunkLength = B(28);
 }
 
 enum CancelSenderType {

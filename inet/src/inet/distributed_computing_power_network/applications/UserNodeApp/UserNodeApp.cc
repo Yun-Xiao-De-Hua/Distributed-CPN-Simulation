@@ -128,34 +128,46 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
-    const auto& selectedCandidate = sumInfo->getCandidateInfo(0);
-    const auto& selectedNode = selectedCandidate.nodeInfo;
-    const auto& taskContext = taskIt->second;
+    int selectedPathIndex = 0;
+    const computeCandidateInfo *selectedCandidate = nullptr;
+    for (int i = 0; i < (int)sumInfo->getCandidateInfoArraySize(); i++) {
+        const auto& candidate = sumInfo->getCandidateInfo(i);
+        if (selectedCandidate == nullptr ||
+            candidate.pathInfo.totalDelay < selectedCandidate->pathInfo.totalDelay ||
+            (candidate.pathInfo.totalDelay == selectedCandidate->pathInfo.totalDelay && candidate.nodeInfo.computeCost < selectedCandidate->nodeInfo.computeCost))
+        {
+            selectedCandidate = &candidate;
+            selectedPathIndex = i;
+        }
+    }
 
-    EV_INFO << "User" << userNodeId << " selected candidate from RespSummaryMsg: nodeId="
+    if (selectedCandidate == nullptr) {
+        EV_WARN << "RespSummaryMsg candidate selection failed." << std::endl;
+        delete packet;
+        return;
+    }
+
+    const auto& selectedNode = selectedCandidate->nodeInfo;
+
+    EV_INFO << "User" << userNodeId << " selected CPRP route from RespSummaryMsg: selectedPathIndex="
+            << selectedPathIndex
+            << ", nodeId="
             << selectedNode.computeNodeId
             << ", nodeAddress=" << selectedNode.computeNodeAddress
             << ", nodePort=" << selectedNode.computeNodePort
-            << ", totalDelay=" << selectedCandidate.pathInfo.totalDelay
-            << ", sidPath=[" << selectedCandidate.pathInfo.sidPath << "]" << endl;
+            << ", computeCost=" << selectedNode.computeCost
+            << ", totalDelay=" << selectedCandidate->pathInfo.totalDelay
+            << ", reservedBandwidth=" << selectedCandidate->pathInfo.reservedBandwidth
+            << ", sidPath=[" << selectedCandidate->pathInfo.sidPath << "]" << endl;
 
-    // CPRP_CONFIRM 必须带上最终选定节点以及任务参数，
-    // 这样用户网关在转发 TASK_DATA 时才能恢复完整业务上下文。
+    // CPRP_CONFIRM 只通告最终选定的节点和路径索引，任务参数由用户网关侧缓存恢复。
     auto payload = makeShared<CprpConfirmMsg>();
     payload->setUserId(sumInfo->getUserId());
     payload->setTaskId(sumInfo->getTaskId());
     payload->setSelectedNodeId(selectedNode.computeNodeId);
     payload->setSelectedNodeAddress(selectedNode.computeNodeAddress);
     payload->setSelectedNodePort(selectedNode.computeNodePort);
-    payload->setSelectedPathIndex(0);
-    payload->setGenerationTime(taskContext.generationTime);
-    payload->setComputingType(taskContext.computingType);
-    payload->setRequiredStorage(taskContext.requiredStorage);
-    payload->setComputingAmount(taskContext.computingAmount);
-    payload->setTransferAmount(taskContext.transferAmount);
-    payload->setTotalDelayRequirement(taskContext.totalDelayRequirement);
-    payload->setBudget(taskContext.budget);
-    payload->setUserMaxBandwidth(taskContext.userMaxBandwidth);
+    payload->setSelectedPathIndex(selectedPathIndex);
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
@@ -167,7 +179,8 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
             << "," << sumInfo->getTaskId() << ") using selectedNodeId="
             << selectedNode.computeNodeId
             << ", selectedNodeAddress=" << selectedNode.computeNodeAddress
-            << ", selectedNodePort=" << selectedNode.computeNodePort << "\n";
+            << ", selectedNodePort=" << selectedNode.computeNodePort
+            << ", selectedPathIndex=" << selectedPathIndex << "\n";
 
     delete packet;
 }

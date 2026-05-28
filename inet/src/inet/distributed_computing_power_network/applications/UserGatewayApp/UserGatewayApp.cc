@@ -506,18 +506,21 @@ void UserGatewayApp::processCprpConfirm(Packet *packet)
     int selectedNodeId = confirmInfo->getSelectedNodeId();
     L3Address selectedNodeAddress = confirmInfo->getSelectedNodeAddress();
     int selectedNodePort = confirmInfo->getSelectedNodePort();
-    int computingType = confirmInfo->getComputingType();
+    int selectedPathIndex = confirmInfo->getSelectedPathIndex();
 
     EV_INFO << "Processing CPRP_CONFIRM for task (" << uid << "," << tid
-            << ") selectedNode=" << selectedNodeId << endl;
+            << ") selectedNode=" << selectedNodeId
+            << ", selectedNodeAddress=" << selectedNodeAddress
+            << ", selectedNodePort=" << selectedNodePort
+            << ", selectedPathIndex=" << selectedPathIndex << endl;
 
-    forwardTaskData(uid, tid, selectedNodeId, selectedNodeAddress, selectedNodePort, computingType);
+    forwardTaskData(uid, tid, selectedNodeId, selectedNodeAddress, selectedNodePort, selectedPathIndex);
 
     delete packet;
 }
 
 // 转发任务数据消息
-void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int computingType)
+void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex)
 {
     auto it = pathCache.find({userId, taskId});
     if (it == pathCache.end() || it->second.empty()) {
@@ -534,16 +537,18 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     std::vector<PathInfo>* paths = &it->second;
     const RequestContext& requestContext = requestIt->second;
 
-    PathInfo* selectedPath = nullptr;
-    double minDelay = std::numeric_limits<double>::max();
+    if (selectedPathIndex < 0 || selectedPathIndex >= (int)paths->size()) {
+        EV_ERROR << "Selected path index " << selectedPathIndex << " is out of range for task ("
+                 << userId << "," << taskId << "), pathCount=" << paths->size() << endl;
+        return;
+    }
 
-    // 同一任务可能收到多个候选 RESP。
-    // 这里先按选定节点过滤，再选择该节点对应的最小时延路径作为最终下发路径。
-    for (auto& path : *paths) {
-        if (path.computeNodeId == selectedNodeId && path.computeNodeAddress == selectedNodeAddress && path.totalDelay < minDelay) {
-            selectedPath = &path;
-            minDelay = path.totalDelay;
-        }
+    PathInfo* selectedPath = &paths->at(selectedPathIndex);
+    if (selectedPath->computeNodeId != selectedNodeId || selectedPath->computeNodeAddress != selectedNodeAddress) {
+        EV_ERROR << "Selected path does not match CPRP_CONFIRM node for task (" << userId << "," << taskId
+                 << "): pathNode=" << selectedPath->computeNodeId << "@" << selectedPath->computeNodeAddress
+                 << ", confirmNode=" << selectedNodeId << "@" << selectedNodeAddress << endl;
+        return;
     }
 
     if (!selectedPath || selectedPath->sidPath.empty()) {
@@ -551,7 +556,8 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
         return;
     }
 
-    EV_INFO << "Selected path with delay=" << selectedPath->totalDelay
+    EV_INFO << "Selected cached CPRP path index=" << selectedPathIndex
+            << " delay=" << selectedPath->totalDelay
             << " hops=" << selectedPath->sidPath.size() << endl;
 
     auto taskData = makeShared<TaskDataMsg>();
@@ -559,7 +565,7 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     taskData->setTaskId(taskId);
     taskData->setUserNodeAddress(requestContext.userNodeAddress);
     taskData->setGenerationTime(requestContext.generationTime);
-    taskData->setComputingType(computingType);
+    taskData->setComputingType(requestContext.computingType);
     taskData->setRequiredStorage(requestContext.requiredStorage);
     taskData->setComputingAmount(requestContext.computingAmount);
     taskData->setTransferAmount(requestContext.transferAmount);

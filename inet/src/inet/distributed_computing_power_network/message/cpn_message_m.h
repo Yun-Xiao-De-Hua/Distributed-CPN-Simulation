@@ -316,19 +316,9 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CprpResponseMsg& obj) {ob
  *     int selectedNodeId;	// 最终选定的算力节点
  *     L3Address selectedNodeAddress;  // 选定算力节点IP
  *     int selectedNodePort;           // 选定算力节点端口
- *     int selectedPathIndex = 0;      // 用户选定的路径索引(可选)
+ *     int selectedPathIndex = 0;      // 用户选定的路径索引
  * 
- * 	// 任务数据参数	
- *     simtime_t generationTime;   // 任务产生的时刻
- *     int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
- *     double requiredStorage;     // 任务所需存储空间(MB)
- *     double computingAmount;     // 任务计算量(FLOPs)
- *     double transferAmount;      // 任务数据量(MB)
- *     simtime_t totalDelayRequirement; // 时延忍耐值(sec)
- *     double budget;              // 预算 
- *     double userMaxBandwidth;    // 传输带宽(Mbps)
- * 
- *     chunkLength = B(28 + 40);
+ *     chunkLength = B(28);
  * }
  * </pre>
  */
@@ -342,14 +332,6 @@ class INET_API CprpConfirmMsg : public ::inet::FieldsChunk
     L3Address selectedNodeAddress;
     int selectedNodePort = 0;
     int selectedPathIndex = 0;
-    ::omnetpp::simtime_t generationTime = SIMTIME_ZERO;
-    int computingType = 0;
-    double requiredStorage = 0;
-    double computingAmount = 0;
-    double transferAmount = 0;
-    ::omnetpp::simtime_t totalDelayRequirement = SIMTIME_ZERO;
-    double budget = 0;
-    double userMaxBandwidth = 0;
 
   private:
     void copy(const CprpConfirmMsg& other);
@@ -387,37 +369,13 @@ class INET_API CprpConfirmMsg : public ::inet::FieldsChunk
 
     virtual int getSelectedPathIndex() const;
     virtual void setSelectedPathIndex(int selectedPathIndex);
-
-    virtual ::omnetpp::simtime_t getGenerationTime() const;
-    virtual void setGenerationTime(::omnetpp::simtime_t generationTime);
-
-    virtual int getComputingType() const;
-    virtual void setComputingType(int computingType);
-
-    virtual double getRequiredStorage() const;
-    virtual void setRequiredStorage(double requiredStorage);
-
-    virtual double getComputingAmount() const;
-    virtual void setComputingAmount(double computingAmount);
-
-    virtual double getTransferAmount() const;
-    virtual void setTransferAmount(double transferAmount);
-
-    virtual ::omnetpp::simtime_t getTotalDelayRequirement() const;
-    virtual void setTotalDelayRequirement(::omnetpp::simtime_t totalDelayRequirement);
-
-    virtual double getBudget() const;
-    virtual void setBudget(double budget);
-
-    virtual double getUserMaxBandwidth() const;
-    virtual void setUserMaxBandwidth(double userMaxBandwidth);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const CprpConfirmMsg& obj) {obj.parsimPack(b);}
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CprpConfirmMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:109</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:99</tt> by opp_msgtool.
  * <pre>
  * enum CancelSenderType
  * {
@@ -437,7 +395,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CancelSenderType& e) 
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CancelSenderType& e) { int n; b->unpack(n); e = static_cast<CancelSenderType>(n); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:115</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:105</tt> by opp_msgtool.
  * <pre>
  * class CancelMsg extends inet::FieldsChunk
  * {
@@ -505,7 +463,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CancelMsg& obj) {obj.
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CancelMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:130</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:120</tt> by opp_msgtool.
  * <pre>
  * class TaskRequestMsg extends inet::FieldsChunk
  * {
@@ -601,7 +559,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskRequestMsg& obj) 
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskRequestMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:155</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:145</tt> by opp_msgtool.
  * <pre>
  * // 任务数据消息
  * class TaskDataMsg extends inet::FieldsChunk
@@ -705,7 +663,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskDataMsg& obj) {ob
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskDataMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:178</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:168</tt> by opp_msgtool.
  * <pre>
  * // 算力应答超时自消息
  * class RespTimeoutSelfMsg extends cMessage
@@ -752,7 +710,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const RespTimeoutSelfMsg& o
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespTimeoutSelfMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:185 by opp_msgtool.
+ * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:175 by opp_msgtool.
  */
 struct INET_API computeNodeInfo
 {
@@ -776,7 +734,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const computeNodeInfo& obj)
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeNodeInfo& obj) { __doUnpacking(b, obj); }
 
 /**
- * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:197 by opp_msgtool.
+ * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:187 by opp_msgtool.
  */
 struct INET_API routeInfo
 {
@@ -795,7 +753,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const routeInfo& obj) { __d
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, routeInfo& obj) { __doUnpacking(b, obj); }
 
 /**
- * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:204 by opp_msgtool.
+ * Struct generated from inet/distributed_computing_power_network/message/cpn_message.msg:194 by opp_msgtool.
  */
 struct INET_API computeCandidateInfo
 {
@@ -812,7 +770,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const computeCandidateInfo&
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeCandidateInfo& obj) { __doUnpacking(b, obj); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:209</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:199</tt> by opp_msgtool.
  * <pre>
  * class RespSummaryMsg extends inet::FieldsChunk
  * {
@@ -880,7 +838,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const RespSummaryMsg& obj) 
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespSummaryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:225</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:215</tt> by opp_msgtool.
  * <pre>
  * class CgmpQueryMsg extends inet::FieldsChunk
  * {
@@ -923,7 +881,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpQueryMsg& obj) {o
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpQueryMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:232</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:222</tt> by opp_msgtool.
  * <pre>
  * class CgmpReportMsg extends inet::FieldsChunk
  * {
@@ -1023,7 +981,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CgmpReportMsg& obj) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CgmpReportMsg& obj) {obj.parsimUnpack(b);}
 
 /**
- * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:255</tt> by opp_msgtool.
+ * Enum generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:245</tt> by opp_msgtool.
  * <pre>
  * enum TaskFailureCode
  * {
@@ -1047,7 +1005,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskFailureCode& e) {
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskFailureCode& e) { int n; b->unpack(n); e = static_cast<TaskFailureCode>(n); }
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:263</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:253</tt> by opp_msgtool.
  * <pre>
  * class TaskCompletionMsg extends inet::FieldsChunk
  * {
