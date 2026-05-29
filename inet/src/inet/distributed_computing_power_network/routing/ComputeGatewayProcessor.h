@@ -20,9 +20,12 @@ protected:
 protected:
     virtual void initialize(int stage) override;
 
+    virtual Result datagramPreRoutingHook(Packet *packet) override;
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet) override;
     virtual Result processCancelMsg(Packet *packet) override;
     virtual Result datagramPostRoutingHook(Packet *packet) override;
+
+    virtual void limitLocalCprpReqMulticast(Packet *packet);
 
 public:
     ComputeGatewayProcessor();

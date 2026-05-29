@@ -31,6 +31,51 @@ void ComputeGatewayProcessor::extractSessionFromResp(RequestSessionState& state,
             << state.userId << "," << state.taskId << ")" << endl;
 }
 
+INetfilter::IHook::Result ComputeGatewayProcessor::datagramPreRoutingHook(Packet *packet) {
+    Enter_Method("datagramPreRoutingHook");
+    Result result = CprpProcessorBase::datagramPreRoutingHook(packet);
+    if (result != ACCEPT)
+        return result;
+
+    limitLocalCprpReqMulticast(packet);
+    return ACCEPT;
+}
+
+void ComputeGatewayProcessor::limitLocalCprpReqMulticast(Packet *packet) {
+    if (!enabled || strcmp(packet->getName(), "CPRP_REQ") != 0)
+        return;
+
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    if (ipv4Header == nullptr || ipv4Header->getProtocol() != &Protocol::udp)
+        return;
+
+    Ipv4Address destAddr = ipv4Header->getDestAddress();
+    if (!destAddr.isMulticast())
+        return;
+
+    auto interfaceInd = packet->findTag<InterfaceInd>();
+    if (interfaceInd == nullptr || interfaceTable == nullptr)
+        return;
+
+    auto ingressInterface = interfaceTable->getInterfaceById(interfaceInd->getInterfaceId());
+    auto ingressIpv4Data = ingressInterface == nullptr ? nullptr : ingressInterface->getProtocolData<Ipv4InterfaceData>();
+    if (ingressIpv4Data == nullptr || !ingressIpv4Data->isMemberOfMulticastGroup(destAddr))
+        return;
+
+    if (ipv4Header->getTimeToLive() <= 1)
+        return;
+
+    auto newIpv4Header = makeShared<Ipv4Header>(*ipv4Header);
+    newIpv4Header->setTimeToLive(1);
+    if (newIpv4Header->getCrcMode() == CRC_COMPUTED)
+        newIpv4Header->updateCrc();
+
+    packet->replaceDataAt(newIpv4Header, B(0), ipv4Header->getChunkLength(), Chunk::PF_ALLOW_INCOMPLETE);
+    EV_INFO << "ComputeGatewayProcessor limited multicast CPRP_REQ TTL to 1 on ingress interface "
+            << ingressInterface->getInterfaceName()
+            << "; packet will be delivered locally and not forwarded to downstream multicast listeners." << endl;
+}
+
 INetfilter::IHook::Result ComputeGatewayProcessor::processCancelMsg(Packet *packet) {
     auto cancel = getCancelMsg(packet);
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
