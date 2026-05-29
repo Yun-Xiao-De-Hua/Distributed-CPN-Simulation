@@ -22,10 +22,13 @@ protected:
 
     virtual Result datagramPreRoutingHook(Packet *packet) override;
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet) override;
+    virtual int getReservationInterfaceId(Packet *packet, const RequestSessionState& state) override;
+    virtual Result processCprpResp(Packet *packet) override;
     virtual Result processCancelMsg(Packet *packet) override;
     virtual Result datagramPostRoutingHook(Packet *packet) override;
 
     virtual void limitLocalCprpReqMulticast(Packet *packet);
+    virtual void forwardCancelToApp(const RequestSessionState& state, const char *reason);
 
 public:
     ComputeGatewayProcessor();

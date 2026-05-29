@@ -851,6 +851,7 @@ void CpnPathReq::copy(const CpnPathReq& other)
     }
     this->userGatewayAddress = other.userGatewayAddress;
     this->requiredBandwidth = other.requiredBandwidth;
+    this->reserveInterfaceId = other.reserveInterfaceId;
     delete [] this->sidList;
     this->sidList = (other.sidList_arraysize==0) ? nullptr : new L3Address[other.sidList_arraysize];
     sidList_arraysize = other.sidList_arraysize;
@@ -870,6 +871,7 @@ void CpnPathReq::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimArrayPacking(b,this->hopAddress,hopAddress_arraysize);
     doParsimPacking(b,this->userGatewayAddress);
     doParsimPacking(b,this->requiredBandwidth);
+    doParsimPacking(b,this->reserveInterfaceId);
     b->pack(sidList_arraysize);
     doParsimArrayPacking(b,this->sidList,sidList_arraysize);
     doParsimPacking(b,this->currentHopIndex);
@@ -891,6 +893,7 @@ void CpnPathReq::parsimUnpack(omnetpp::cCommBuffer *b)
     }
     doParsimUnpacking(b,this->userGatewayAddress);
     doParsimUnpacking(b,this->requiredBandwidth);
+    doParsimUnpacking(b,this->reserveInterfaceId);
     delete [] this->sidList;
     b->unpack(sidList_arraysize);
     if (sidList_arraysize == 0) {
@@ -1016,6 +1019,16 @@ void CpnPathReq::setRequiredBandwidth(double requiredBandwidth)
     this->requiredBandwidth = requiredBandwidth;
 }
 
+int CpnPathReq::getReserveInterfaceId() const
+{
+    return this->reserveInterfaceId;
+}
+
+void CpnPathReq::setReserveInterfaceId(int reserveInterfaceId)
+{
+    this->reserveInterfaceId = reserveInterfaceId;
+}
+
 size_t CpnPathReq::getSidListArraySize() const
 {
     return sidList_arraysize;
@@ -1101,6 +1114,7 @@ class CpnPathReqDescriptor : public omnetpp::cClassDescriptor
         FIELD_hopAddress,
         FIELD_userGatewayAddress,
         FIELD_requiredBandwidth,
+        FIELD_reserveInterfaceId,
         FIELD_sidList,
         FIELD_currentHopIndex,
     };
@@ -1169,7 +1183,7 @@ const char *CpnPathReqDescriptor::getProperty(const char *propertyName) const
 int CpnPathReqDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 8+base->getFieldCount() : 8;
+    return base ? 9+base->getFieldCount() : 9;
 }
 
 unsigned int CpnPathReqDescriptor::getFieldTypeFlags(int field) const
@@ -1187,10 +1201,11 @@ unsigned int CpnPathReqDescriptor::getFieldTypeFlags(int field) const
         FD_ISARRAY | FD_ISRESIZABLE,    // FIELD_hopAddress
         0,    // FIELD_userGatewayAddress
         FD_ISEDITABLE,    // FIELD_requiredBandwidth
+        FD_ISEDITABLE,    // FIELD_reserveInterfaceId
         FD_ISARRAY | FD_ISRESIZABLE,    // FIELD_sidList
         FD_ISEDITABLE,    // FIELD_currentHopIndex
     };
-    return (field >= 0 && field < 8) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 9) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CpnPathReqDescriptor::getFieldName(int field) const
@@ -1208,10 +1223,11 @@ const char *CpnPathReqDescriptor::getFieldName(int field) const
         "hopAddress",
         "userGatewayAddress",
         "requiredBandwidth",
+        "reserveInterfaceId",
         "sidList",
         "currentHopIndex",
     };
-    return (field >= 0 && field < 8) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 9) ? fieldNames[field] : nullptr;
 }
 
 int CpnPathReqDescriptor::findField(const char *fieldName) const
@@ -1224,8 +1240,9 @@ int CpnPathReqDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "hopAddress") == 0) return baseIndex + 3;
     if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 4;
     if (strcmp(fieldName, "requiredBandwidth") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "sidList") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "currentHopIndex") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "reserveInterfaceId") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "sidList") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "currentHopIndex") == 0) return baseIndex + 8;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -1244,10 +1261,11 @@ const char *CpnPathReqDescriptor::getFieldTypeString(int field) const
         "inet::L3Address",    // FIELD_hopAddress
         "inet::L3Address",    // FIELD_userGatewayAddress
         "double",    // FIELD_requiredBandwidth
+        "int",    // FIELD_reserveInterfaceId
         "inet::L3Address",    // FIELD_sidList
         "int",    // FIELD_currentHopIndex
     };
-    return (field >= 0 && field < 8) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 9) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CpnPathReqDescriptor::getFieldPropertyNames(int field) const
@@ -1340,6 +1358,7 @@ std::string CpnPathReqDescriptor::getFieldValueAsString(omnetpp::any_ptr object,
         case FIELD_hopAddress: return pp->getHopAddress(i).str();
         case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
         case FIELD_requiredBandwidth: return double2string(pp->getRequiredBandwidth());
+        case FIELD_reserveInterfaceId: return long2string(pp->getReserveInterfaceId());
         case FIELD_sidList: return pp->getSidList(i).str();
         case FIELD_currentHopIndex: return long2string(pp->getCurrentHopIndex());
         default: return "";
@@ -1362,6 +1381,7 @@ void CpnPathReqDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int fi
         case FIELD_userId: pp->setUserId(string2long(value)); break;
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_requiredBandwidth: pp->setRequiredBandwidth(string2double(value)); break;
+        case FIELD_reserveInterfaceId: pp->setReserveInterfaceId(string2long(value)); break;
         case FIELD_currentHopIndex: pp->setCurrentHopIndex(string2long(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CpnPathReq'", field);
     }
@@ -1383,6 +1403,7 @@ omnetpp::cValue CpnPathReqDescriptor::getFieldValue(omnetpp::any_ptr object, int
         case FIELD_hopAddress: return omnetpp::toAnyPtr(&pp->getHopAddress(i)); break;
         case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
         case FIELD_requiredBandwidth: return pp->getRequiredBandwidth();
+        case FIELD_reserveInterfaceId: return pp->getReserveInterfaceId();
         case FIELD_sidList: return omnetpp::toAnyPtr(&pp->getSidList(i)); break;
         case FIELD_currentHopIndex: return pp->getCurrentHopIndex();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CpnPathReq' as cValue -- field index out of range?", field);
@@ -1405,6 +1426,7 @@ void CpnPathReqDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int
         case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_requiredBandwidth: pp->setRequiredBandwidth(value.doubleValue()); break;
+        case FIELD_reserveInterfaceId: pp->setReserveInterfaceId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_currentHopIndex: pp->setCurrentHopIndex(omnetpp::checked_int_cast<int>(value.intValue())); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'CpnPathReq'", field);
     }

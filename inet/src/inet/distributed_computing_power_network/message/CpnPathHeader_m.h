@@ -175,6 +175,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathHeader& obj) {obj.
  *     L3Address hopAddress[];
  *     L3Address userGatewayAddress;
  *     double requiredBandwidth = 0;
+ *     int reserveInterfaceId = -1;      // 本地预留接口ID，不写入物理路径Header
  *     L3Address sidList[];
  *     int currentHopIndex = 0;
  * }
@@ -190,6 +191,7 @@ class INET_API CpnPathReq : public ::inet::TagBase
     size_t hopAddress_arraysize = 0;
     L3Address userGatewayAddress;
     double requiredBandwidth = 0;
+    int reserveInterfaceId = -1;
     L3Address *sidList = nullptr;
     size_t sidList_arraysize = 0;
     int currentHopIndex = 0;
@@ -235,6 +237,9 @@ class INET_API CpnPathReq : public ::inet::TagBase
     virtual double getRequiredBandwidth() const;
     virtual void setRequiredBandwidth(double requiredBandwidth);
 
+    virtual int getReserveInterfaceId() const;
+    virtual void setReserveInterfaceId(int reserveInterfaceId);
+
     virtual void setSidListArraySize(size_t size);
     virtual size_t getSidListArraySize() const;
     virtual const L3Address& getSidList(size_t k) const;
@@ -253,7 +258,7 @@ inline void doParsimPacking(omnetpp::cCommBuffer *b, const CpnPathReq& obj) {obj
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CpnPathReq& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:50</tt> by opp_msgtool.
+ * Class generated from <tt>inet/distributed_computing_power_network/message/CpnPathHeader.msg:51</tt> by opp_msgtool.
  * <pre>
  * // 算力网络路径记录指示Tag (网络层 -> 应用层)
  * class CpnPathInd extends TagBase

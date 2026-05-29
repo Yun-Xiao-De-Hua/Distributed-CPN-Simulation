@@ -11,28 +11,28 @@
 namespace inet {
 
 struct RequestSessionState {
-    int userId;
-    int taskId;
+    int userId = -1;
+    int taskId = -1;
     
     L3Address computeNodeAddress;
-    int computeNodePort;
-    int computeNodeId;
+    int computeNodePort = -1;
+    int computeNodeId = -1;
     
     std::vector<L3Address> sidPath;
-    int interfaceId;
+    int interfaceId = -1;
     
-    double totalDelay;
-    double minTotalDelay;
-    double requiredBandwidth;
+    double totalDelay = -1;
+    double minTotalDelay = -1;
+    double requiredBandwidth = 0;
     
     L3Address userGatewayAddress;
-    simtime_t lastHopSendTime;
-    double computeCost;
-    double computingCapacity;
-    double availableStorage;
+    simtime_t lastHopSendTime = SIMTIME_ZERO;
+    double computeCost = 0;
+    double computingCapacity = 0;
+    double availableStorage = 0;
     
-    simtime_t createTime;
-    simtime_t updateTime;
+    simtime_t createTime = SIMTIME_ZERO;
+    simtime_t updateTime = SIMTIME_ZERO;
 };
 
 class SessionManager : public cSimpleModule
