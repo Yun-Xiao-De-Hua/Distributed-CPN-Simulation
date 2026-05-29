@@ -447,6 +447,12 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 
         auto upstreamNodes = getUpstreamNodes(existingState->sidPath);
         for (const auto& addr : upstreamNodes) {
+            if (addr == existingState->computeNodeAddress) {
+                EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
+                        << " for task (" << existingState->userId << "," << existingState->taskId << ")" << endl;
+                continue;
+            }
+
             PendingCancel pc;
             pc.destAddr = addr;
             pc.userId = existingState->userId;
@@ -469,6 +475,12 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 
         auto upstreamNodes = getUpstreamNodes(newState.sidPath);
         for (const auto& addr : upstreamNodes) {
+            if (addr == newState.computeNodeAddress) {
+                EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
+                        << " for task (" << newState.userId << "," << newState.taskId << ")" << endl;
+                continue;
+            }
+
             PendingCancel pc;
             pc.destAddr = addr;
             pc.userId = newState.userId;
