@@ -534,7 +534,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
 
     if (!sessionManager) {
         EV_INFO << "No session manager is configured, ignoring CPRP_CANCEL session cleanup" << endl;
-        return isUdpCancel ? ACCEPT : DROP;
+        return DROP;
     }
 
     const RequestSessionState* session = sessionManager->getSession(userId, taskId);
@@ -554,8 +554,8 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
     }
 
     if (isUdpCancel) {
-        EV_INFO << "CPRP_CANCEL is UDP, ACCEPTing to pass to application layer" << endl;
-        return ACCEPT;
+        EV_INFO << "CPRP_CANCEL is UDP, dropping after local session cleanup" << endl;
+        return DROP;
     }
 
     return DROP;

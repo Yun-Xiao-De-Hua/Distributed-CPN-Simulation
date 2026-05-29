@@ -35,16 +35,20 @@ INetfilter::IHook::Result ComputeGatewayProcessor::processCancelMsg(Packet *pack
     auto cancel = getCancelMsg(packet);
     auto ipv4Header = packet->peekAtFront<Ipv4Header>();
     bool isUdpCancel = ipv4Header != nullptr && ipv4Header->getProtocol() == &Protocol::udp;
-    if (cancel != nullptr && !isUdpCancel) {
+
+    Result result = CprpProcessorBase::processCancelMsg(packet);
+
+    if (cancel != nullptr) {
         Packet *appPacket = new Packet("CPRP_CANCEL");
         appPacket->insertAtBack(makeShared<CancelMsg>(*cancel));
 
         send(appPacket, "cancelOut");
-        EV_INFO << "ComputeGatewayProcessor forwarded raw CPRP_CANCEL to ComputeGatewayApp control gate for task ("
+        EV_INFO << "ComputeGatewayProcessor forwarded " << (isUdpCancel ? "UDP" : "raw")
+                << " CPRP_CANCEL to ComputeGatewayApp control gate for task ("
                 << cancel->getUserId() << "," << cancel->getTaskId() << ")" << endl;
     }
 
-    return CprpProcessorBase::processCancelMsg(packet);
+    return result;
 }
 
 INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packet *packet){
