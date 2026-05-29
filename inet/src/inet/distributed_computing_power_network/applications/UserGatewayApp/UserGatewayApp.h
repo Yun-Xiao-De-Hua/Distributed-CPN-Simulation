@@ -20,6 +20,7 @@ struct ResponseCandidate {
 
 struct RequestContext {
     L3Address userNodeAddress;
+    int userNodePort = -1;
     simtime_t generationTime;
     int computingType;
     double requiredStorage;
@@ -69,6 +70,7 @@ protected:
     void processCprpResp(Packet *packet);
     void stripCpnPathHeader(Packet *packet);
     void processCprpConfirm(Packet *packet);
+    void cancelUnselectedCandidates(int userId, int taskId, int selectedPathIndex, const std::vector<ResponseCandidate>& candidates);
     void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);

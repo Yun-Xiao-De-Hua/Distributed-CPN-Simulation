@@ -23,8 +23,7 @@ module ComputeGateway extends OspfRouter
 {
     parameters:
         hasUdp = true;
-        numApps = default(1);
-        app[0].typename = "ComputeGatewayApp";
+        numApps = default(0);
         bool hasSessionManager = default(true);
         bool hasComputeGatewayProcessor = default(true);
         double sessionTimeout @unit(s) = default(60s);
@@ -45,8 +44,15 @@ module ComputeGateway extends OspfRouter
                 ipv4Module = "^.ipv4.ip";
             @display("p=600,150");
         }
+        computeGatewayApp: ComputeGatewayApp {
+            parameters:
+                @display("p=375,75");
+        }
 
     connections allowunconnected:
         computeGatewayProcessor.ipOut --> tn.in++ if hasComputeGatewayProcessor;
         computeGatewayProcessor.ipIn <-- tn.out++ if hasComputeGatewayProcessor;
+        computeGatewayProcessor.cancelOut --> computeGatewayApp.cprpControlIn if hasComputeGatewayProcessor;
+        computeGatewayApp.socketOut --> at.in++;
+        computeGatewayApp.socketIn <-- at.out++;
 }

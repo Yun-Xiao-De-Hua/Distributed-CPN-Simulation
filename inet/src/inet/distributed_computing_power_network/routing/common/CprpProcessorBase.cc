@@ -529,9 +529,12 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
     EV_INFO << "Processing CPRP_CANCEL for task (" << userId << "," << taskId
             << ") computeNode=" << computeNodeAddr << ":" << computeNodePort << endl;
 
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    bool isUdpCancel = ipv4Header && ipv4Header->getProtocol() == &Protocol::udp;
+
     if (!sessionManager) {
-        EV_INFO << "No session manager is configured, ignoring CPRP_CANCEL soft-state cleanup" << endl;
-        return DROP;
+        EV_INFO << "No session manager is configured, ignoring CPRP_CANCEL session cleanup" << endl;
+        return isUdpCancel ? ACCEPT : DROP;
     }
 
     const RequestSessionState* session = sessionManager->getSession(userId, taskId);
@@ -550,8 +553,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
         EV_INFO << "No session found for task (" << userId << "," << taskId << ")" << endl;
     }
 
-    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
-    if (ipv4Header && ipv4Header->getProtocol() == &Protocol::udp) {
+    if (isUdpCancel) {
         EV_INFO << "CPRP_CANCEL is UDP, ACCEPTing to pass to application layer" << endl;
         return ACCEPT;
     }

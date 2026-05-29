@@ -156,7 +156,7 @@ Register_Class(CprpRequestMsg)
 
 CprpRequestMsg::CprpRequestMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(28 + 56));
+    this->setChunkLength(B(32 + 56));
 
 }
 
@@ -184,6 +184,7 @@ void CprpRequestMsg::copy(const CprpRequestMsg& other)
     this->msgType = other.msgType;
     this->userGatewayAddress = other.userGatewayAddress;
     this->userNodeAddress = other.userNodeAddress;
+    this->userNodePort = other.userNodePort;
     this->userAccessRtt = other.userAccessRtt;
     this->userGatewayForwardTime = other.userGatewayForwardTime;
     this->generationTime = other.generationTime;
@@ -204,6 +205,7 @@ void CprpRequestMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->msgType);
     doParsimPacking(b,this->userGatewayAddress);
     doParsimPacking(b,this->userNodeAddress);
+    doParsimPacking(b,this->userNodePort);
     doParsimPacking(b,this->userAccessRtt);
     doParsimPacking(b,this->userGatewayForwardTime);
     doParsimPacking(b,this->generationTime);
@@ -224,6 +226,7 @@ void CprpRequestMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->msgType);
     doParsimUnpacking(b,this->userGatewayAddress);
     doParsimUnpacking(b,this->userNodeAddress);
+    doParsimUnpacking(b,this->userNodePort);
     doParsimUnpacking(b,this->userAccessRtt);
     doParsimUnpacking(b,this->userGatewayForwardTime);
     doParsimUnpacking(b,this->generationTime);
@@ -289,6 +292,17 @@ void CprpRequestMsg::setUserNodeAddress(const L3Address& userNodeAddress)
 {
     handleChange();
     this->userNodeAddress = userNodeAddress;
+}
+
+int CprpRequestMsg::getUserNodePort() const
+{
+    return this->userNodePort;
+}
+
+void CprpRequestMsg::setUserNodePort(int userNodePort)
+{
+    handleChange();
+    this->userNodePort = userNodePort;
 }
 
 ::omnetpp::simtime_t CprpRequestMsg::getUserAccessRtt() const
@@ -411,6 +425,7 @@ class CprpRequestMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_msgType,
         FIELD_userGatewayAddress,
         FIELD_userNodeAddress,
+        FIELD_userNodePort,
         FIELD_userAccessRtt,
         FIELD_userGatewayForwardTime,
         FIELD_generationTime,
@@ -487,7 +502,7 @@ const char *CprpRequestMsgDescriptor::getProperty(const char *propertyName) cons
 int CprpRequestMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 15+base->getFieldCount() : 15;
+    return base ? 16+base->getFieldCount() : 16;
 }
 
 unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
@@ -504,6 +519,7 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_msgType
         0,    // FIELD_userGatewayAddress
         0,    // FIELD_userNodeAddress
+        FD_ISEDITABLE,    // FIELD_userNodePort
         FD_ISEDITABLE,    // FIELD_userAccessRtt
         FD_ISEDITABLE,    // FIELD_userGatewayForwardTime
         FD_ISEDITABLE,    // FIELD_generationTime
@@ -515,7 +531,7 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_budget
         FD_ISEDITABLE,    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 15) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 16) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CprpRequestMsgDescriptor::getFieldName(int field) const
@@ -532,6 +548,7 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "msgType",
         "userGatewayAddress",
         "userNodeAddress",
+        "userNodePort",
         "userAccessRtt",
         "userGatewayForwardTime",
         "generationTime",
@@ -543,7 +560,7 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "budget",
         "userMaxBandwidth",
     };
-    return (field >= 0 && field < 15) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 16) ? fieldNames[field] : nullptr;
 }
 
 int CprpRequestMsgDescriptor::findField(const char *fieldName) const
@@ -555,16 +572,17 @@ int CprpRequestMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 2;
     if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 3;
     if (strcmp(fieldName, "userNodeAddress") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "userAccessRtt") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "userGatewayForwardTime") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 11;
-    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 12;
-    if (strcmp(fieldName, "budget") == 0) return baseIndex + 13;
-    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 14;
+    if (strcmp(fieldName, "userNodePort") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "userAccessRtt") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "userGatewayForwardTime") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 10;
+    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 13;
+    if (strcmp(fieldName, "budget") == 0) return baseIndex + 14;
+    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 15;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -582,6 +600,7 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "string",    // FIELD_msgType
         "inet::L3Address",    // FIELD_userGatewayAddress
         "inet::L3Address",    // FIELD_userNodeAddress
+        "int",    // FIELD_userNodePort
         "omnetpp::simtime_t",    // FIELD_userAccessRtt
         "omnetpp::simtime_t",    // FIELD_userGatewayForwardTime
         "omnetpp::simtime_t",    // FIELD_generationTime
@@ -593,7 +612,7 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_budget
         "double",    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 15) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 16) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CprpRequestMsgDescriptor::getFieldPropertyNames(int field) const
@@ -681,6 +700,7 @@ std::string CprpRequestMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
         case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
         case FIELD_userNodeAddress: return pp->getUserNodeAddress().str();
+        case FIELD_userNodePort: return long2string(pp->getUserNodePort());
         case FIELD_userAccessRtt: return simtime2string(pp->getUserAccessRtt());
         case FIELD_userGatewayForwardTime: return simtime2string(pp->getUserGatewayForwardTime());
         case FIELD_generationTime: return simtime2string(pp->getGenerationTime());
@@ -710,6 +730,7 @@ void CprpRequestMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, in
         case FIELD_userId: pp->setUserId(string2long(value)); break;
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_msgType: pp->setMsgType((value)); break;
+        case FIELD_userNodePort: pp->setUserNodePort(string2long(value)); break;
         case FIELD_userAccessRtt: pp->setUserAccessRtt(string2simtime(value)); break;
         case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(string2simtime(value)); break;
         case FIELD_generationTime: pp->setGenerationTime(string2simtime(value)); break;
@@ -739,6 +760,7 @@ omnetpp::cValue CprpRequestMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_msgType: return pp->getMsgType();
         case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
         case FIELD_userNodeAddress: return omnetpp::toAnyPtr(&pp->getUserNodeAddress()); break;
+        case FIELD_userNodePort: return pp->getUserNodePort();
         case FIELD_userAccessRtt: return pp->getUserAccessRtt().dbl();
         case FIELD_userGatewayForwardTime: return pp->getUserGatewayForwardTime().dbl();
         case FIELD_generationTime: return pp->getGenerationTime().dbl();
@@ -768,6 +790,7 @@ void CprpRequestMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field,
         case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        case FIELD_userNodePort: pp->setUserNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_userAccessRtt: pp->setUserAccessRtt(value.doubleValue()); break;
         case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(value.doubleValue()); break;
         case FIELD_generationTime: pp->setGenerationTime(value.doubleValue()); break;
@@ -3100,7 +3123,7 @@ Register_Class(TaskDataMsg)
 
 TaskDataMsg::TaskDataMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(16 + 40));
+    this->setChunkLength(B(20 + 40));
 
 }
 
@@ -3127,6 +3150,7 @@ void TaskDataMsg::copy(const TaskDataMsg& other)
     this->taskId = other.taskId;
     this->msgType = other.msgType;
     this->userNodeAddress = other.userNodeAddress;
+    this->userNodePort = other.userNodePort;
     this->generationTime = other.generationTime;
     this->computingType = other.computingType;
     this->requiredStorage = other.requiredStorage;
@@ -3145,6 +3169,7 @@ void TaskDataMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->taskId);
     doParsimPacking(b,this->msgType);
     doParsimPacking(b,this->userNodeAddress);
+    doParsimPacking(b,this->userNodePort);
     doParsimPacking(b,this->generationTime);
     doParsimPacking(b,this->computingType);
     doParsimPacking(b,this->requiredStorage);
@@ -3163,6 +3188,7 @@ void TaskDataMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->taskId);
     doParsimUnpacking(b,this->msgType);
     doParsimUnpacking(b,this->userNodeAddress);
+    doParsimUnpacking(b,this->userNodePort);
     doParsimUnpacking(b,this->generationTime);
     doParsimUnpacking(b,this->computingType);
     doParsimUnpacking(b,this->requiredStorage);
@@ -3216,6 +3242,17 @@ void TaskDataMsg::setUserNodeAddress(const L3Address& userNodeAddress)
 {
     handleChange();
     this->userNodeAddress = userNodeAddress;
+}
+
+int TaskDataMsg::getUserNodePort() const
+{
+    return this->userNodePort;
+}
+
+void TaskDataMsg::setUserNodePort(int userNodePort)
+{
+    handleChange();
+    this->userNodePort = userNodePort;
 }
 
 ::omnetpp::simtime_t TaskDataMsg::getGenerationTime() const
@@ -3326,6 +3363,7 @@ class TaskDataMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_taskId,
         FIELD_msgType,
         FIELD_userNodeAddress,
+        FIELD_userNodePort,
         FIELD_generationTime,
         FIELD_computingType,
         FIELD_requiredStorage,
@@ -3401,7 +3439,7 @@ const char *TaskDataMsgDescriptor::getProperty(const char *propertyName) const
 int TaskDataMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 13+base->getFieldCount() : 13;
+    return base ? 14+base->getFieldCount() : 14;
 }
 
 unsigned int TaskDataMsgDescriptor::getFieldTypeFlags(int field) const
@@ -3417,6 +3455,7 @@ unsigned int TaskDataMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_taskId
         FD_ISEDITABLE,    // FIELD_msgType
         0,    // FIELD_userNodeAddress
+        FD_ISEDITABLE,    // FIELD_userNodePort
         FD_ISEDITABLE,    // FIELD_generationTime
         FD_ISEDITABLE,    // FIELD_computingType
         FD_ISEDITABLE,    // FIELD_requiredStorage
@@ -3427,7 +3466,7 @@ unsigned int TaskDataMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_userMaxBandwidth
         FD_ISEDITABLE,    // FIELD_priority
     };
-    return (field >= 0 && field < 13) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *TaskDataMsgDescriptor::getFieldName(int field) const
@@ -3443,6 +3482,7 @@ const char *TaskDataMsgDescriptor::getFieldName(int field) const
         "taskId",
         "msgType",
         "userNodeAddress",
+        "userNodePort",
         "generationTime",
         "computingType",
         "requiredStorage",
@@ -3453,7 +3493,7 @@ const char *TaskDataMsgDescriptor::getFieldName(int field) const
         "userMaxBandwidth",
         "priority",
     };
-    return (field >= 0 && field < 13) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldNames[field] : nullptr;
 }
 
 int TaskDataMsgDescriptor::findField(const char *fieldName) const
@@ -3464,15 +3504,16 @@ int TaskDataMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 2;
     if (strcmp(fieldName, "userNodeAddress") == 0) return baseIndex + 3;
-    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "budget") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 11;
-    if (strcmp(fieldName, "priority") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "userNodePort") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 10;
+    if (strcmp(fieldName, "budget") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "priority") == 0) return baseIndex + 13;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -3489,6 +3530,7 @@ const char *TaskDataMsgDescriptor::getFieldTypeString(int field) const
         "int",    // FIELD_taskId
         "string",    // FIELD_msgType
         "inet::L3Address",    // FIELD_userNodeAddress
+        "int",    // FIELD_userNodePort
         "omnetpp::simtime_t",    // FIELD_generationTime
         "int",    // FIELD_computingType
         "double",    // FIELD_requiredStorage
@@ -3499,7 +3541,7 @@ const char *TaskDataMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_userMaxBandwidth
         "int",    // FIELD_priority
     };
-    return (field >= 0 && field < 13) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **TaskDataMsgDescriptor::getFieldPropertyNames(int field) const
@@ -3586,6 +3628,7 @@ std::string TaskDataMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr object
         case FIELD_taskId: return long2string(pp->getTaskId());
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
         case FIELD_userNodeAddress: return pp->getUserNodeAddress().str();
+        case FIELD_userNodePort: return long2string(pp->getUserNodePort());
         case FIELD_generationTime: return simtime2string(pp->getGenerationTime());
         case FIELD_computingType: return long2string(pp->getComputingType());
         case FIELD_requiredStorage: return double2string(pp->getRequiredStorage());
@@ -3614,6 +3657,7 @@ void TaskDataMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int f
         case FIELD_userId: pp->setUserId(string2long(value)); break;
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_msgType: pp->setMsgType((value)); break;
+        case FIELD_userNodePort: pp->setUserNodePort(string2long(value)); break;
         case FIELD_generationTime: pp->setGenerationTime(string2simtime(value)); break;
         case FIELD_computingType: pp->setComputingType(string2long(value)); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(string2double(value)); break;
@@ -3641,6 +3685,7 @@ omnetpp::cValue TaskDataMsgDescriptor::getFieldValue(omnetpp::any_ptr object, in
         case FIELD_taskId: return pp->getTaskId();
         case FIELD_msgType: return pp->getMsgType();
         case FIELD_userNodeAddress: return omnetpp::toAnyPtr(&pp->getUserNodeAddress()); break;
+        case FIELD_userNodePort: return pp->getUserNodePort();
         case FIELD_generationTime: return pp->getGenerationTime().dbl();
         case FIELD_computingType: return pp->getComputingType();
         case FIELD_requiredStorage: return pp->getRequiredStorage();
@@ -3669,6 +3714,7 @@ void TaskDataMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, in
         case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        case FIELD_userNodePort: pp->setUserNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_generationTime: pp->setGenerationTime(value.doubleValue()); break;
         case FIELD_computingType: pp->setComputingType(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(value.doubleValue()); break;
@@ -6076,11 +6122,349 @@ void CgmpQueryMsgDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object,
     }
 }
 
+cgmpTaskState::cgmpTaskState()
+{
+}
+
+void __doPacking(omnetpp::cCommBuffer *b, const cgmpTaskState& a)
+{
+    doParsimPacking(b,a.userId);
+    doParsimPacking(b,a.taskId);
+    doParsimPacking(b,a.remainingExecutionTime);
+}
+
+void __doUnpacking(omnetpp::cCommBuffer *b, cgmpTaskState& a)
+{
+    doParsimUnpacking(b,a.userId);
+    doParsimUnpacking(b,a.taskId);
+    doParsimUnpacking(b,a.remainingExecutionTime);
+}
+
+class cgmpTaskStateDescriptor : public omnetpp::cClassDescriptor
+{
+  private:
+    mutable const char **propertyNames;
+    enum FieldConstants {
+        FIELD_userId,
+        FIELD_taskId,
+        FIELD_remainingExecutionTime,
+    };
+  public:
+    cgmpTaskStateDescriptor();
+    virtual ~cgmpTaskStateDescriptor();
+
+    virtual bool doesSupport(omnetpp::cObject *obj) const override;
+    virtual const char **getPropertyNames() const override;
+    virtual const char *getProperty(const char *propertyName) const override;
+    virtual int getFieldCount() const override;
+    virtual const char *getFieldName(int field) const override;
+    virtual int findField(const char *fieldName) const override;
+    virtual unsigned int getFieldTypeFlags(int field) const override;
+    virtual const char *getFieldTypeString(int field) const override;
+    virtual const char **getFieldPropertyNames(int field) const override;
+    virtual const char *getFieldProperty(int field, const char *propertyName) const override;
+    virtual int getFieldArraySize(omnetpp::any_ptr object, int field) const override;
+    virtual void setFieldArraySize(omnetpp::any_ptr object, int field, int size) const override;
+
+    virtual const char *getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual std::string getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const override;
+    virtual omnetpp::cValue getFieldValue(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const override;
+
+    virtual const char *getFieldStructName(int field) const override;
+    virtual omnetpp::any_ptr getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const override;
+};
+
+Register_ClassDescriptor(cgmpTaskStateDescriptor)
+
+cgmpTaskStateDescriptor::cgmpTaskStateDescriptor() : omnetpp::cClassDescriptor(omnetpp::opp_typename(typeid(inet::cgmpTaskState)), "")
+{
+    propertyNames = nullptr;
+}
+
+cgmpTaskStateDescriptor::~cgmpTaskStateDescriptor()
+{
+    delete[] propertyNames;
+}
+
+bool cgmpTaskStateDescriptor::doesSupport(omnetpp::cObject *obj) const
+{
+    return dynamic_cast<cgmpTaskState *>(obj)!=nullptr;
+}
+
+const char **cgmpTaskStateDescriptor::getPropertyNames() const
+{
+    if (!propertyNames) {
+        static const char *names[] = {  nullptr };
+        omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+        const char **baseNames = base ? base->getPropertyNames() : nullptr;
+        propertyNames = mergeLists(baseNames, names);
+    }
+    return propertyNames;
+}
+
+const char *cgmpTaskStateDescriptor::getProperty(const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? base->getProperty(propertyName) : nullptr;
+}
+
+int cgmpTaskStateDescriptor::getFieldCount() const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? 3+base->getFieldCount() : 3;
+}
+
+unsigned int cgmpTaskStateDescriptor::getFieldTypeFlags(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeFlags(field);
+        field -= base->getFieldCount();
+    }
+    static unsigned int fieldTypeFlags[] = {
+        FD_ISEDITABLE,    // FIELD_userId
+        FD_ISEDITABLE,    // FIELD_taskId
+        FD_ISEDITABLE,    // FIELD_remainingExecutionTime
+    };
+    return (field >= 0 && field < 3) ? fieldTypeFlags[field] : 0;
+}
+
+const char *cgmpTaskStateDescriptor::getFieldName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldName(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldNames[] = {
+        "userId",
+        "taskId",
+        "remainingExecutionTime",
+    };
+    return (field >= 0 && field < 3) ? fieldNames[field] : nullptr;
+}
+
+int cgmpTaskStateDescriptor::findField(const char *fieldName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    int baseIndex = base ? base->getFieldCount() : 0;
+    if (strcmp(fieldName, "userId") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
+    if (strcmp(fieldName, "remainingExecutionTime") == 0) return baseIndex + 2;
+    return base ? base->findField(fieldName) : -1;
+}
+
+const char *cgmpTaskStateDescriptor::getFieldTypeString(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeString(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldTypeStrings[] = {
+        "int",    // FIELD_userId
+        "int",    // FIELD_taskId
+        "omnetpp::simtime_t",    // FIELD_remainingExecutionTime
+    };
+    return (field >= 0 && field < 3) ? fieldTypeStrings[field] : nullptr;
+}
+
+const char **cgmpTaskStateDescriptor::getFieldPropertyNames(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldPropertyNames(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+const char *cgmpTaskStateDescriptor::getFieldProperty(int field, const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldProperty(field, propertyName);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+int cgmpTaskStateDescriptor::getFieldArraySize(omnetpp::any_ptr object, int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldArraySize(object, field);
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        default: return 0;
+    }
+}
+
+void cgmpTaskStateDescriptor::setFieldArraySize(omnetpp::any_ptr object, int field, int size) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldArraySize(object, field, size);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'cgmpTaskState'", field);
+    }
+}
+
+const char *cgmpTaskStateDescriptor::getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldDynamicTypeString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+std::string cgmpTaskStateDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValueAsString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: return long2string(pp->userId);
+        case FIELD_taskId: return long2string(pp->taskId);
+        case FIELD_remainingExecutionTime: return simtime2string(pp->remainingExecutionTime);
+        default: return "";
+    }
+}
+
+void cgmpTaskStateDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValueAsString(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: pp->userId = string2long(value); break;
+        case FIELD_taskId: pp->taskId = string2long(value); break;
+        case FIELD_remainingExecutionTime: pp->remainingExecutionTime = string2simtime(value); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'cgmpTaskState'", field);
+    }
+}
+
+omnetpp::cValue cgmpTaskStateDescriptor::getFieldValue(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValue(object,field,i);
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: return pp->userId;
+        case FIELD_taskId: return pp->taskId;
+        case FIELD_remainingExecutionTime: return pp->remainingExecutionTime.dbl();
+        default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'cgmpTaskState' as cValue -- field index out of range?", field);
+    }
+}
+
+void cgmpTaskStateDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValue(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: pp->userId = omnetpp::checked_int_cast<int>(value.intValue()); break;
+        case FIELD_taskId: pp->taskId = omnetpp::checked_int_cast<int>(value.intValue()); break;
+        case FIELD_remainingExecutionTime: pp->remainingExecutionTime = value.doubleValue(); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'cgmpTaskState'", field);
+    }
+}
+
+const char *cgmpTaskStateDescriptor::getFieldStructName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructName(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    };
+}
+
+omnetpp::any_ptr cgmpTaskStateDescriptor::getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructValuePointer(object, field, i);
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        default: return omnetpp::any_ptr(nullptr);
+    }
+}
+
+void cgmpTaskStateDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldStructValuePointer(object, field, i, ptr);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    cgmpTaskState *pp = omnetpp::fromAnyPtr<cgmpTaskState>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'cgmpTaskState'", field);
+    }
+}
+
 Register_Class(CgmpReportMsg)
 
 CgmpReportMsg::CgmpReportMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(12 + 56));
+    this->setChunkLength(B(12 + 72));
 
 }
 
@@ -6091,6 +6475,7 @@ CgmpReportMsg::CgmpReportMsg(const CgmpReportMsg& other) : ::inet::FieldsChunk(o
 
 CgmpReportMsg::~CgmpReportMsg()
 {
+    delete [] this->taskState;
 }
 
 CgmpReportMsg& CgmpReportMsg::operator=(const CgmpReportMsg& other)
@@ -6108,11 +6493,18 @@ void CgmpReportMsg::copy(const CgmpReportMsg& other)
     this->computeNodePort = other.computeNodePort;
     this->computingType = other.computingType;
     this->computeNodeAddress = other.computeNodeAddress;
+    this->serviceGroupAddress = other.serviceGroupAddress;
     this->computingCapacity = other.computingCapacity;
     this->availableStorage = other.availableStorage;
     this->maxNetworkBandwidth = other.maxNetworkBandwidth;
     this->computeCost = other.computeCost;
     this->queueingTime = other.queueingTime;
+    delete [] this->taskState;
+    this->taskState = (other.taskState_arraysize==0) ? nullptr : new cgmpTaskState[other.taskState_arraysize];
+    taskState_arraysize = other.taskState_arraysize;
+    for (size_t i = 0; i < taskState_arraysize; i++) {
+        this->taskState[i] = other.taskState[i];
+    }
     this->querySendTime = other.querySendTime;
     this->sendTime = other.sendTime;
 }
@@ -6125,11 +6517,14 @@ void CgmpReportMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->computeNodePort);
     doParsimPacking(b,this->computingType);
     doParsimPacking(b,this->computeNodeAddress);
+    doParsimPacking(b,this->serviceGroupAddress);
     doParsimPacking(b,this->computingCapacity);
     doParsimPacking(b,this->availableStorage);
     doParsimPacking(b,this->maxNetworkBandwidth);
     doParsimPacking(b,this->computeCost);
     doParsimPacking(b,this->queueingTime);
+    b->pack(taskState_arraysize);
+    doParsimArrayPacking(b,this->taskState,taskState_arraysize);
     doParsimPacking(b,this->querySendTime);
     doParsimPacking(b,this->sendTime);
 }
@@ -6142,11 +6537,20 @@ void CgmpReportMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->computeNodePort);
     doParsimUnpacking(b,this->computingType);
     doParsimUnpacking(b,this->computeNodeAddress);
+    doParsimUnpacking(b,this->serviceGroupAddress);
     doParsimUnpacking(b,this->computingCapacity);
     doParsimUnpacking(b,this->availableStorage);
     doParsimUnpacking(b,this->maxNetworkBandwidth);
     doParsimUnpacking(b,this->computeCost);
     doParsimUnpacking(b,this->queueingTime);
+    delete [] this->taskState;
+    b->unpack(taskState_arraysize);
+    if (taskState_arraysize == 0) {
+        this->taskState = nullptr;
+    } else {
+        this->taskState = new cgmpTaskState[taskState_arraysize];
+        doParsimArrayUnpacking(b,this->taskState,taskState_arraysize);
+    }
     doParsimUnpacking(b,this->querySendTime);
     doParsimUnpacking(b,this->sendTime);
 }
@@ -6206,6 +6610,17 @@ void CgmpReportMsg::setComputeNodeAddress(const L3Address& computeNodeAddress)
     this->computeNodeAddress = computeNodeAddress;
 }
 
+const L3Address& CgmpReportMsg::getServiceGroupAddress() const
+{
+    return this->serviceGroupAddress;
+}
+
+void CgmpReportMsg::setServiceGroupAddress(const L3Address& serviceGroupAddress)
+{
+    handleChange();
+    this->serviceGroupAddress = serviceGroupAddress;
+}
+
 double CgmpReportMsg::getComputingCapacity() const
 {
     return this->computingCapacity;
@@ -6261,6 +6676,74 @@ void CgmpReportMsg::setQueueingTime(::omnetpp::simtime_t queueingTime)
     this->queueingTime = queueingTime;
 }
 
+size_t CgmpReportMsg::getTaskStateArraySize() const
+{
+    return taskState_arraysize;
+}
+
+const cgmpTaskState& CgmpReportMsg::getTaskState(size_t k) const
+{
+    if (k >= taskState_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)taskState_arraysize, (unsigned long)k);
+    return this->taskState[k];
+}
+
+void CgmpReportMsg::setTaskStateArraySize(size_t newSize)
+{
+    handleChange();
+    cgmpTaskState *taskState2 = (newSize==0) ? nullptr : new cgmpTaskState[newSize];
+    size_t minSize = taskState_arraysize < newSize ? taskState_arraysize : newSize;
+    for (size_t i = 0; i < minSize; i++)
+        taskState2[i] = this->taskState[i];
+    delete [] this->taskState;
+    this->taskState = taskState2;
+    taskState_arraysize = newSize;
+}
+
+void CgmpReportMsg::setTaskState(size_t k, const cgmpTaskState& taskState)
+{
+    if (k >= taskState_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)taskState_arraysize, (unsigned long)k);
+    handleChange();
+    this->taskState[k] = taskState;
+}
+
+void CgmpReportMsg::insertTaskState(size_t k, const cgmpTaskState& taskState)
+{
+    if (k > taskState_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)taskState_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = taskState_arraysize + 1;
+    cgmpTaskState *taskState2 = new cgmpTaskState[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        taskState2[i] = this->taskState[i];
+    taskState2[k] = taskState;
+    for (i = k + 1; i < newSize; i++)
+        taskState2[i] = this->taskState[i-1];
+    delete [] this->taskState;
+    this->taskState = taskState2;
+    taskState_arraysize = newSize;
+}
+
+void CgmpReportMsg::appendTaskState(const cgmpTaskState& taskState)
+{
+    insertTaskState(taskState_arraysize, taskState);
+}
+
+void CgmpReportMsg::eraseTaskState(size_t k)
+{
+    if (k >= taskState_arraysize) throw omnetpp::cRuntimeError("Array of size %lu indexed by %lu", (unsigned long)taskState_arraysize, (unsigned long)k);
+    handleChange();
+    size_t newSize = taskState_arraysize - 1;
+    cgmpTaskState *taskState2 = (newSize == 0) ? nullptr : new cgmpTaskState[newSize];
+    size_t i;
+    for (i = 0; i < k; i++)
+        taskState2[i] = this->taskState[i];
+    for (i = k; i < newSize; i++)
+        taskState2[i] = this->taskState[i+1];
+    delete [] this->taskState;
+    this->taskState = taskState2;
+    taskState_arraysize = newSize;
+}
+
 ::omnetpp::simtime_t CgmpReportMsg::getQuerySendTime() const
 {
     return this->querySendTime;
@@ -6293,11 +6776,13 @@ class CgmpReportMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_computeNodePort,
         FIELD_computingType,
         FIELD_computeNodeAddress,
+        FIELD_serviceGroupAddress,
         FIELD_computingCapacity,
         FIELD_availableStorage,
         FIELD_maxNetworkBandwidth,
         FIELD_computeCost,
         FIELD_queueingTime,
+        FIELD_taskState,
         FIELD_querySendTime,
         FIELD_sendTime,
     };
@@ -6366,7 +6851,7 @@ const char *CgmpReportMsgDescriptor::getProperty(const char *propertyName) const
 int CgmpReportMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 12+base->getFieldCount() : 12;
+    return base ? 14+base->getFieldCount() : 14;
 }
 
 unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
@@ -6383,15 +6868,17 @@ unsigned int CgmpReportMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_computeNodePort
         FD_ISEDITABLE,    // FIELD_computingType
         0,    // FIELD_computeNodeAddress
+        0,    // FIELD_serviceGroupAddress
         FD_ISEDITABLE,    // FIELD_computingCapacity
         FD_ISEDITABLE,    // FIELD_availableStorage
         FD_ISEDITABLE,    // FIELD_maxNetworkBandwidth
         FD_ISEDITABLE,    // FIELD_computeCost
         FD_ISEDITABLE,    // FIELD_queueingTime
+        FD_ISARRAY | FD_ISCOMPOUND | FD_ISRESIZABLE,    // FIELD_taskState
         FD_ISEDITABLE,    // FIELD_querySendTime
         FD_ISEDITABLE,    // FIELD_sendTime
     };
-    return (field >= 0 && field < 12) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CgmpReportMsgDescriptor::getFieldName(int field) const
@@ -6408,15 +6895,17 @@ const char *CgmpReportMsgDescriptor::getFieldName(int field) const
         "computeNodePort",
         "computingType",
         "computeNodeAddress",
+        "serviceGroupAddress",
         "computingCapacity",
         "availableStorage",
         "maxNetworkBandwidth",
         "computeCost",
         "queueingTime",
+        "taskState",
         "querySendTime",
         "sendTime",
     };
-    return (field >= 0 && field < 12) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldNames[field] : nullptr;
 }
 
 int CgmpReportMsgDescriptor::findField(const char *fieldName) const
@@ -6428,13 +6917,15 @@ int CgmpReportMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "computeNodePort") == 0) return baseIndex + 2;
     if (strcmp(fieldName, "computingType") == 0) return baseIndex + 3;
     if (strcmp(fieldName, "computeNodeAddress") == 0) return baseIndex + 4;
-    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "queueingTime") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "querySendTime") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "serviceGroupAddress") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "computingCapacity") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "availableStorage") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "maxNetworkBandwidth") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "computeCost") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "queueingTime") == 0) return baseIndex + 10;
+    if (strcmp(fieldName, "taskState") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "querySendTime") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 13;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -6452,15 +6943,17 @@ const char *CgmpReportMsgDescriptor::getFieldTypeString(int field) const
         "int",    // FIELD_computeNodePort
         "int",    // FIELD_computingType
         "inet::L3Address",    // FIELD_computeNodeAddress
+        "inet::L3Address",    // FIELD_serviceGroupAddress
         "double",    // FIELD_computingCapacity
         "double",    // FIELD_availableStorage
         "double",    // FIELD_maxNetworkBandwidth
         "double",    // FIELD_computeCost
         "omnetpp::simtime_t",    // FIELD_queueingTime
+        "inet::cgmpTaskState",    // FIELD_taskState
         "omnetpp::simtime_t",    // FIELD_querySendTime
         "omnetpp::simtime_t",    // FIELD_sendTime
     };
-    return (field >= 0 && field < 12) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CgmpReportMsgDescriptor::getFieldPropertyNames(int field) const
@@ -6499,6 +6992,7 @@ int CgmpReportMsgDescriptor::getFieldArraySize(omnetpp::any_ptr object, int fiel
     }
     CgmpReportMsg *pp = omnetpp::fromAnyPtr<CgmpReportMsg>(object); (void)pp;
     switch (field) {
+        case FIELD_taskState: return pp->getTaskStateArraySize();
         default: return 0;
     }
 }
@@ -6515,6 +7009,7 @@ void CgmpReportMsgDescriptor::setFieldArraySize(omnetpp::any_ptr object, int fie
     }
     CgmpReportMsg *pp = omnetpp::fromAnyPtr<CgmpReportMsg>(object); (void)pp;
     switch (field) {
+        case FIELD_taskState: pp->setTaskStateArraySize(size); break;
         default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'CgmpReportMsg'", field);
     }
 }
@@ -6548,11 +7043,13 @@ std::string CgmpReportMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obje
         case FIELD_computeNodePort: return long2string(pp->getComputeNodePort());
         case FIELD_computingType: return long2string(pp->getComputingType());
         case FIELD_computeNodeAddress: return pp->getComputeNodeAddress().str();
+        case FIELD_serviceGroupAddress: return pp->getServiceGroupAddress().str();
         case FIELD_computingCapacity: return double2string(pp->getComputingCapacity());
         case FIELD_availableStorage: return double2string(pp->getAvailableStorage());
         case FIELD_maxNetworkBandwidth: return double2string(pp->getMaxNetworkBandwidth());
         case FIELD_computeCost: return double2string(pp->getComputeCost());
         case FIELD_queueingTime: return simtime2string(pp->getQueueingTime());
+        case FIELD_taskState: return "";
         case FIELD_querySendTime: return simtime2string(pp->getQuerySendTime());
         case FIELD_sendTime: return simtime2string(pp->getSendTime());
         default: return "";
@@ -6601,11 +7098,13 @@ omnetpp::cValue CgmpReportMsgDescriptor::getFieldValue(omnetpp::any_ptr object, 
         case FIELD_computeNodePort: return pp->getComputeNodePort();
         case FIELD_computingType: return pp->getComputingType();
         case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->getComputeNodeAddress()); break;
+        case FIELD_serviceGroupAddress: return omnetpp::toAnyPtr(&pp->getServiceGroupAddress()); break;
         case FIELD_computingCapacity: return pp->getComputingCapacity();
         case FIELD_availableStorage: return pp->getAvailableStorage();
         case FIELD_maxNetworkBandwidth: return pp->getMaxNetworkBandwidth();
         case FIELD_computeCost: return pp->getComputeCost();
         case FIELD_queueingTime: return pp->getQueueingTime().dbl();
+        case FIELD_taskState: return omnetpp::toAnyPtr(&pp->getTaskState(i)); break;
         case FIELD_querySendTime: return pp->getQuerySendTime().dbl();
         case FIELD_sendTime: return pp->getSendTime().dbl();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'CgmpReportMsg' as cValue -- field index out of range?", field);
@@ -6648,6 +7147,7 @@ const char *CgmpReportMsgDescriptor::getFieldStructName(int field) const
         field -= base->getFieldCount();
     }
     switch (field) {
+        case FIELD_taskState: return omnetpp::opp_typename(typeid(cgmpTaskState));
         default: return nullptr;
     };
 }
@@ -6663,6 +7163,8 @@ omnetpp::any_ptr CgmpReportMsgDescriptor::getFieldStructValuePointer(omnetpp::an
     CgmpReportMsg *pp = omnetpp::fromAnyPtr<CgmpReportMsg>(object); (void)pp;
     switch (field) {
         case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->getComputeNodeAddress()); break;
+        case FIELD_serviceGroupAddress: return omnetpp::toAnyPtr(&pp->getServiceGroupAddress()); break;
+        case FIELD_taskState: return omnetpp::toAnyPtr(&pp->getTaskState(i)); break;
         default: return omnetpp::any_ptr(nullptr);
     }
 }

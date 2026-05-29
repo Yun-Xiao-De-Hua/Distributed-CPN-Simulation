@@ -39,6 +39,8 @@ module ComputeRouter extends OspfRouter
         }
         computeRouterProcessor: ComputeRouterProcessor if hasComputeRouterProcessor {
             parameters:
+                sessionManagerModule = "^.sessionManager";
+                interfaceTableModule = "^.interfaceTable";
                 ipv4Module = "^.ipv4.ip";
             @display("p=600,150");
         }

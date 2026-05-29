@@ -14,4 +14,7 @@ simple ComputeGatewayProcessor extends CprpProcessorBase
     parameters:
         @class(ComputeGatewayProcessor);
         int computeNodePort = default(5000);
+
+    gates:
+        output cancelOut;
 }

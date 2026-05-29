@@ -6,6 +6,7 @@
 // 
 
 #include "ComputeGatewayProcessor.h"
+#include "inet/networklayer/ipv4/Ipv4Header_m.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
 
 namespace inet {
@@ -28,6 +29,22 @@ void ComputeGatewayProcessor::extractSessionFromResp(RequestSessionState& state,
 
     EV_INFO << "ComputeGatewayProcessor extracted session for task ("
             << state.userId << "," << state.taskId << ")" << endl;
+}
+
+INetfilter::IHook::Result ComputeGatewayProcessor::processCancelMsg(Packet *packet) {
+    auto cancel = getCancelMsg(packet);
+    auto ipv4Header = packet->peekAtFront<Ipv4Header>();
+    bool isUdpCancel = ipv4Header != nullptr && ipv4Header->getProtocol() == &Protocol::udp;
+    if (cancel != nullptr && !isUdpCancel) {
+        Packet *appPacket = new Packet("CPRP_CANCEL");
+        appPacket->insertAtBack(makeShared<CancelMsg>(*cancel));
+
+        send(appPacket, "cancelOut");
+        EV_INFO << "ComputeGatewayProcessor forwarded raw CPRP_CANCEL to ComputeGatewayApp control gate for task ("
+                << cancel->getUserId() << "," << cancel->getTaskId() << ")" << endl;
+    }
+
+    return CprpProcessorBase::processCancelMsg(packet);
 }
 
 INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packet *packet){

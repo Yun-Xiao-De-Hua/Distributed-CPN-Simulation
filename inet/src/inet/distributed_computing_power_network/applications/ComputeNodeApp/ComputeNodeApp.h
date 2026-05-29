@@ -31,6 +31,7 @@ protected:
         int userId = -1;
         int taskId = -1;
         L3Address userNodeAddress;
+        int userNodePort = -1;
         simtime_t generationTime = SIMTIME_ZERO;
         int computingType = -1;
         double requiredStorage = 0;
@@ -83,6 +84,8 @@ protected:
     // 发送组成员报告消息
     void sendCgmpReport(simtime_t querySendTime);
     simtime_t computeQueueingTime() const;
+    simtime_t getTaskExecutionTime(const QueuedTask& task) const;
+    simtime_t getTaskRemainingExecutionTime(const QueuedTask& task) const;
     void processTaskData(Packet *packet);
     void enqueueTask(const Ptr<const TaskDataMsg>& taskData);
     void tryStartNextTask();

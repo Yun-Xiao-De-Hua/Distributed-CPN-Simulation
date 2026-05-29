@@ -193,6 +193,7 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     payload->setTaskId(requestInfo->getTaskId());
     payload->setUserGatewayAddress(localAddress);
     payload->setUserNodeAddress(userNodeAddress);
+    payload->setUserNodePort(userNodePort);
     payload->setUserAccessRtt(userAccessRtt);
     payload->setUserGatewayForwardTime(simTime());
     payload->setGenerationTime(requestInfo->getGenerationTime());
@@ -206,6 +207,7 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
 
     RequestContext requestContext;
     requestContext.userNodeAddress = userNodeAddress;
+    requestContext.userNodePort = userNodePort;
     requestContext.generationTime = requestInfo->getGenerationTime();
     requestContext.computingType = requestInfo->getComputingType();
     requestContext.requiredStorage = requestInfo->getRequiredStorage();
@@ -524,6 +526,44 @@ void UserGatewayApp::processCprpConfirm(Packet *packet)
 }
 
 // 转发任务数据消息
+void UserGatewayApp::cancelUnselectedCandidates(int userId, int taskId, int selectedPathIndex, const std::vector<ResponseCandidate>& candidates)
+{
+    for (int i = 0; i < (int)candidates.size(); i++) {
+        if (i == selectedPathIndex)
+            continue;
+
+        const ResponseCandidate& candidate = candidates[i];
+        if (candidate.sidPath.empty()) {
+            EV_WARN << "Cannot send CPRP_CANCEL for unselected candidate: empty SID path, task=(" << userId << "," << taskId
+                    << "), candidateIndex=" << i << endl;
+            continue;
+        }
+
+        for (const auto& pathNodeAddress : candidate.sidPath) {
+            if (pathNodeAddress == candidate.nodeInfo.computeNodeAddress)
+                continue;
+
+            auto cancel = makeShared<CancelMsg>();
+            cancel->setUserId(userId);
+            cancel->setTaskId(taskId);
+            cancel->setComputeNodeAddress(candidate.nodeInfo.computeNodeAddress);
+            cancel->setComputeNodePort(candidate.nodeInfo.computeNodePort);
+            cancel->setSenderType(SENDER_USER_GW);
+
+            Packet *cancelPacket = new Packet("CPRP_CANCEL");
+            cancelPacket->insertAtBack(cancel);
+            socket.sendTo(cancelPacket, pathNodeAddress, computeGatewayPort);
+
+            EV_INFO << "Sent CPRP_CANCEL for unselected candidate: task=(" << userId << "," << taskId
+                    << "), candidateIndex=" << i
+                    << ", computeNode=" << candidate.nodeInfo.computeNodeId << "@" << candidate.nodeInfo.computeNodeAddress
+                    << ":" << candidate.nodeInfo.computeNodePort
+                    << ", pathNode=" << pathNodeAddress
+                    << ", cancelPort=" << computeGatewayPort << endl;
+        }
+    }
+}
+
 void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex)
 {
     auto candidateIt = candidateCache.find({userId, taskId});
@@ -561,6 +601,8 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
         return;
     }
 
+    cancelUnselectedCandidates(userId, taskId, selectedPathIndex, *candidates);
+
     EV_INFO << "Selected cached CPRP path index=" << selectedPathIndex
             << " delay=" << selectedCandidate->totalDelay
             << " hops=" << selectedCandidate->sidPath.size() << endl;
@@ -569,6 +611,7 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     taskData->setUserId(userId);
     taskData->setTaskId(taskId);
     taskData->setUserNodeAddress(requestContext.userNodeAddress);
+    taskData->setUserNodePort(requestContext.userNodePort);
     taskData->setGenerationTime(requestContext.generationTime);
     taskData->setComputingType(requestContext.computingType);
     taskData->setRequiredStorage(requestContext.requiredStorage);

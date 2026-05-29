@@ -32,6 +32,7 @@ class CprpRequestMsg extends inet::FieldsChunk {
     string msgType = "CPRP_REQ";    
 	L3Address userGatewayAddress;
     L3Address userNodeAddress;       // 产生任务的用户节点地址
+    int userNodePort;                // 用户节点端口号
     simtime_t userAccessRtt;         // 用户节点到用户网关的估计往返网络时延
     simtime_t userGatewayForwardTime; // 用户网关转发 CPRP_REQ 的时间戳
  
@@ -45,7 +46,7 @@ class CprpRequestMsg extends inet::FieldsChunk {
     double budget;              // 预算
     double userMaxBandwidth;    // 传输带宽(Mbps)
     
-    chunkLength = B(28 + 56); // 在构造函数中直接赋值
+    chunkLength = B(32 + 56); // 在构造函数中直接赋值
 }
 
 class CprpResponseMsg extends inet::FieldsChunk {
@@ -149,6 +150,7 @@ class TaskDataMsg extends inet::FieldsChunk {
 
     string msgType = "TaskDataMsg";    
 	L3Address userNodeAddress;    
+    int userNodePort;                // 用户节点端口号
  
 	// 任务数据参数	
     simtime_t generationTime;   // 任务产生的时刻
@@ -161,7 +163,7 @@ class TaskDataMsg extends inet::FieldsChunk {
     double userMaxBandwidth;    // 传输带宽(Mbps)
     int priority = 5;           // DSCP优先级，默认EF(5)
     
-    chunkLength = B(16 + 40); // 在构造函数中直接赋值
+    chunkLength = B(20 + 40); // 在构造函数中直接赋值
 }
 
 // 算力应答超时自消息
@@ -219,6 +221,12 @@ class CgmpQueryMsg extends inet::FieldsChunk {
     chunkLength = B(8); // 在构造函数中直接赋值
 }
 
+struct cgmpTaskState {
+    int userId;                    // 用户ID
+    int taskId;                    // 任务ID
+    simtime_t remainingExecutionTime; // 任务剩余执行时间
+}
+
 class CgmpReportMsg extends inet::FieldsChunk {
     string msgType = "CGMP_Report";    
     
@@ -226,15 +234,17 @@ class CgmpReportMsg extends inet::FieldsChunk {
     int computeNodePort;          // 算力节点端口号
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     L3Address computeNodeAddress; // 算力节点IP地址
+    L3Address serviceGroupAddress; // 算力组地址
     double computingCapacity;	// 节点计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
     double computeCost;          // 节点使用单价(￥/s)
     simtime_t queueingTime;      // 节点等待队列预计排队时间
+    cgmpTaskState taskState[];   // 节点当前任务剩余执行时间
     simtime_t querySendTime;     // 查询发送时间戳
     simtime_t sendTime;          // 时间戳
     
-    chunkLength = B(12 + 56); // 在构造函数中直接赋值
+    chunkLength = B(12 + 72); // 在构造函数中直接赋值
 }
 
 

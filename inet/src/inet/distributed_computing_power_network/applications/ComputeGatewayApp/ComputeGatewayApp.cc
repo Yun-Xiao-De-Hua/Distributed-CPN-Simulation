@@ -17,12 +17,9 @@ Define_Module(inet::ComputeGatewayApp);
 namespace inet {
 
 ComputeGatewayApp::ComputeGatewayApp() {
-    // TODO Auto-generated constructor stub
-
 }
 
 ComputeGatewayApp::~ComputeGatewayApp() {
-    // TODO Auto-generated destructor stub
 }
 
 void ComputeGatewayApp::initialize(int stage)
@@ -90,8 +87,13 @@ void ComputeGatewayApp::handleMessageWhenUp(cMessage *msg)
         }
     }
     else {
-        // 处理底层传上来的 UDP 数据
-        socket.processMessage(msg);
+        if (msg->getArrivalGate() == gate("cprpControlIn")) {
+            processCprpCancel(check_and_cast<Packet *>(msg));
+        }
+        else {
+            // 处理底层传上来的 UDP 数据
+            socket.processMessage(msg);
+        }
     }
 }
 
@@ -164,6 +166,7 @@ void ComputeGatewayApp::logCurrentCib() const
             EV_INFO << "  CIBEntry{"
                     << "computingType=" << cib.computingType
                     << ", nodeId=" << cib.nodeId
+                    << ", serviceGroupAddress=" << cib.serviceGroupAddress
                     << ", address=" << cib.nodeAddress
                     << ", port=" << cib.nodePort
                     << ", interfaceId=" << cib.interfaceId
@@ -179,6 +182,185 @@ void ComputeGatewayApp::logCurrentCib() const
                     << "}" << std::endl;
         }
     }
+}
+
+void ComputeGatewayApp::logTaskQueueStates() const
+{
+    EV_INFO << "Current task queue soft states on ComputeGateway" << computeGatewayId << ":" << std::endl;
+
+    if (taskQueueStateMap.empty()) {
+        EV_INFO << "  <empty>" << std::endl;
+        return;
+    }
+
+    for (const auto& entry : taskQueueStateMap) {
+        const TaskQueueState& queueState = entry.second;
+        EV_INFO << "  TaskQueueState{"
+                << "queueId=" << queueState.queueId
+                << ", computingType=" << entry.first.first
+                << ", computeNodeId=" << queueState.computeNodeId
+                << ", serviceGroupAddress=" << queueState.serviceGroupAddress
+                << ", computeNodeAddress=" << queueState.computeNodeAddress
+                << ", computeNodePort=" << queueState.computeNodePort
+                << ", queueTotalTime=" << queueState.queueTotalTime
+                << ", taskCount=" << queueState.taskQueue.size()
+                << "}" << std::endl;
+
+        for (const auto& task : queueState.taskQueue) {
+            EV_INFO << "    ReservedTask{"
+                    << "userId=" << task.userId
+                    << ", taskId=" << task.taskId
+                    << ", userNodeAddress=" << task.userNodeAddress
+                    << ", userNodePort=" << task.userNodePort
+                    << ", remainingExecutionTime=" << task.remainingExecutionTime
+                    << ", reportedByComputeNode=" << (task.reportedByComputeNode ? "true" : "false")
+                    << "}" << std::endl;
+        }
+    }
+}
+
+ComputeGatewayApp::TaskQueueState& ComputeGatewayApp::getOrCreateTaskQueueState(const CIB& cib)
+{
+    auto key = std::make_pair(cib.computingType, cib.nodeId);
+    TaskQueueState& queueState = taskQueueStateMap[key];
+    if (queueState.queueId < 0)
+        queueState.queueId = nextQueueId++;
+
+    queueState.computeNodeId = cib.nodeId;
+    queueState.serviceGroupAddress = cib.serviceGroupAddress;
+    queueState.computeNodeAddress = cib.nodeAddress;
+    queueState.computeNodePort = cib.nodePort;
+    if (queueState.queueTotalTime < SIMTIME_ZERO)
+        queueState.queueTotalTime = SIMTIME_ZERO;
+    return queueState;
+}
+
+const ComputeGatewayApp::TaskQueueState *ComputeGatewayApp::findTaskQueueState(int computingType, int computeNodeId) const
+{
+    auto it = taskQueueStateMap.find({computingType, computeNodeId});
+    return it == taskQueueStateMap.end() ? nullptr : &it->second;
+}
+
+simtime_t ComputeGatewayApp::getReservedQueueingTime(int computingType, int computeNodeId) const
+{
+    const TaskQueueState *queueState = findTaskQueueState(computingType, computeNodeId);
+    return queueState == nullptr ? SIMTIME_ZERO : queueState->queueTotalTime;
+}
+
+bool ComputeGatewayApp::reserveTaskQueueItem(const CprpRequestMsg& requestInfo, const CandidateEvaluation& selectedCandidate)
+{
+    const CIB& cib = selectedCandidate.cib;
+    TaskQueueState& queueState = getOrCreateTaskQueueState(cib);
+
+    for (const auto& task : queueState.taskQueue) {
+        if (task.userId == requestInfo.getUserId() && task.taskId == requestInfo.getTaskId()) {
+            EV_WARN << "Task queue reservation already exists for task (" << task.userId << "," << task.taskId
+                    << ") on queueId=" << queueState.queueId << std::endl;
+            return false;
+        }
+    }
+
+    ReservedTaskItem task;
+    task.userId = requestInfo.getUserId();
+    task.taskId = requestInfo.getTaskId();
+    task.userNodeAddress = requestInfo.getUserNodeAddress();
+    task.userNodePort = requestInfo.getUserNodePort();
+    double computationDelay = cib.computingCapacity > 0 ? requestInfo.getComputingAmount() / cib.computingCapacity : 0;
+    task.remainingExecutionTime = SimTime(computationDelay);
+
+    queueState.taskQueue.push_back(task);
+    queueState.queueTotalTime += task.remainingExecutionTime;
+
+    EV_INFO << "Reserved compute task queue item: queueId=" << queueState.queueId
+            << ", task=(" << task.userId << "," << task.taskId << ")"
+            << ", computeNode=" << queueState.computeNodeId << "@" << queueState.computeNodeAddress << ":" << queueState.computeNodePort
+            << ", serviceGroupAddress=" << queueState.serviceGroupAddress
+            << ", remainingExecutionTime=" << task.remainingExecutionTime
+            << ", queueTotalTime=" << queueState.queueTotalTime << std::endl;
+    return true;
+}
+
+bool ComputeGatewayApp::removeReservedTaskQueueItem(int userId, int taskId, const L3Address& computeNodeAddress, int computeNodePort, const char *reason)
+{
+    for (auto& entry : taskQueueStateMap) {
+        TaskQueueState& queueState = entry.second;
+        if (!computeNodeAddress.isUnspecified() && queueState.computeNodeAddress != computeNodeAddress)
+            continue;
+        if (computeNodePort > 0 && queueState.computeNodePort != computeNodePort)
+            continue;
+
+        for (auto it = queueState.taskQueue.begin(); it != queueState.taskQueue.end(); ++it) {
+            if (it->userId == userId && it->taskId == taskId) {
+                simtime_t removedTime = it->remainingExecutionTime;
+                queueState.taskQueue.erase(it);
+                queueState.queueTotalTime -= removedTime;
+                if (queueState.queueTotalTime < SIMTIME_ZERO)
+                    queueState.queueTotalTime = SIMTIME_ZERO;
+                EV_INFO << "Removed compute task queue item by " << reason
+                        << ": queueId=" << queueState.queueId
+                        << ", task=(" << userId << "," << taskId << ")"
+                        << ", removedTime=" << removedTime
+                        << ", queueTotalTime=" << queueState.queueTotalTime << std::endl;
+                return true;
+            }
+        }
+    }
+
+    EV_WARN << "No matching compute task queue item found by " << reason
+            << " for task (" << userId << "," << taskId << ")"
+            << ", computeNodeAddress=" << computeNodeAddress
+            << ", computeNodePort=" << computeNodePort << std::endl;
+    return false;
+}
+
+void ComputeGatewayApp::reconcileTaskQueueWithReport(const CIB& cib, const Ptr<const CgmpReportMsg>& reportInfo)
+{
+    TaskQueueState& queueState = getOrCreateTaskQueueState(cib);
+
+    for (auto it = queueState.taskQueue.begin(); it != queueState.taskQueue.end(); ) {
+        bool reported = false;
+        for (int i = 0; i < (int)reportInfo->getTaskStateArraySize(); i++) {
+            const cgmpTaskState& taskState = reportInfo->getTaskState(i);
+            if (it->userId == taskState.userId && it->taskId == taskState.taskId) {
+                it->remainingExecutionTime = taskState.remainingExecutionTime;
+                it->reportedByComputeNode = true;
+                reported = true;
+                break;
+            }
+        }
+
+        if (!reported && it->reportedByComputeNode) {
+            EV_INFO << "CGMP_Report indicates task has left compute node queue, removing soft state item: queueId=" << queueState.queueId
+                    << ", task=(" << it->userId << "," << it->taskId << ")" << std::endl;
+            it = queueState.taskQueue.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+    queueState.queueTotalTime = SIMTIME_ZERO;
+    for (const auto& task : queueState.taskQueue)
+        queueState.queueTotalTime += task.remainingExecutionTime;
+
+    EV_INFO << "Reconciled task queue soft state by CGMP_Report: queueId=" << queueState.queueId
+            << ", reportedTaskCount=" << reportInfo->getTaskStateArraySize()
+            << ", queueTotalTime=" << queueState.queueTotalTime << std::endl;
+}
+
+void ComputeGatewayApp::processCprpCancel(Packet *packet)
+{
+    const auto& cancelInfo = packet->popAtFront<CancelMsg>();
+    if (cancelInfo == nullptr) {
+        EV_WARN << "Error: Received a Packet named '" << packet->getName()
+                << "', but it does not contain a CancelMsg chunk. Discarding.";
+        delete packet;
+        return;
+    }
+
+    removeReservedTaskQueueItem(cancelInfo->getUserId(), cancelInfo->getTaskId(), cancelInfo->getComputeNodeAddress(), cancelInfo->getComputeNodePort(), "CPRP_CANCEL");
+    logTaskQueueStates();
+    delete packet;
 }
 
 std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateCandidateNodes(const CprpRequestMsg& requestInfo, const std::unordered_map<int, CIB>& groupMap)
@@ -212,17 +394,17 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
         CandidateEvaluation evaluation;
         evaluation.cib = cib;
         evaluation.userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayRttMs;
-        evaluation.userToComputeNodeRttMs = userAccessRttMs + userGatewayToComputeGatewayRttMs + cib.networkDelayMs;
+        double userToComputeNodeRttMs = userAccessRttMs + userGatewayToComputeGatewayRttMs + cib.networkDelayMs;
 
         NetworkInterface *nodeInterface = ift != nullptr && cib.interfaceId >= 0 ? ift->getInterfaceById(cib.interfaceId) : nullptr;
         double gatewayLinkBandwidthBps = nodeInterface != nullptr ? nodeInterface->getDatarate() : 0;
-        evaluation.gatewayLinkBandwidthMbps = gatewayLinkBandwidthBps / 1e6;
+        double gatewayLinkBandwidthMbps = gatewayLinkBandwidthBps / 1e6;
 
-        evaluation.transmissionDelay = userMaxBandwidthMbps > 0 ? requestInfo.getTransferAmount() * 8.0 / userMaxBandwidthMbps : std::numeric_limits<double>::infinity();
-        evaluation.propagationDelay = evaluation.userToComputeNodeRttMs / 1000.0;
-        evaluation.computationDelay = cib.computingCapacity > 0 ? requestInfo.getComputingAmount() / cib.computingCapacity : std::numeric_limits<double>::infinity();
-        evaluation.queueingDelay = cib.queueingTime.dbl();
-        evaluation.totalDelay = evaluation.transmissionDelay + evaluation.propagationDelay + evaluation.computationDelay + evaluation.queueingDelay;
+        double transmissionDelay = userMaxBandwidthMbps > 0 ? requestInfo.getTransferAmount() * 8.0 / userMaxBandwidthMbps : std::numeric_limits<double>::infinity();
+        double propagationDelay = userToComputeNodeRttMs / 1000.0;
+        double computationDelay = cib.computingCapacity > 0 ? requestInfo.getComputingAmount() / cib.computingCapacity : std::numeric_limits<double>::infinity();
+        double queueingDelay = getReservedQueueingTime(cib.computingType, cib.nodeId).dbl();
+        evaluation.totalDelay = transmissionDelay + propagationDelay + computationDelay + queueingDelay;
 
         if (cib.computingType != requestInfo.getComputingType())
             evaluation.rejectReason = "computing type mismatch";
@@ -230,7 +412,7 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
             evaluation.rejectReason = "task data size exceeds available storage";
         else if (gatewayLinkBandwidthBps <= 0)
             evaluation.rejectReason = "gateway link bandwidth is unavailable";
-        else if (evaluation.gatewayLinkBandwidthMbps < userMaxBandwidthMbps)
+        else if (gatewayLinkBandwidthMbps < userMaxBandwidthMbps)
             evaluation.rejectReason = "gateway link bandwidth is lower than user maximum bandwidth";
         else if (cib.maxNetworkBandwidth < userMaxBandwidthMbps)
             evaluation.rejectReason = "compute node network bandwidth is lower than user maximum bandwidth";
@@ -243,21 +425,23 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
 
         EV_INFO << "  Candidate{"
                 << "nodeId=" << cib.nodeId
+                << ", queueId=" << getOrCreateTaskQueueState(cib).queueId
+                << ", serviceGroupAddress=" << cib.serviceGroupAddress
                 << ", address=" << cib.nodeAddress
                 << ", port=" << cib.nodePort
                 << ", interfaceId=" << cib.interfaceId
                 << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
-                << ", queueingTime=" << cib.queueingTime
+                << ", softStateQueueingTime=" << queueingDelay << " s"
                 << ", computeCost=" << cib.computeCost << " CNY/s"
                 << ", availableStorage=" << cib.availableStorage << " MB"
                 << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
-                << ", gatewayLinkBandwidth=" << evaluation.gatewayLinkBandwidthMbps << " Mbps"
+                << ", gatewayLinkBandwidth=" << gatewayLinkBandwidthMbps << " Mbps"
                 << ", computeGatewayToComputeNodeRtt=" << cib.networkDelayMs << " ms"
-                << ", userToComputeNodeRtt=" << evaluation.userToComputeNodeRttMs << " ms"
-                << ", transmissionDelay=" << evaluation.transmissionDelay << " s"
-                << ", propagationDelay=" << evaluation.propagationDelay << " s"
-                << ", computationDelay=" << evaluation.computationDelay << " s"
-                << ", queueingDelay=" << evaluation.queueingDelay << " s"
+                << ", userToComputeNodeRtt=" << userToComputeNodeRttMs << " ms"
+                << ", transmissionDelay=" << transmissionDelay << " s"
+                << ", propagationDelay=" << propagationDelay << " s"
+                << ", computationDelay=" << computationDelay << " s"
+                << ", queueingDelay=" << queueingDelay << " s"
                 << ", totalDelay=" << evaluation.totalDelay << " s"
                 << ", delayTolerance=" << requestInfo.getTotalDelayRequirement() << " s"
                 << ", eligible=" << (evaluation.eligible ? "true" : "false")
@@ -287,8 +471,7 @@ bool ComputeGatewayApp::selectBestCandidate(const std::vector<CandidateEvaluatio
         EV_INFO << "Selected compute node candidate: nodeId=" << bestCandidate.cib.nodeId
                 << ", address=" << bestCandidate.cib.nodeAddress
                 << ", port=" << bestCandidate.cib.nodePort
-                << ", totalDelay=" << bestCandidate.totalDelay << " s"
-                << ", userToComputeNodeRtt=" << bestCandidate.userToComputeNodeRttMs << " ms" << std::endl;
+                << ", totalDelay=" << bestCandidate.totalDelay << " s" << std::endl;
     }
     else {
         EV_WARN << "No eligible compute node candidate found." << std::endl;
@@ -332,6 +515,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.computingType = reportInfo->getComputingType();
     cib.nodeAddress = reportInfo->getComputeNodeAddress();
     cib.nodePort = reportInfo->getComputeNodePort();
+    cib.serviceGroupAddress = reportInfo->getServiceGroupAddress();
     auto interfaceInd = packet->findTag<InterfaceInd>();
     cib.interfaceId = interfaceInd != nullptr ? interfaceInd->getInterfaceId() : -1;
     cib.computingCapacity = reportInfo->getComputingCapacity();
@@ -348,6 +532,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", nodeId=" << cib.nodeId
             << ", address=" << cib.nodeAddress
             << ", port=" << cib.nodePort
+            << ", serviceGroupAddress=" << cib.serviceGroupAddress
             << ", interfaceId=" << cib.interfaceId
             << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
             << ", computeCost=" << cib.computeCost << " CNY/s"
@@ -357,7 +542,9 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", networkDelay=" << cib.networkDelayMs << " ms"
             << ", updateTime=" << cib.updateTime << std::endl;
 
+    reconcileTaskQueueWithReport(cib, reportInfo);
     logCurrentCib();
+    logTaskQueueStates();
 
     delete packet;
 }
@@ -407,6 +594,8 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
         delete packet;
         return;
     }
+
+    reserveTaskQueueItem(*requestInfo, bestCandidate);
 
     CIB destNodeInfo = bestCandidate.cib;
 
@@ -470,9 +659,7 @@ void ComputeGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
         updateCib(packet);
     }
     else if(strcmp(packet->getName(), "CPRP_CANCEL") == 0){
-        // 网络层已先完成带宽/会话撤销。应用层这里只预留软状态清理入口。
-        EV_INFO << "ComputeGatewayApp received CPRP_CANCEL." << std::endl;
-        delete packet;
+        processCprpCancel(packet);
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << std::endl;

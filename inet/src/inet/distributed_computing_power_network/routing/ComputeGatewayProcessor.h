@@ -21,6 +21,7 @@ protected:
     virtual void initialize(int stage) override;
 
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet) override;
+    virtual Result processCancelMsg(Packet *packet) override;
     virtual Result datagramPostRoutingHook(Packet *packet) override;
 
 public:

@@ -68,11 +68,38 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
     payload->setComputeNodePort(localPort);
     payload->setComputingType(computingType);
     payload->setComputeNodeAddress(localAddress);
+    payload->setServiceGroupAddress(multicastAddress);
     payload->setComputingCapacity(computingCapacity);
     payload->setAvailableStorage(availableStorage);
     payload->setMaxNetworkBandwidth(maxNetworkBandwidth);
     payload->setComputeCost(computeCost);
     payload->setQueueingTime(queueingTime);
+
+    int taskStateIndex = 0;
+    int taskStateCount = (busy && activeTask.taskId >= 0) ? 1 : 0;
+    std::queue<QueuedTask> pendingTasks = taskQueue;
+    taskStateCount += pendingTasks.size();
+    payload->setTaskStateArraySize(taskStateCount);
+
+    if (busy && activeTask.taskId >= 0) {
+        cgmpTaskState taskState;
+        taskState.userId = activeTask.userId;
+        taskState.taskId = activeTask.taskId;
+        taskState.remainingExecutionTime = getTaskRemainingExecutionTime(activeTask);
+        payload->setTaskState(taskStateIndex++, taskState);
+    }
+
+    while (!pendingTasks.empty()) {
+        QueuedTask task = pendingTasks.front();
+        pendingTasks.pop();
+
+        cgmpTaskState taskState;
+        taskState.userId = task.userId;
+        taskState.taskId = task.taskId;
+        taskState.remainingExecutionTime = getTaskExecutionTime(task);
+        payload->setTaskState(taskStateIndex++, taskState);
+    }
+
     payload->setQuerySendTime(querySendTime);
     payload->setSendTime(simTime());
 
@@ -90,11 +117,13 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
     EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report (TTL=1) to computeGateway" << computeGatewayId
             << ": address=" << localAddress
             << ", port=" << localPort
+            << ", serviceGroupAddress=" << multicastAddress
             << ", computingCapacity=" << computingCapacity << " FLOPs/s"
             << ", computeCost=" << computeCost << " CNY/s"
             << ", availableStorage=" << availableStorage << " MB"
             << ", maxNetworkBandwidth=" << maxNetworkBandwidth << " Mbps"
             << ", queueingTime=" << queueingTime
+            << ", taskStateCount=" << taskStateCount
             << ", querySendTime=" << querySendTime
             << ", sendTime=" << simTime() << "\n";
 }
@@ -121,6 +150,20 @@ simtime_t ComputeNodeApp::computeQueueingTime() const
         pendingTasks.pop();
     }
     return queueingTime;
+}
+
+simtime_t ComputeNodeApp::getTaskExecutionTime(const QueuedTask& task) const
+{
+    return computingCapacity > 0 && task.computingAmount > 0 ? SimTime(task.computingAmount / computingCapacity) : SIMTIME_ZERO;
+}
+
+simtime_t ComputeNodeApp::getTaskRemainingExecutionTime(const QueuedTask& task) const
+{
+    if (busy && activeTask.userId == task.userId && activeTask.taskId == task.taskId) {
+        simtime_t remainingTime = getTaskExecutionTime(task) - (simTime() - task.executionStartTime);
+        return remainingTime > SIMTIME_ZERO ? remainingTime : SIMTIME_ZERO;
+    }
+    return getTaskExecutionTime(task);
 }
 
 
@@ -187,6 +230,7 @@ void ComputeNodeApp::enqueueTask(const Ptr<const TaskDataMsg>& taskData)
     task.userId = taskData->getUserId();
     task.taskId = taskData->getTaskId();
     task.userNodeAddress = taskData->getUserNodeAddress();
+    task.userNodePort = taskData->getUserNodePort();
     task.generationTime = taskData->getGenerationTime();
     task.computingType = taskData->getComputingType();
     task.requiredStorage = taskData->getRequiredStorage();
@@ -310,11 +354,12 @@ void ComputeNodeApp::sendTaskCompletion(const QueuedTask& task, bool success, in
 
     Packet *pkt = new Packet("TASK_COMPLETION");
     pkt->insertAtBack(payload);
-    socket.sendTo(pkt, task.userNodeAddress, userNodePort);
+    int destinationPort = task.userNodePort > 0 ? task.userNodePort : userNodePort;
+    socket.sendTo(pkt, task.userNodeAddress, destinationPort);
 
     EV_INFO << "ComputeNode" << computeNodeId << " sent " << (success ? "successful" : "failed")
             << " TASK_COMPLETION for task (" << task.userId << "," << task.taskId
-            << ") to " << task.userNodeAddress << ":" << userNodePort << endl;
+            << ") to " << task.userNodeAddress << ":" << destinationPort << endl;
 }
 
 void ComputeNodeApp::stripCpnPathHeader(Packet *packet)

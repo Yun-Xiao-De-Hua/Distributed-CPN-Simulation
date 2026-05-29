@@ -20,5 +20,6 @@ simple ComputeGatewayApp like IApp
 
     gates:
         input socketIn;
+        input cprpControlIn;
         output socketOut;
 }
