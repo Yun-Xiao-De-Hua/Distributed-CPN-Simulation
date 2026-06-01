@@ -78,11 +78,6 @@ RequestSessionState* SessionManager::getSessionForUpdate(int userId, int taskId)
 
 void SessionManager::createSession(const RequestSessionState& state) {
     auto key = std::make_pair(state.userId, state.taskId);
-    if (state.interfaceId < 0) {
-        EV_WARN << "Cannot create session: invalid reservation interface " << state.interfaceId
-                << " for task (" << state.userId << "," << state.taskId << ")" << endl;
-        return;
-    }
     
     if (hasSession(state.userId, state.taskId)) {
         EV_WARN << "Session already exists for task (" << state.userId 
@@ -99,8 +94,7 @@ void SessionManager::createSession(const RequestSessionState& state) {
         
         EV_INFO << "Created session for task (" << state.userId << "," << state.taskId 
                 << ") computeNode=" << state.computeNodeAddress 
-                << ":" << state.computeNodePort
-                << " reservationInterface=" << state.interfaceId << endl;
+                << ":" << state.computeNodePort << endl;
     } else {
         EV_WARN << "Cannot create session: insufficient bandwidth on interface " 
                 << state.interfaceId << endl;
@@ -109,11 +103,6 @@ void SessionManager::createSession(const RequestSessionState& state) {
 
 void SessionManager::updateSession(const RequestSessionState& state) {
     auto key = std::make_pair(state.userId, state.taskId);
-    if (state.interfaceId < 0) {
-        EV_WARN << "Cannot update session: invalid reservation interface " << state.interfaceId
-                << " for task (" << state.userId << "," << state.taskId << ")" << endl;
-        return;
-    }
     
     if (!hasSession(state.userId, state.taskId)) {
         EV_WARN << "Session not found for task (" << state.userId 
@@ -142,8 +131,7 @@ void SessionManager::updateSession(const RequestSessionState& state) {
     
     EV_INFO << "Updated session for task (" << state.userId << "," << state.taskId 
             << ") computeNode=" << state.computeNodeAddress 
-            << ":" << state.computeNodePort
-            << " reservationInterface=" << state.interfaceId << endl;
+            << ":" << state.computeNodePort << endl;
 }
 
 void SessionManager::removeSession(int userId, int taskId) {
@@ -163,22 +151,12 @@ void SessionManager::removeSession(int userId, int taskId) {
 }
 
 void SessionManager::reserveBandwidth(int interfaceId, double bandwidth) {
-    if (interfaceId < 0) {
-        EV_WARN << "Cannot reserve bandwidth on invalid interface " << interfaceId << endl;
-        return;
-    }
-
     reservedBandwidth[interfaceId] += bandwidth;
     EV_INFO << "Reserved " << bandwidth << " bps on interface " << interfaceId 
             << ", total reserved: " << reservedBandwidth[interfaceId] << endl;
 }
 
 void SessionManager::releaseBandwidth(int interfaceId, double bandwidth) {
-    if (interfaceId < 0) {
-        EV_WARN << "Cannot release bandwidth on invalid interface " << interfaceId << endl;
-        return;
-    }
-
     if (reservedBandwidth[interfaceId] >= bandwidth) {
         reservedBandwidth[interfaceId] -= bandwidth;
         EV_INFO << "Released " << bandwidth << " bps on interface " << interfaceId 
@@ -190,9 +168,6 @@ void SessionManager::releaseBandwidth(int interfaceId, double bandwidth) {
 }
 
 double SessionManager::getAvailableBandwidth(int interfaceId) {
-    if (interfaceId < 0)
-        return 0;
-
     auto totalIt = interfaceBandwidth.find(interfaceId);
     double total = totalIt != interfaceBandwidth.end() ? totalIt->second : defaultInterfaceBandwidth;
     double reserved = reservedBandwidth[interfaceId];
@@ -200,9 +175,6 @@ double SessionManager::getAvailableBandwidth(int interfaceId) {
 }
 
 bool SessionManager::canReserveBandwidth(int interfaceId, double bandwidth) {
-    if (interfaceId < 0)
-        return false;
-
     return getAvailableBandwidth(interfaceId) >= bandwidth;
 }
 

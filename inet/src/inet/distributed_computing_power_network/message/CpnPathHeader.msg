@@ -41,7 +41,6 @@ class CpnPathReq extends TagBase
     L3Address hopAddress[];
     L3Address userGatewayAddress;
     double requiredBandwidth = 0;
-    int reserveInterfaceId = -1;      // 本地预留接口ID，不写入物理路径Header
     L3Address sidList[];
     int currentHopIndex = 0;
 }

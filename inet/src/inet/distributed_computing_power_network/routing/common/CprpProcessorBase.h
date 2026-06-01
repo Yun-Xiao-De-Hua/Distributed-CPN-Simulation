@@ -57,12 +57,8 @@ protected:
     virtual Result processCancelMsg(Packet *packet);
 
     virtual bool shouldKeepNewSession(const RequestSessionState& existing,
-                                       const RequestSessionState& newResp);
-
-    virtual int getReservationInterfaceId(Packet *packet, const RequestSessionState& state);
-    virtual L3Address getPathRecordAddress(Packet *packet);
-    virtual L3Address getInterfaceAddress(int interfaceId) const;
-    virtual void queueCancelsForPath(const RequestSessionState& state);
+                                       const RequestSessionState& newResp,
+                                       int outInterfaceId);
 
     virtual void sendPendingCancels();
     virtual void sendCancelPacket(const PendingCancel& info);

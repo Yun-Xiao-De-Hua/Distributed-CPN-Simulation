@@ -2,7 +2,6 @@
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/InterfaceTable.h"
-#include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
@@ -599,15 +598,6 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     reserveTaskQueueItem(*requestInfo, bestCandidate);
 
     CIB destNodeInfo = bestCandidate.cib;
-    L3Address gatewayToComputeAddress = localAddress;
-    IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-    NetworkInterface *reserveInterface = ift != nullptr && destNodeInfo.interfaceId >= 0 ? ift->getInterfaceById(destNodeInfo.interfaceId) : nullptr;
-    auto reserveIpv4Data = reserveInterface == nullptr ? nullptr : reserveInterface->getProtocolData<Ipv4InterfaceData>();
-    if (reserveIpv4Data != nullptr)
-        gatewayToComputeAddress = L3Address(reserveIpv4Data->getIPAddress());
-    else
-        EV_WARN << "Cannot resolve compute gateway reservation interface address for interfaceId="
-                << destNodeInfo.interfaceId << "; falling back to localAddress=" << localAddress << std::endl;
 
     auto payload = makeShared<CprpResponseMsg>();
     payload->setUserId(requestInfo->getUserId());
@@ -645,19 +635,16 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
     pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth() * 1e6);
-    pathReq->setReserveInterfaceId(destNodeInfo.interfaceId);
-    // 应用层预先写入上游路径起点：[算力节点, 算力网关面向该算力节点的接口]。
-    // 后续算力路由器在网络层继续记录自身面向算力侧的预留接口地址。
+    // 应用层预先写入上游路径起点：[算力节点, 算力网关]。
+    // 后续算力路由器在网络层继续向 hopAddress 末尾追加自身出口地址。
     pathReq->setHopAddressArraySize(2);
     pathReq->setHopAddress(0, destNodeInfo.nodeAddress);
-    pathReq->setHopAddress(1, gatewayToComputeAddress);
+    pathReq->setHopAddress(1, localAddress);
 
     socket.sendTo(pkt, requestInfo->getUserGatewayAddress(), userGatewayPort);
 
     EV_INFO << "ComputeGateway" << computeGatewayId << " has sent CPRP_RESP with path recording for task("
-            << requestInfo->getUserId() << "," << requestInfo->getTaskId()
-            << ") reserveInterfaceId=" << destNodeInfo.interfaceId
-            << " reserveInterfaceAddress=" << gatewayToComputeAddress << ".\n";
+            << requestInfo->getUserId() << "," << requestInfo->getTaskId() << ").\n";
 
     delete packet;
 }

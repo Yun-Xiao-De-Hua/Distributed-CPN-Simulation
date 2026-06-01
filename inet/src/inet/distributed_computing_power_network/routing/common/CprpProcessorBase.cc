@@ -369,75 +369,6 @@ void CprpProcessorBase::clearForwardingDecisionTags(Packet *packet) {
     packet->removeTagIfPresent<NextHopAddressReq>();
 }
 
-int CprpProcessorBase::getReservationInterfaceId(Packet *packet, const RequestSessionState& state) {
-    auto interfaceInd = packet->findTag<InterfaceInd>();
-    if (interfaceInd != nullptr)
-        return interfaceInd->getInterfaceId();
-
-    auto interfaceReq = packet->findTag<InterfaceReq>();
-    if (interfaceReq != nullptr) {
-        EV_WARN << "getReservationInterfaceId: InterfaceInd is missing for RESP task ("
-                << state.userId << "," << state.taskId
-                << "), falling back to InterfaceReq=" << interfaceReq->getInterfaceId() << endl;
-        return interfaceReq->getInterfaceId();
-    }
-
-    return -1;
-}
-
-L3Address CprpProcessorBase::getInterfaceAddress(int interfaceId) const {
-    if (interfaceId < 0 || interfaceTable == nullptr)
-        return L3Address();
-
-    auto ie = interfaceTable->getInterfaceById(interfaceId);
-    auto ipv4Data = ie == nullptr ? nullptr : ie->getProtocolData<Ipv4InterfaceData>();
-    return ipv4Data == nullptr ? L3Address() : L3Address(ipv4Data->getIPAddress());
-}
-
-L3Address CprpProcessorBase::getPathRecordAddress(Packet *packet) {
-    auto interfaceInd = packet->findTag<InterfaceInd>();
-    if (interfaceInd != nullptr) {
-        L3Address address = getInterfaceAddress(interfaceInd->getInterfaceId());
-        if (!address.isUnspecified())
-            return address;
-    }
-
-    auto interfaceReq = packet->findTag<InterfaceReq>();
-    if (interfaceReq != nullptr) {
-        L3Address address = getInterfaceAddress(interfaceReq->getInterfaceId());
-        if (!address.isUnspecified()) {
-            EV_WARN << "getPathRecordAddress: InterfaceInd address is unavailable, falling back to InterfaceReq address "
-                    << address << endl;
-            return address;
-        }
-    }
-
-    return L3Address();
-}
-
-void CprpProcessorBase::queueCancelsForPath(const RequestSessionState& state) {
-    auto upstreamNodes = getUpstreamNodes(state.sidPath);
-    for (const auto& addr : upstreamNodes) {
-        if (addr == state.computeNodeAddress) {
-            EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
-                    << " for task (" << state.userId << "," << state.taskId << ")" << endl;
-            continue;
-        }
-
-        PendingCancel pc;
-        pc.destAddr = addr;
-        pc.userId = state.userId;
-        pc.taskId = state.taskId;
-        pc.computeNodeAddress = state.computeNodeAddress;
-        pc.computeNodePort = state.computeNodePort;
-        pc.senderType = SENDER_COMPUTE_ROUTER;
-        pendingCancels.push_back(pc);
-    }
-
-    if (!pendingCancels.empty() && !sendCancelsMsg->isScheduled())
-        scheduleAt(simTime(), sendCancelsMsg);
-}
-
 INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     EV_INFO << "processCprpResp: packet='" << packet->getName()
             << "' totalLength=" << packet->getTotalLength()
@@ -466,14 +397,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 
     RequestSessionState newState;
     extractSessionFromResp(newState, packet);
-    int reservationInterfaceId = getReservationInterfaceId(packet, newState);
-    if (reservationInterfaceId < 0) {
-        EV_WARN << "processCprpResp: cannot determine reservation interface for task ("
-                << userId << "," << taskId << "), dropping RESP." << endl;
-        queueCancelsForPath(newState);
-        return DROP;
-    }
-    newState.interfaceId = reservationInterfaceId;
+    newState.interfaceId = outIE->getInterfaceId();
 
     simtime_t now = simTime();
     simtime_t networkDelay = now - resp->getLastHopSendTime();
@@ -505,19 +429,9 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 
     EV_INFO << "processCprpResp: networkDelay=" << networkDelay
             << " roundTripDelay=" << roundTripDelay
-            << " accumulatedDelay=" << accumulatedDelay
-            << " forwardInterface=" << outIE->getInterfaceId()
-            << " reservationInterface=" << newState.interfaceId << endl;
+            << " accumulatedDelay=" << accumulatedDelay << endl;
 
     if (!sessionManager->hasSession(userId, taskId)) {
-        if (!sessionManager->canReserveBandwidth(newState.interfaceId, newState.requiredBandwidth)) {
-            EV_INFO << "First RESP for task (" << userId << "," << taskId
-                    << ") cannot reserve required bandwidth=" << newState.requiredBandwidth
-                    << " on interface " << newState.interfaceId << ", dropping RESP" << endl;
-            queueCancelsForPath(newState);
-            return DROP;
-        }
-
         sessionManager->createSession(newState);
         EV_INFO << "First RESP for task (" << userId << "," << taskId << "), created session" << endl;
         return ACCEPT;
@@ -526,12 +440,32 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     RequestSessionState* existingState = sessionManager->getSessionForUpdate(userId, taskId);
     if (!existingState) return ACCEPT;
 
-    bool shouldKeep = shouldKeepNewSession(*existingState, newState);
+    bool shouldKeep = shouldKeepNewSession(*existingState, newState, outIE->getInterfaceId());
 
     if (shouldKeep) {
         EV_INFO << "New RESP is better, updating session, sending CANCEL to old path" << endl;
 
-        queueCancelsForPath(*existingState);
+        auto upstreamNodes = getUpstreamNodes(existingState->sidPath);
+        for (const auto& addr : upstreamNodes) {
+            if (addr == existingState->computeNodeAddress) {
+                EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
+                        << " for task (" << existingState->userId << "," << existingState->taskId << ")" << endl;
+                continue;
+            }
+
+            PendingCancel pc;
+            pc.destAddr = addr;
+            pc.userId = existingState->userId;
+            pc.taskId = existingState->taskId;
+            pc.computeNodeAddress = existingState->computeNodeAddress;
+            pc.computeNodePort = existingState->computeNodePort;
+            pc.senderType = SENDER_COMPUTE_ROUTER;
+            pendingCancels.push_back(pc);
+        }
+
+        if (!pendingCancels.empty() && !sendCancelsMsg->isScheduled()) {
+            scheduleAt(simTime(), sendCancelsMsg);
+        }
 
         sessionManager->updateSession(newState);
         return ACCEPT;
@@ -539,27 +473,45 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     else {
         EV_INFO << "Existing session is better, dropping new RESP, sending CANCEL to new path" << endl;
 
-        queueCancelsForPath(newState);
+        auto upstreamNodes = getUpstreamNodes(newState.sidPath);
+        for (const auto& addr : upstreamNodes) {
+            if (addr == newState.computeNodeAddress) {
+                EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
+                        << " for task (" << newState.userId << "," << newState.taskId << ")" << endl;
+                continue;
+            }
+
+            PendingCancel pc;
+            pc.destAddr = addr;
+            pc.userId = newState.userId;
+            pc.taskId = newState.taskId;
+            pc.computeNodeAddress = newState.computeNodeAddress;
+            pc.computeNodePort = newState.computeNodePort;
+            pc.senderType = SENDER_COMPUTE_ROUTER;
+            pendingCancels.push_back(pc);
+        }
+
+        if (!pendingCancels.empty() && !sendCancelsMsg->isScheduled()) {
+            scheduleAt(simTime(), sendCancelsMsg);
+        }
 
         return DROP;
     }
 }
 
 bool CprpProcessorBase::shouldKeepNewSession(const RequestSessionState& existing,
-                                              const RequestSessionState& newResp) {
+                                              const RequestSessionState& newResp,
+                                              int outInterfaceId) {
     double newTotalDelay = newResp.totalDelay;
 
     EV_INFO << "Routing selection: newTotalDelay=" << newTotalDelay
             << " existingTotalDelay=" << existing.totalDelay << endl;
 
     if (sessionManager) {
-        double availableBw = sessionManager->getAvailableBandwidth(newResp.interfaceId);
-        if (existing.interfaceId == newResp.interfaceId)
-            availableBw += existing.requiredBandwidth;
+        double availableBw = sessionManager->getAvailableBandwidth(outInterfaceId);
         if (availableBw < newResp.requiredBandwidth) {
             EV_INFO << "Bandwidth constraint not satisfied: required=" << newResp.requiredBandwidth
-                    << " available=" << availableBw
-                    << " interface=" << newResp.interfaceId << endl;
+                    << " available=" << availableBw << endl;
             return false;
         }
     }
@@ -654,6 +606,7 @@ void CprpProcessorBase::sendCancelPacket(const PendingCancel& info) {
 }
 
 INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packet) {
+    auto outIE = packet->findTag<InterfaceReq>();
     auto pathReqTag = packet->findTagForUpdate<CpnPathReq>();
     
     B offset = getPayloadOffset(packet);
@@ -663,20 +616,34 @@ INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packe
         EV_WARN << "processPathRecordMode: Neither CpnPathReq tag nor CpnPathHeader chunk is present, skipping recording." << endl;
         return ACCEPT;
     }
-
-    L3Address recordAddress = getPathRecordAddress(packet);
-    if (recordAddress.isUnspecified()) {
-        EV_WARN << "processPathRecordMode: reservation interface address is unavailable, returning ACCEPT without recording." << endl;
+    
+    if (!outIE) {
+        EV_WARN << "processPathRecordMode: InterfaceReq tag is missing from packet, returning ACCEPT without recording." << endl;
         return ACCEPT;
     }
+
+    auto ie = interfaceTable->getInterfaceById(outIE->getInterfaceId());
+    if (!ie) {
+        EV_WARN << "processPathRecordMode: Output interface with ID " << outIE->getInterfaceId() 
+                << " not found in interfaceTable." << endl;
+        return ACCEPT;
+    }
+
+    auto ipv4Data = ie->getProtocolData<Ipv4InterfaceData>();
+    if (!ipv4Data) {
+        EV_WARN << "processPathRecordMode: Interface '" << ie->getInterfaceName() 
+                << "' has no IPv4 configuration." << endl;
+        return ACCEPT;
+    }
+
+    Ipv4Address outAddr = ipv4Data->getIPAddress();
 
     // 更新 Tag (如果是本地包)
     if (pathReqTag != nullptr) {
         int hopCount = pathReqTag->getHopAddressArraySize();
         pathReqTag->setHopAddressArraySize(hopCount + 1);
-        pathReqTag->setHopAddress(hopCount, recordAddress);
-        EV_INFO << "processPathRecordMode: Recorded reservation-facing hop " << hopCount
-                << " as " << recordAddress << " in local Tag." << endl;
+        pathReqTag->setHopAddress(hopCount, outAddr);
+        EV_INFO << "processPathRecordMode: Recorded hop " << hopCount << " as " << outAddr << " in local Tag." << endl;
     }
     
     // 更新 Header (如果是转发包或本地已封装包)
@@ -684,10 +651,9 @@ INetfilter::IHook::Result CprpProcessorBase::processPathRecordMode(Packet *packe
         auto newHeader = makeShared<CpnPathHeader>(*pathHeader);
         int hopCount = newHeader->getHopAddressArraySize();
         newHeader->setHopAddressArraySize(hopCount + 1);
-        newHeader->setHopAddress(hopCount, recordAddress);
+        newHeader->setHopAddress(hopCount, outAddr);
         replacePathHeader(packet, offset, newHeader, *pathHeader);
-        EV_INFO << "processPathRecordMode: Recorded reservation-facing hop " << hopCount
-                << " as " << recordAddress << " in Header chunk." << endl;
+        EV_INFO << "processPathRecordMode: Recorded hop " << hopCount << " as " << outAddr << " in Header chunk." << endl;
     }
 
     return ACCEPT;
