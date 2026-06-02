@@ -47,6 +47,7 @@ protected:
     
     simtime_t sessionTimeout;
     double defaultInterfaceBandwidth;
+    cMessage *sessionExpirationTimer = nullptr;
     
 protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -56,6 +57,7 @@ protected:
 
     virtual void initializeInterfaceBandwidths();
     virtual std::string getInterfaceLabel(int interfaceId) const;
+    virtual void scheduleNextExpirationCheck();
 
 public:
     SessionManager();

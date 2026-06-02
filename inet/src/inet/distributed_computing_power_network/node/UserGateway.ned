@@ -33,9 +33,9 @@ module UserGateway extends OspfRouter
     submodules:
         sessionManager: SessionManager if hasSessionManager {
             parameters:
-                sessionTimeout = parent.sessionTimeout;
+                sessionTimeout = default(parent.sessionTimeout);
                 interfaceTableModule = "^.interfaceTable";
-                defaultInterfaceBandwidth = parent.defaultInterfaceBandwidth;
+                defaultInterfaceBandwidth = default(parent.defaultInterfaceBandwidth);
             @display("p=600,100");
         }
         userGatewayProcessor: UserGatewayProcessor if hasUserGatewayProcessor {

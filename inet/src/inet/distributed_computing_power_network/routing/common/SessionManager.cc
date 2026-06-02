@@ -9,13 +9,18 @@ namespace inet {
 Define_Module(SessionManager);
 
 SessionManager::SessionManager() {}
-SessionManager::~SessionManager() {}
+SessionManager::~SessionManager() {
+    cancelAndDelete(sessionExpirationTimer);
+}
 
 void SessionManager::initialize(int stage) {
     cSimpleModule::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
         sessionTimeout = par("sessionTimeout");
         defaultInterfaceBandwidth = par("defaultInterfaceBandwidth");
+        sessionExpirationTimer = new cMessage("sessionExpirationTimer");
+        EV_INFO << "SessionManager configured: sessionTimeout=" << sessionTimeout
+                << ", defaultInterfaceBandwidth=" << defaultInterfaceBandwidth << " bps" << endl;
     }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
         initializeInterfaceBandwidths();
@@ -72,7 +77,12 @@ std::string SessionManager::getInterfaceLabel(int interfaceId) const {
 }
 
 void SessionManager::handleMessage(cMessage *msg) {
-    delete msg;
+    if (msg == sessionExpirationTimer) {
+        removeExpiredSessions();
+    }
+    else {
+        delete msg;
+    }
 }
 
 void SessionManager::finish() {
@@ -118,6 +128,7 @@ void SessionManager::createSession(const RequestSessionState& state) {
         EV_INFO << "Created session for task (" << state.userId << "," << state.taskId 
                 << ") computeNode=" << state.computeNodeAddress 
                 << ":" << state.computeNodePort << endl;
+        scheduleNextExpirationCheck();
     } else {
         EV_WARN << "Cannot create session: insufficient bandwidth on interface "
                 << getInterfaceLabel(state.interfaceId) << endl;
@@ -156,6 +167,7 @@ void SessionManager::updateSession(const RequestSessionState& state) {
     EV_INFO << "Updated session for task (" << state.userId << "," << state.taskId 
             << ") computeNode=" << state.computeNodeAddress 
             << ":" << state.computeNodePort << endl;
+    scheduleNextExpirationCheck();
 }
 
 void SessionManager::removeSession(int userId, int taskId) {
@@ -172,6 +184,7 @@ void SessionManager::removeSession(int userId, int taskId) {
             << ":" << it->second.computeNodePort << endl;
     
     sessionTable.erase(it);
+    scheduleNextExpirationCheck();
 }
 
 void SessionManager::reserveBandwidth(int interfaceId, double bandwidth) {
@@ -207,7 +220,35 @@ void SessionManager::refreshSession(int userId, int taskId) {
     if (it != sessionTable.end()) {
         it->second.updateTime = simTime();
         EV_INFO << "Refreshed session for task (" << userId << "," << taskId << ")" << endl;
+        scheduleNextExpirationCheck();
     }
+}
+
+void SessionManager::scheduleNextExpirationCheck() {
+    Enter_Method_Silent("scheduleNextExpirationCheck");
+
+    if (sessionExpirationTimer == nullptr || sessionTimeout <= SIMTIME_ZERO)
+        return;
+
+    if (sessionTable.empty()) {
+        if (sessionExpirationTimer->isScheduled())
+            cancelEvent(sessionExpirationTimer);
+        return;
+    }
+
+    simtime_t nextExpiration = SimTime::getMaxTime();
+    for (const auto& pair : sessionTable) {
+        simtime_t expirationTime = pair.second.updateTime + sessionTimeout;
+        if (expirationTime < nextExpiration)
+            nextExpiration = expirationTime;
+    }
+
+    if (nextExpiration < simTime())
+        nextExpiration = simTime();
+
+    if (sessionExpirationTimer->isScheduled())
+        cancelEvent(sessionExpirationTimer);
+    scheduleAt(nextExpiration, sessionExpirationTimer);
 }
 
 void SessionManager::removeExpiredSessions() {
@@ -215,7 +256,7 @@ void SessionManager::removeExpiredSessions() {
     std::vector<std::pair<int, int>> expiredKeys;
     
     for (auto& pair : sessionTable) {
-        if (now - pair.second.updateTime > sessionTimeout) {
+        if (now - pair.second.updateTime >= sessionTimeout) {
             expiredKeys.push_back(pair.first);
         }
     }
@@ -225,6 +266,7 @@ void SessionManager::removeExpiredSessions() {
                 << "," << key.second << ")" << endl;
         removeSession(key.first, key.second);
     }
+    scheduleNextExpirationCheck();
 }
 
 void SessionManager::printSessionTable() {
