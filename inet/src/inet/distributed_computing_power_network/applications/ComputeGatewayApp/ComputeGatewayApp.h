@@ -35,7 +35,6 @@ protected:
     struct CandidateEvaluation {
         CIB cib;
         double totalDelay = 0;
-        double userGatewayToComputeGatewayRttMs = 0;
         bool eligible = false;
         std::string rejectReason;
     };

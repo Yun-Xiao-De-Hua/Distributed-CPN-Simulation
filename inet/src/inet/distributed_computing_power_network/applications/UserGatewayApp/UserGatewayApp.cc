@@ -190,21 +190,12 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
 
     // 创建算力请求载荷
     L3Address userNodeAddress = userNodeIpMap.at(requestInfo->getUserId());
-    simtime_t userAccessOneWayDelay = simTime() - requestInfo->getGenerationTime();
-    if (userAccessOneWayDelay < SIMTIME_ZERO) {
-        EV_WARN << "TaskRequestMsg generationTime is later than UserGateway receive time; userAccessRtt is clamped to 0." << endl;
-        userAccessOneWayDelay = SIMTIME_ZERO;
-    }
-    simtime_t userAccessRtt = userAccessOneWayDelay * 2;
-
     auto payload = makeShared<CprpRequestMsg>();
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
     payload->setUserGatewayAddress(localAddress);
     payload->setUserNodeAddress(userNodeAddress);
     payload->setUserNodePort(userNodePort);
-    payload->setUserAccessRtt(userAccessRtt);
-    payload->setUserGatewayForwardTime(simTime());
     payload->setGenerationTime(requestInfo->getGenerationTime());
     payload->setComputingType(requestInfo->getComputingType());
     payload->setRequiredStorage(requestInfo->getRequiredStorage());
@@ -257,8 +248,6 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     EV_INFO << "Forwarding CPRP request for task(" << payload->getUserId() << "-" << payload->getTaskId() 
             << ") computingType=" << computingType 
             << ", userNodeAddress=" << userNodeAddress
-            << ", userAccessRtt=" << userAccessRtt
-            << ", userGatewayForwardTime=" << payload->getUserGatewayForwardTime()
             << " to multicast group " << groupAddr 
             << " via " << interfaceIds.size() << " interface(s)" << endl;
 
@@ -300,6 +289,7 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
     }
 
     auto payload = makeShared<RespSummaryMsg>();
+    payload->setSendTime(simTime());
     payload->setCandidateInfoArraySize(candidateCount);
     for (size_t i = 0; i < candidateCount; i++) {
         computeCandidateInfo candidate;
@@ -315,7 +305,6 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
         candidate.pathInfo.sidPath = sidPath.c_str();
         candidate.pathInfo.totalDelay = SimTime(candidates[i].totalDelay);
         candidate.pathInfo.reservedBandwidth = candidates[i].reservedBandwidth;
-        candidate.pathInfo.timestamp = candidates[i].timestamp;
 
         payload->setCandidateInfo(i, candidate);
 
@@ -468,7 +457,6 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 
     candidate.totalDelay = totalDelay.dbl();
     candidate.reservedBandwidth = respInfo->getRequiredBandwidth();
-    candidate.timestamp = simTime();
 
     candidateCache[{uid, tid}].push_back(candidate);
 

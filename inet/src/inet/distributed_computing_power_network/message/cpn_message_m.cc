@@ -156,7 +156,7 @@ Register_Class(CprpRequestMsg)
 
 CprpRequestMsg::CprpRequestMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(32 + 56));
+    this->setChunkLength(B(32 + 40));
 
 }
 
@@ -185,8 +185,6 @@ void CprpRequestMsg::copy(const CprpRequestMsg& other)
     this->userGatewayAddress = other.userGatewayAddress;
     this->userNodeAddress = other.userNodeAddress;
     this->userNodePort = other.userNodePort;
-    this->userAccessRtt = other.userAccessRtt;
-    this->userGatewayForwardTime = other.userGatewayForwardTime;
     this->generationTime = other.generationTime;
     this->computingType = other.computingType;
     this->requiredStorage = other.requiredStorage;
@@ -206,8 +204,6 @@ void CprpRequestMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->userGatewayAddress);
     doParsimPacking(b,this->userNodeAddress);
     doParsimPacking(b,this->userNodePort);
-    doParsimPacking(b,this->userAccessRtt);
-    doParsimPacking(b,this->userGatewayForwardTime);
     doParsimPacking(b,this->generationTime);
     doParsimPacking(b,this->computingType);
     doParsimPacking(b,this->requiredStorage);
@@ -227,8 +223,6 @@ void CprpRequestMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->userGatewayAddress);
     doParsimUnpacking(b,this->userNodeAddress);
     doParsimUnpacking(b,this->userNodePort);
-    doParsimUnpacking(b,this->userAccessRtt);
-    doParsimUnpacking(b,this->userGatewayForwardTime);
     doParsimUnpacking(b,this->generationTime);
     doParsimUnpacking(b,this->computingType);
     doParsimUnpacking(b,this->requiredStorage);
@@ -303,28 +297,6 @@ void CprpRequestMsg::setUserNodePort(int userNodePort)
 {
     handleChange();
     this->userNodePort = userNodePort;
-}
-
-::omnetpp::simtime_t CprpRequestMsg::getUserAccessRtt() const
-{
-    return this->userAccessRtt;
-}
-
-void CprpRequestMsg::setUserAccessRtt(::omnetpp::simtime_t userAccessRtt)
-{
-    handleChange();
-    this->userAccessRtt = userAccessRtt;
-}
-
-::omnetpp::simtime_t CprpRequestMsg::getUserGatewayForwardTime() const
-{
-    return this->userGatewayForwardTime;
-}
-
-void CprpRequestMsg::setUserGatewayForwardTime(::omnetpp::simtime_t userGatewayForwardTime)
-{
-    handleChange();
-    this->userGatewayForwardTime = userGatewayForwardTime;
 }
 
 ::omnetpp::simtime_t CprpRequestMsg::getGenerationTime() const
@@ -426,8 +398,6 @@ class CprpRequestMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_userGatewayAddress,
         FIELD_userNodeAddress,
         FIELD_userNodePort,
-        FIELD_userAccessRtt,
-        FIELD_userGatewayForwardTime,
         FIELD_generationTime,
         FIELD_computingType,
         FIELD_requiredStorage,
@@ -502,7 +472,7 @@ const char *CprpRequestMsgDescriptor::getProperty(const char *propertyName) cons
 int CprpRequestMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 16+base->getFieldCount() : 16;
+    return base ? 14+base->getFieldCount() : 14;
 }
 
 unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
@@ -520,8 +490,6 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         0,    // FIELD_userGatewayAddress
         0,    // FIELD_userNodeAddress
         FD_ISEDITABLE,    // FIELD_userNodePort
-        FD_ISEDITABLE,    // FIELD_userAccessRtt
-        FD_ISEDITABLE,    // FIELD_userGatewayForwardTime
         FD_ISEDITABLE,    // FIELD_generationTime
         FD_ISEDITABLE,    // FIELD_computingType
         FD_ISEDITABLE,    // FIELD_requiredStorage
@@ -531,7 +499,7 @@ unsigned int CprpRequestMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_budget
         FD_ISEDITABLE,    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 16) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 14) ? fieldTypeFlags[field] : 0;
 }
 
 const char *CprpRequestMsgDescriptor::getFieldName(int field) const
@@ -549,8 +517,6 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "userGatewayAddress",
         "userNodeAddress",
         "userNodePort",
-        "userAccessRtt",
-        "userGatewayForwardTime",
         "generationTime",
         "computingType",
         "requiredStorage",
@@ -560,7 +526,7 @@ const char *CprpRequestMsgDescriptor::getFieldName(int field) const
         "budget",
         "userMaxBandwidth",
     };
-    return (field >= 0 && field < 16) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldNames[field] : nullptr;
 }
 
 int CprpRequestMsgDescriptor::findField(const char *fieldName) const
@@ -573,16 +539,14 @@ int CprpRequestMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 3;
     if (strcmp(fieldName, "userNodeAddress") == 0) return baseIndex + 4;
     if (strcmp(fieldName, "userNodePort") == 0) return baseIndex + 5;
-    if (strcmp(fieldName, "userAccessRtt") == 0) return baseIndex + 6;
-    if (strcmp(fieldName, "userGatewayForwardTime") == 0) return baseIndex + 7;
-    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 8;
-    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 9;
-    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 10;
-    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 11;
-    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 12;
-    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 13;
-    if (strcmp(fieldName, "budget") == 0) return baseIndex + 14;
-    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 15;
+    if (strcmp(fieldName, "generationTime") == 0) return baseIndex + 6;
+    if (strcmp(fieldName, "computingType") == 0) return baseIndex + 7;
+    if (strcmp(fieldName, "requiredStorage") == 0) return baseIndex + 8;
+    if (strcmp(fieldName, "computingAmount") == 0) return baseIndex + 9;
+    if (strcmp(fieldName, "transferAmount") == 0) return baseIndex + 10;
+    if (strcmp(fieldName, "totalDelayRequirement") == 0) return baseIndex + 11;
+    if (strcmp(fieldName, "budget") == 0) return baseIndex + 12;
+    if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 13;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -601,8 +565,6 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "inet::L3Address",    // FIELD_userGatewayAddress
         "inet::L3Address",    // FIELD_userNodeAddress
         "int",    // FIELD_userNodePort
-        "omnetpp::simtime_t",    // FIELD_userAccessRtt
-        "omnetpp::simtime_t",    // FIELD_userGatewayForwardTime
         "omnetpp::simtime_t",    // FIELD_generationTime
         "int",    // FIELD_computingType
         "double",    // FIELD_requiredStorage
@@ -612,7 +574,7 @@ const char *CprpRequestMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_budget
         "double",    // FIELD_userMaxBandwidth
     };
-    return (field >= 0 && field < 16) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 14) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **CprpRequestMsgDescriptor::getFieldPropertyNames(int field) const
@@ -701,8 +663,6 @@ std::string CprpRequestMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
         case FIELD_userNodeAddress: return pp->getUserNodeAddress().str();
         case FIELD_userNodePort: return long2string(pp->getUserNodePort());
-        case FIELD_userAccessRtt: return simtime2string(pp->getUserAccessRtt());
-        case FIELD_userGatewayForwardTime: return simtime2string(pp->getUserGatewayForwardTime());
         case FIELD_generationTime: return simtime2string(pp->getGenerationTime());
         case FIELD_computingType: return long2string(pp->getComputingType());
         case FIELD_requiredStorage: return double2string(pp->getRequiredStorage());
@@ -731,8 +691,6 @@ void CprpRequestMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, in
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_msgType: pp->setMsgType((value)); break;
         case FIELD_userNodePort: pp->setUserNodePort(string2long(value)); break;
-        case FIELD_userAccessRtt: pp->setUserAccessRtt(string2simtime(value)); break;
-        case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(string2simtime(value)); break;
         case FIELD_generationTime: pp->setGenerationTime(string2simtime(value)); break;
         case FIELD_computingType: pp->setComputingType(string2long(value)); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(string2double(value)); break;
@@ -761,8 +719,6 @@ omnetpp::cValue CprpRequestMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
         case FIELD_userNodeAddress: return omnetpp::toAnyPtr(&pp->getUserNodeAddress()); break;
         case FIELD_userNodePort: return pp->getUserNodePort();
-        case FIELD_userAccessRtt: return pp->getUserAccessRtt().dbl();
-        case FIELD_userGatewayForwardTime: return pp->getUserGatewayForwardTime().dbl();
         case FIELD_generationTime: return pp->getGenerationTime().dbl();
         case FIELD_computingType: return pp->getComputingType();
         case FIELD_requiredStorage: return pp->getRequiredStorage();
@@ -791,8 +747,6 @@ void CprpRequestMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field,
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
         case FIELD_userNodePort: pp->setUserNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
-        case FIELD_userAccessRtt: pp->setUserAccessRtt(value.doubleValue()); break;
-        case FIELD_userGatewayForwardTime: pp->setUserGatewayForwardTime(value.doubleValue()); break;
         case FIELD_generationTime: pp->setGenerationTime(value.doubleValue()); break;
         case FIELD_computingType: pp->setComputingType(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_requiredStorage: pp->setRequiredStorage(value.doubleValue()); break;
@@ -4580,7 +4534,6 @@ void __doPacking(omnetpp::cCommBuffer *b, const routeInfo& a)
     doParsimPacking(b,a.sidPath);
     doParsimPacking(b,a.totalDelay);
     doParsimPacking(b,a.reservedBandwidth);
-    doParsimPacking(b,a.timestamp);
 }
 
 void __doUnpacking(omnetpp::cCommBuffer *b, routeInfo& a)
@@ -4588,7 +4541,6 @@ void __doUnpacking(omnetpp::cCommBuffer *b, routeInfo& a)
     doParsimUnpacking(b,a.sidPath);
     doParsimUnpacking(b,a.totalDelay);
     doParsimUnpacking(b,a.reservedBandwidth);
-    doParsimUnpacking(b,a.timestamp);
 }
 
 class routeInfoDescriptor : public omnetpp::cClassDescriptor
@@ -4599,7 +4551,6 @@ class routeInfoDescriptor : public omnetpp::cClassDescriptor
         FIELD_sidPath,
         FIELD_totalDelay,
         FIELD_reservedBandwidth,
-        FIELD_timestamp,
     };
   public:
     routeInfoDescriptor();
@@ -4666,7 +4617,7 @@ const char *routeInfoDescriptor::getProperty(const char *propertyName) const
 int routeInfoDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 4+base->getFieldCount() : 4;
+    return base ? 3+base->getFieldCount() : 3;
 }
 
 unsigned int routeInfoDescriptor::getFieldTypeFlags(int field) const
@@ -4681,9 +4632,8 @@ unsigned int routeInfoDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_sidPath
         FD_ISEDITABLE,    // FIELD_totalDelay
         FD_ISEDITABLE,    // FIELD_reservedBandwidth
-        FD_ISEDITABLE,    // FIELD_timestamp
     };
-    return (field >= 0 && field < 4) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 3) ? fieldTypeFlags[field] : 0;
 }
 
 const char *routeInfoDescriptor::getFieldName(int field) const
@@ -4698,9 +4648,8 @@ const char *routeInfoDescriptor::getFieldName(int field) const
         "sidPath",
         "totalDelay",
         "reservedBandwidth",
-        "timestamp",
     };
-    return (field >= 0 && field < 4) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 3) ? fieldNames[field] : nullptr;
 }
 
 int routeInfoDescriptor::findField(const char *fieldName) const
@@ -4710,7 +4659,6 @@ int routeInfoDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "sidPath") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "totalDelay") == 0) return baseIndex + 1;
     if (strcmp(fieldName, "reservedBandwidth") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "timestamp") == 0) return baseIndex + 3;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -4726,9 +4674,8 @@ const char *routeInfoDescriptor::getFieldTypeString(int field) const
         "string",    // FIELD_sidPath
         "omnetpp::simtime_t",    // FIELD_totalDelay
         "double",    // FIELD_reservedBandwidth
-        "omnetpp::simtime_t",    // FIELD_timestamp
     };
-    return (field >= 0 && field < 4) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 3) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **routeInfoDescriptor::getFieldPropertyNames(int field) const
@@ -4814,7 +4761,6 @@ std::string routeInfoDescriptor::getFieldValueAsString(omnetpp::any_ptr object, 
         case FIELD_sidPath: return oppstring2string(pp->sidPath);
         case FIELD_totalDelay: return simtime2string(pp->totalDelay);
         case FIELD_reservedBandwidth: return double2string(pp->reservedBandwidth);
-        case FIELD_timestamp: return simtime2string(pp->timestamp);
         default: return "";
     }
 }
@@ -4834,7 +4780,6 @@ void routeInfoDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int fie
         case FIELD_sidPath: pp->sidPath = (value); break;
         case FIELD_totalDelay: pp->totalDelay = string2simtime(value); break;
         case FIELD_reservedBandwidth: pp->reservedBandwidth = string2double(value); break;
-        case FIELD_timestamp: pp->timestamp = string2simtime(value); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'routeInfo'", field);
     }
 }
@@ -4852,7 +4797,6 @@ omnetpp::cValue routeInfoDescriptor::getFieldValue(omnetpp::any_ptr object, int 
         case FIELD_sidPath: return pp->sidPath;
         case FIELD_totalDelay: return pp->totalDelay.dbl();
         case FIELD_reservedBandwidth: return pp->reservedBandwidth;
-        case FIELD_timestamp: return pp->timestamp.dbl();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'routeInfo' as cValue -- field index out of range?", field);
     }
 }
@@ -4872,7 +4816,6 @@ void routeInfoDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int 
         case FIELD_sidPath: pp->sidPath = value.stringValue(); break;
         case FIELD_totalDelay: pp->totalDelay = value.doubleValue(); break;
         case FIELD_reservedBandwidth: pp->reservedBandwidth = value.doubleValue(); break;
-        case FIELD_timestamp: pp->timestamp = value.doubleValue(); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'routeInfo'", field);
     }
 }
@@ -5278,6 +5221,7 @@ void RespSummaryMsg::copy(const RespSummaryMsg& other)
     this->userId = other.userId;
     this->taskId = other.taskId;
     this->msgType = other.msgType;
+    this->sendTime = other.sendTime;
     delete [] this->candidateInfo;
     this->candidateInfo = (other.candidateInfo_arraysize==0) ? nullptr : new computeCandidateInfo[other.candidateInfo_arraysize];
     candidateInfo_arraysize = other.candidateInfo_arraysize;
@@ -5292,6 +5236,7 @@ void RespSummaryMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->userId);
     doParsimPacking(b,this->taskId);
     doParsimPacking(b,this->msgType);
+    doParsimPacking(b,this->sendTime);
     b->pack(candidateInfo_arraysize);
     doParsimArrayPacking(b,this->candidateInfo,candidateInfo_arraysize);
 }
@@ -5302,6 +5247,7 @@ void RespSummaryMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->userId);
     doParsimUnpacking(b,this->taskId);
     doParsimUnpacking(b,this->msgType);
+    doParsimUnpacking(b,this->sendTime);
     delete [] this->candidateInfo;
     b->unpack(candidateInfo_arraysize);
     if (candidateInfo_arraysize == 0) {
@@ -5343,6 +5289,17 @@ void RespSummaryMsg::setMsgType(const char * msgType)
 {
     handleChange();
     this->msgType = msgType;
+}
+
+::omnetpp::simtime_t RespSummaryMsg::getSendTime() const
+{
+    return this->sendTime;
+}
+
+void RespSummaryMsg::setSendTime(::omnetpp::simtime_t sendTime)
+{
+    handleChange();
+    this->sendTime = sendTime;
 }
 
 size_t RespSummaryMsg::getCandidateInfoArraySize() const
@@ -5421,6 +5378,7 @@ class RespSummaryMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_userId,
         FIELD_taskId,
         FIELD_msgType,
+        FIELD_sendTime,
         FIELD_candidateInfo,
     };
   public:
@@ -5488,7 +5446,7 @@ const char *RespSummaryMsgDescriptor::getProperty(const char *propertyName) cons
 int RespSummaryMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 4+base->getFieldCount() : 4;
+    return base ? 5+base->getFieldCount() : 5;
 }
 
 unsigned int RespSummaryMsgDescriptor::getFieldTypeFlags(int field) const
@@ -5503,9 +5461,10 @@ unsigned int RespSummaryMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_userId
         FD_ISEDITABLE,    // FIELD_taskId
         FD_ISEDITABLE,    // FIELD_msgType
+        FD_ISEDITABLE,    // FIELD_sendTime
         FD_ISARRAY | FD_ISCOMPOUND | FD_ISRESIZABLE,    // FIELD_candidateInfo
     };
-    return (field >= 0 && field < 4) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 5) ? fieldTypeFlags[field] : 0;
 }
 
 const char *RespSummaryMsgDescriptor::getFieldName(int field) const
@@ -5520,9 +5479,10 @@ const char *RespSummaryMsgDescriptor::getFieldName(int field) const
         "userId",
         "taskId",
         "msgType",
+        "sendTime",
         "candidateInfo",
     };
-    return (field >= 0 && field < 4) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 5) ? fieldNames[field] : nullptr;
 }
 
 int RespSummaryMsgDescriptor::findField(const char *fieldName) const
@@ -5532,7 +5492,8 @@ int RespSummaryMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "userId") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
     if (strcmp(fieldName, "msgType") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "candidateInfo") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "sendTime") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "candidateInfo") == 0) return baseIndex + 4;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -5548,9 +5509,10 @@ const char *RespSummaryMsgDescriptor::getFieldTypeString(int field) const
         "int",    // FIELD_userId
         "int",    // FIELD_taskId
         "string",    // FIELD_msgType
+        "omnetpp::simtime_t",    // FIELD_sendTime
         "inet::computeCandidateInfo",    // FIELD_candidateInfo
     };
-    return (field >= 0 && field < 4) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 5) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **RespSummaryMsgDescriptor::getFieldPropertyNames(int field) const
@@ -5638,6 +5600,7 @@ std::string RespSummaryMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr obj
         case FIELD_userId: return long2string(pp->getUserId());
         case FIELD_taskId: return long2string(pp->getTaskId());
         case FIELD_msgType: return oppstring2string(pp->getMsgType());
+        case FIELD_sendTime: return simtime2string(pp->getSendTime());
         case FIELD_candidateInfo: return "";
         default: return "";
     }
@@ -5658,6 +5621,7 @@ void RespSummaryMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, in
         case FIELD_userId: pp->setUserId(string2long(value)); break;
         case FIELD_taskId: pp->setTaskId(string2long(value)); break;
         case FIELD_msgType: pp->setMsgType((value)); break;
+        case FIELD_sendTime: pp->setSendTime(string2simtime(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'RespSummaryMsg'", field);
     }
 }
@@ -5675,6 +5639,7 @@ omnetpp::cValue RespSummaryMsgDescriptor::getFieldValue(omnetpp::any_ptr object,
         case FIELD_userId: return pp->getUserId();
         case FIELD_taskId: return pp->getTaskId();
         case FIELD_msgType: return pp->getMsgType();
+        case FIELD_sendTime: return pp->getSendTime().dbl();
         case FIELD_candidateInfo: return omnetpp::toAnyPtr(&pp->getCandidateInfo(i)); break;
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'RespSummaryMsg' as cValue -- field index out of range?", field);
     }
@@ -5695,6 +5660,7 @@ void RespSummaryMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field,
         case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        case FIELD_sendTime: pp->setSendTime(value.doubleValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'RespSummaryMsg'", field);
     }
 }

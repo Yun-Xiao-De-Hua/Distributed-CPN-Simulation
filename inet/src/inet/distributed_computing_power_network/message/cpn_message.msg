@@ -33,8 +33,6 @@ class CprpRequestMsg extends inet::FieldsChunk {
 	L3Address userGatewayAddress;
     L3Address userNodeAddress;       // 产生任务的用户节点地址
     int userNodePort;                // 用户节点端口号
-    simtime_t userAccessRtt;         // 用户节点到用户网关的估计往返网络时延
-    simtime_t userGatewayForwardTime; // 用户网关转发 CPRP_REQ 的时间戳
  
     // 任务数据参数
     simtime_t generationTime;   // 任务产生的时刻
@@ -46,7 +44,7 @@ class CprpRequestMsg extends inet::FieldsChunk {
     double budget;              // 预算
     double userMaxBandwidth;    // 传输带宽(Mbps)
     
-    chunkLength = B(32 + 56); // 在构造函数中直接赋值
+    chunkLength = B(32 + 40); // 在构造函数中直接赋值
 }
 
 class CprpResponseMsg extends inet::FieldsChunk {
@@ -72,7 +70,7 @@ class CprpResponseMsg extends inet::FieldsChunk {
     double computeCost;             // 使用成本(￥/s)
     
     // 时延信息
-    simtime_t accumulatedDelay;     // 算力网关计算的总时延
+    simtime_t accumulatedDelay;     // RESP返回路径动态累计时延，不含用户节点到用户网关RTT
     
     // 路由选择相关字段
     simtime_t lastHopSendTime;      // 上一跳发送时间戳
@@ -188,9 +186,8 @@ struct computeNodeInfo{
 
 struct routeInfo{
     string sidPath;              // 用户网关到算力节点的源路由路径
-    simtime_t totalDelay;        // 候选路径总时延
+    simtime_t totalDelay;        // 候选路径总时延，不含用户节点到用户网关RTT
     double reservedBandwidth;    // 路径预留带宽(bps)
-    simtime_t timestamp;         // 路由记录时间
 }
 
 struct computeCandidateInfo{
@@ -204,6 +201,7 @@ class RespSummaryMsg extends inet::FieldsChunk {
     int taskId;           // 任务ID
 
     string msgType = "RespSummaryMsg";    
+    simtime_t sendTime;          // 用户网关发送候选摘要的时间戳，用于用户节点估算接入RTT
  
     computeCandidateInfo candidateInfo[];
 

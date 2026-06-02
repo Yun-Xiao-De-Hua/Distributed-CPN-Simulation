@@ -128,21 +128,42 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
         return;
     }
 
+    simtime_t userAccessOneWayDelay = simTime() - sumInfo->getSendTime();
+    if (userAccessOneWayDelay < SIMTIME_ZERO) {
+        EV_WARN << "RespSummaryMsg sendTime is later than UserNode receive time; user access RTT is clamped to 0." << endl;
+        userAccessOneWayDelay = SIMTIME_ZERO;
+    }
+    simtime_t userAccessRtt = userAccessOneWayDelay * 2;
+
     int selectedPathIndex = 0;
     const computeCandidateInfo *selectedCandidate = nullptr;
+    simtime_t selectedTotalDelay = SIMTIME_ZERO;
     for (int i = 0; i < (int)sumInfo->getCandidateInfoArraySize(); i++) {
         const auto& candidate = sumInfo->getCandidateInfo(i);
+        simtime_t candidateTotalDelay = candidate.pathInfo.totalDelay + userAccessRtt;
+
+        EV_INFO << "User" << userNodeId << " candidate[" << i << "] delay evaluation: "
+                << "gatewayToComputeTotalDelay=" << candidate.pathInfo.totalDelay
+                << ", userAccessRtt=" << userAccessRtt
+                << ", totalDelay=" << candidateTotalDelay
+                << ", delayTolerance=" << taskIt->second.totalDelayRequirement
+                << ", eligible=" << (candidateTotalDelay < taskIt->second.totalDelayRequirement ? "true" : "false") << endl;
+
+        if (candidateTotalDelay >= taskIt->second.totalDelayRequirement)
+            continue;
+
         if (selectedCandidate == nullptr ||
-            candidate.pathInfo.totalDelay < selectedCandidate->pathInfo.totalDelay ||
-            (candidate.pathInfo.totalDelay == selectedCandidate->pathInfo.totalDelay && candidate.nodeInfo.computeCost < selectedCandidate->nodeInfo.computeCost))
+            candidateTotalDelay < selectedTotalDelay ||
+            (candidateTotalDelay == selectedTotalDelay && candidate.nodeInfo.computeCost < selectedCandidate->nodeInfo.computeCost))
         {
             selectedCandidate = &candidate;
             selectedPathIndex = i;
+            selectedTotalDelay = candidateTotalDelay;
         }
     }
 
     if (selectedCandidate == nullptr) {
-        EV_WARN << "RespSummaryMsg candidate selection failed." << std::endl;
+        EV_WARN << "RespSummaryMsg candidate selection failed: no candidate satisfies end-to-end delay tolerance." << std::endl;
         delete packet;
         return;
     }
@@ -156,7 +177,9 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
             << ", nodeAddress=" << selectedNode.computeNodeAddress
             << ", nodePort=" << selectedNode.computeNodePort
             << ", computeCost=" << selectedNode.computeCost
-            << ", totalDelay=" << selectedCandidate->pathInfo.totalDelay
+            << ", gatewayToComputeTotalDelay=" << selectedCandidate->pathInfo.totalDelay
+            << ", userAccessRtt=" << userAccessRtt
+            << ", totalDelay=" << selectedTotalDelay
             << ", reservedBandwidth=" << selectedCandidate->pathInfo.reservedBandwidth
             << ", sidPath=[" << selectedCandidate->pathInfo.sidPath << "]" << endl;
 

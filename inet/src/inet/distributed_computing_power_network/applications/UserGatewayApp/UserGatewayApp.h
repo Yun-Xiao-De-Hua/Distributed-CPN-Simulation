@@ -16,7 +16,6 @@ struct ResponseCandidate {
     std::vector<L3Address> sidPath;
     double totalDelay;
     double reservedBandwidth;
-    simtime_t timestamp;
 };
 
 struct RequestContext {

@@ -368,15 +368,6 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
     std::vector<CandidateEvaluation> candidates;
     IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
 
-    simtime_t userGatewayToComputeGatewayOneWay = simTime() - requestInfo.getUserGatewayForwardTime();
-    if (userGatewayToComputeGatewayOneWay < SIMTIME_ZERO) {
-        EV_WARN << "CPRP_REQ has a future userGatewayForwardTime=" << requestInfo.getUserGatewayForwardTime()
-                << "; userGatewayToComputeGatewayRtt is clamped to 0 ms." << std::endl;
-        userGatewayToComputeGatewayOneWay = SIMTIME_ZERO;
-    }
-
-    double userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayOneWay.dbl() * 2000.0;
-    double userAccessRttMs = requestInfo.getUserAccessRtt().dbl() * 1000.0;
     double userMaxBandwidthMbps = requestInfo.getUserMaxBandwidth();
 
     std::vector<int> nodeIds;
@@ -386,22 +377,19 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
 
     EV_INFO << "Candidate RTT evaluation for task(" << requestInfo.getUserId() << "," << requestInfo.getTaskId()
             << ") userNode=" << requestInfo.getUserNodeAddress()
-            << ", userAccessRtt=" << userAccessRttMs << " ms"
-            << ", userGatewayToComputeGatewayRtt=" << userGatewayToComputeGatewayRttMs << " ms" << std::endl;
+            << ", propagationDelayScope=computeGatewayToComputeNodeRttOnly" << std::endl;
 
     for (int nodeId : nodeIds) {
         const CIB& cib = groupMap.at(nodeId);
         CandidateEvaluation evaluation;
         evaluation.cib = cib;
-        evaluation.userGatewayToComputeGatewayRttMs = userGatewayToComputeGatewayRttMs;
-        double userToComputeNodeRttMs = userAccessRttMs + userGatewayToComputeGatewayRttMs + cib.networkDelayMs;
 
         NetworkInterface *nodeInterface = ift != nullptr && cib.interfaceId >= 0 ? ift->getInterfaceById(cib.interfaceId) : nullptr;
         double gatewayLinkBandwidthBps = nodeInterface != nullptr ? nodeInterface->getDatarate() : 0;
         double gatewayLinkBandwidthMbps = gatewayLinkBandwidthBps / 1e6;
 
         double transmissionDelay = userMaxBandwidthMbps > 0 ? requestInfo.getTransferAmount() * 8.0 / userMaxBandwidthMbps : std::numeric_limits<double>::infinity();
-        double propagationDelay = userToComputeNodeRttMs / 1000.0;
+        double propagationDelay = cib.networkDelayMs / 1000.0;
         double computationDelay = cib.computingCapacity > 0 ? requestInfo.getComputingAmount() / cib.computingCapacity : std::numeric_limits<double>::infinity();
         double queueingDelay = getReservedQueueingTime(cib.computingType, cib.nodeId).dbl();
         evaluation.totalDelay = transmissionDelay + propagationDelay + computationDelay + queueingDelay;
@@ -437,7 +425,6 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
                 << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
                 << ", gatewayLinkBandwidth=" << gatewayLinkBandwidthMbps << " Mbps"
                 << ", computeGatewayToComputeNodeRtt=" << cib.networkDelayMs << " ms"
-                << ", userToComputeNodeRtt=" << userToComputeNodeRttMs << " ms"
                 << ", transmissionDelay=" << transmissionDelay << " s"
                 << ", propagationDelay=" << propagationDelay << " s"
                 << ", computationDelay=" << computationDelay << " s"
@@ -618,12 +605,9 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
 
     payload->setLastHopSendTime(simTime());
     payload->setLastHopAddress(localAddress);
-    double initialAccumulatedDelay = bestCandidate.totalDelay - bestCandidate.userGatewayToComputeGatewayRttMs / 1000.0;
-    if (initialAccumulatedDelay < 0)
-        initialAccumulatedDelay = 0;
-    // RESP 返回用户网关时，网络层会继续叠加算力网关到用户网关的路径 RTT。
-    // 因此这里写入的初值需要扣除这段 RTT，避免与沿途 CPRP 处理重复计入。
-    payload->setAccumulatedDelay(SimTime(initialAccumulatedDelay));
+    // 初始累计时延只包含算力网关侧可确定的部分：传输、计算、排队、算力网关到算力节点RTT。
+    // RESP 返回用户网关时，网络层会继续动态叠加用户网关到算力网关的路径RTT。
+    payload->setAccumulatedDelay(SimTime(bestCandidate.totalDelay));
 
     std::string messageType = payload->getMsgType();
     Packet *pkt = new Packet(messageType.c_str());
