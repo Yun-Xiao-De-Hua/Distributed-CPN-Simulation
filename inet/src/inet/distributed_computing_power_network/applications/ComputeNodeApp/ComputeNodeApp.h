@@ -88,6 +88,7 @@ protected:
     simtime_t getTaskRemainingExecutionTime(const QueuedTask& task) const;
     void processTaskData(Packet *packet);
     void enqueueTask(const Ptr<const TaskDataMsg>& taskData);
+    void sendTaskDataTransferComplete(const Ptr<const TaskDataMsg>& taskData, const L3Address& userGatewayAddress, int userGatewayPort);
     void tryStartNextTask();
     bool validateTask(const QueuedTask& task, int& failureCode, std::string& failureReason) const;
     void startTaskExecution(const QueuedTask& task);

@@ -44,6 +44,7 @@ protected:
 
     std::map<int, inet::L3Address> userNodeIpMap;
     std::map<std::pair<int, int>, std::vector<ResponseCandidate>> candidateCache;
+    std::map<std::pair<int, int>, ResponseCandidate> selectedPathCache;
     std::map<std::pair<int, int>, RequestContext> requestContextCache;
 
     UdpSocket socket;
@@ -70,7 +71,9 @@ protected:
     void processCprpResp(Packet *packet);
     void stripCpnPathHeader(Packet *packet);
     void processCprpConfirm(Packet *packet);
+    void processTaskDataTransferComplete(Packet *packet);
     void cancelUnselectedCandidates(int userId, int taskId, int selectedPathIndex, const std::vector<ResponseCandidate>& candidates);
+    void sendCancelForCandidate(int userId, int taskId, const ResponseCandidate& candidate, const char *reason);
     void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);

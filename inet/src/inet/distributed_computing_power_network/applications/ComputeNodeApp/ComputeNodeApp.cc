@@ -1,7 +1,9 @@
 #include<cstring>
 #include "ComputeNodeApp.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
+#include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/distributed_computing_power_network/message/CpnPathHeader_m.h"
 
 
@@ -212,6 +214,11 @@ void ComputeNodeApp::processTaskData(Packet *packet)
 {
     stripCpnPathHeader(packet);
 
+    auto addressInd = packet->findTag<L3AddressInd>();
+    L3Address userGatewayAddress = addressInd != nullptr ? addressInd->getSrcAddress() : L3Address();
+    auto portInd = packet->findTag<L4PortInd>();
+    int userGatewayPort = portInd != nullptr && portInd->getSrcPort() > 0 ? portInd->getSrcPort() : computeGatewayPort;
+
     const auto& taskData = packet->popAtFront<TaskDataMsg>();
     if (taskData == nullptr) {
         EV_WARN << "ComputeNode" << computeNodeId << " received TASK_DATA without TaskDataMsg payload." << endl;
@@ -219,6 +226,7 @@ void ComputeNodeApp::processTaskData(Packet *packet)
         return;
     }
 
+    sendTaskDataTransferComplete(taskData, userGatewayAddress, userGatewayPort);
     enqueueTask(taskData);
     delete packet;
     tryStartNextTask();
@@ -243,6 +251,30 @@ void ComputeNodeApp::enqueueTask(const Ptr<const TaskDataMsg>& taskData)
     taskQueue.push(task);
     EV_INFO << "ComputeNode" << computeNodeId << " enqueued task (" << task.userId << "," << task.taskId
             << "), queueLength=" << taskQueue.size() << endl;
+}
+
+void ComputeNodeApp::sendTaskDataTransferComplete(const Ptr<const TaskDataMsg>& taskData, const L3Address& userGatewayAddress, int userGatewayPort)
+{
+    if (userGatewayAddress.isUnspecified()) {
+        EV_WARN << "ComputeNode" << computeNodeId << " cannot notify TASK_DATA transfer completion: user gateway address is unspecified." << endl;
+        return;
+    }
+
+    auto payload = makeShared<TaskDataTransferCompleteMsg>();
+    payload->setUserId(taskData->getUserId());
+    payload->setTaskId(taskData->getTaskId());
+    payload->setComputeNodeAddress(localAddress);
+    payload->setComputeNodePort(localPort);
+    payload->setUserGatewayAddress(userGatewayAddress);
+    payload->setReceiveTime(simTime());
+
+    Packet *pkt = new Packet("TASK_DATA_TRANSFER_COMPLETE");
+    pkt->insertAtBack(payload);
+    socket.sendTo(pkt, userGatewayAddress, userGatewayPort);
+
+    EV_INFO << "ComputeNode" << computeNodeId << " notified TASK_DATA transfer completion for task ("
+            << taskData->getUserId() << "," << taskData->getTaskId()
+            << ") to user gateway " << userGatewayAddress << ":" << userGatewayPort << endl;
 }
 
 void ComputeNodeApp::tryStartNextTask()

@@ -277,6 +277,18 @@ class TaskCompletionMsg extends inet::FieldsChunk {
     chunkLength = B(64);
 }
 
+class TaskDataTransferCompleteMsg extends inet::FieldsChunk {
+    int userId;                       // 用户ID
+    int taskId;                       // 任务ID
+    L3Address computeNodeAddress;     // 已接收TASK_DATA的算力节点地址
+    int computeNodePort;              // 算力节点端口
+    L3Address userGatewayAddress;     // 接收通告的用户网关地址
+    simtime_t receiveTime;            // 算力节点收到TASK_DATA的时间
+
+    string msgType = "TASK_DATA_TRANSFER_COMPLETE";
+    chunkLength = B(56);
+}
+
 
 
 

@@ -45,6 +45,7 @@ class CgmpQueryMsg;
 struct cgmpTaskState;
 class CgmpReportMsg;
 class TaskCompletionMsg;
+class TaskDataTransferCompleteMsg;
 
 }  // namespace inet
 
@@ -1147,6 +1148,76 @@ class INET_API TaskCompletionMsg : public ::inet::FieldsChunk
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskCompletionMsg& obj) {obj.parsimPack(b);}
 inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskCompletionMsg& obj) {obj.parsimUnpack(b);}
 
+/**
+ * Class generated from <tt>inet/distributed_computing_power_network/message/cpn_message.msg:280</tt> by opp_msgtool.
+ * <pre>
+ * class TaskDataTransferCompleteMsg extends inet::FieldsChunk
+ * {
+ *     int userId;                       // 用户ID
+ *     int taskId;                       // 任务ID
+ *     L3Address computeNodeAddress;     // 已接收TASK_DATA的算力节点地址
+ *     int computeNodePort;              // 算力节点端口
+ *     L3Address userGatewayAddress;     // 接收通告的用户网关地址
+ *     simtime_t receiveTime;            // 算力节点收到TASK_DATA的时间
+ * 
+ *     string msgType = "TASK_DATA_TRANSFER_COMPLETE";
+ *     chunkLength = B(56);
+ * }
+ * </pre>
+ */
+class INET_API TaskDataTransferCompleteMsg : public ::inet::FieldsChunk
+{
+  protected:
+    int userId = 0;
+    int taskId = 0;
+    L3Address computeNodeAddress;
+    int computeNodePort = 0;
+    L3Address userGatewayAddress;
+    ::omnetpp::simtime_t receiveTime = SIMTIME_ZERO;
+    ::omnetpp::opp_string msgType = "TASK_DATA_TRANSFER_COMPLETE";
+
+  private:
+    void copy(const TaskDataTransferCompleteMsg& other);
+
+  protected:
+    bool operator==(const TaskDataTransferCompleteMsg&) = delete;
+
+  public:
+    TaskDataTransferCompleteMsg();
+    TaskDataTransferCompleteMsg(const TaskDataTransferCompleteMsg& other);
+    virtual ~TaskDataTransferCompleteMsg();
+    TaskDataTransferCompleteMsg& operator=(const TaskDataTransferCompleteMsg& other);
+    virtual TaskDataTransferCompleteMsg *dup() const override {return new TaskDataTransferCompleteMsg(*this);}
+    virtual void parsimPack(omnetpp::cCommBuffer *b) const override;
+    virtual void parsimUnpack(omnetpp::cCommBuffer *b) override;
+
+    virtual int getUserId() const;
+    virtual void setUserId(int userId);
+
+    virtual int getTaskId() const;
+    virtual void setTaskId(int taskId);
+
+    virtual const L3Address& getComputeNodeAddress() const;
+    virtual L3Address& getComputeNodeAddressForUpdate() { handleChange();return const_cast<L3Address&>(const_cast<TaskDataTransferCompleteMsg*>(this)->getComputeNodeAddress());}
+    virtual void setComputeNodeAddress(const L3Address& computeNodeAddress);
+
+    virtual int getComputeNodePort() const;
+    virtual void setComputeNodePort(int computeNodePort);
+
+    virtual const L3Address& getUserGatewayAddress() const;
+    virtual L3Address& getUserGatewayAddressForUpdate() { handleChange();return const_cast<L3Address&>(const_cast<TaskDataTransferCompleteMsg*>(this)->getUserGatewayAddress());}
+    virtual void setUserGatewayAddress(const L3Address& userGatewayAddress);
+
+    virtual ::omnetpp::simtime_t getReceiveTime() const;
+    virtual void setReceiveTime(::omnetpp::simtime_t receiveTime);
+
+    virtual const char * getMsgType() const;
+    virtual void setMsgType(const char * msgType);
+};
+
+inline void doParsimPacking(omnetpp::cCommBuffer *b, const TaskDataTransferCompleteMsg& obj) {obj.parsimPack(b);}
+inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskDataTransferCompleteMsg& obj) {obj.parsimUnpack(b);}
+
 
 }  // namespace inet
 
@@ -1172,6 +1243,7 @@ inline any_ptr toAnyPtr(const inet::cgmpTaskState *p) {return any_ptr(p);}
 template<> inline inet::cgmpTaskState *fromAnyPtr(any_ptr ptr) { return ptr.get<inet::cgmpTaskState>(); }
 template<> inline inet::CgmpReportMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::CgmpReportMsg*>(ptr.get<cObject>()); }
 template<> inline inet::TaskCompletionMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::TaskCompletionMsg*>(ptr.get<cObject>()); }
+template<> inline inet::TaskDataTransferCompleteMsg *fromAnyPtr(any_ptr ptr) { return check_and_cast<inet::TaskDataTransferCompleteMsg*>(ptr.get<cObject>()); }
 
 }  // namespace omnetpp
 

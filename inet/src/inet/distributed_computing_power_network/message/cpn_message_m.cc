@@ -7793,6 +7793,497 @@ void TaskCompletionMsgDescriptor::setFieldStructValuePointer(omnetpp::any_ptr ob
     }
 }
 
+Register_Class(TaskDataTransferCompleteMsg)
+
+TaskDataTransferCompleteMsg::TaskDataTransferCompleteMsg() : ::inet::FieldsChunk()
+{
+    this->setChunkLength(B(56));
+
+}
+
+TaskDataTransferCompleteMsg::TaskDataTransferCompleteMsg(const TaskDataTransferCompleteMsg& other) : ::inet::FieldsChunk(other)
+{
+    copy(other);
+}
+
+TaskDataTransferCompleteMsg::~TaskDataTransferCompleteMsg()
+{
+}
+
+TaskDataTransferCompleteMsg& TaskDataTransferCompleteMsg::operator=(const TaskDataTransferCompleteMsg& other)
+{
+    if (this == &other) return *this;
+    ::inet::FieldsChunk::operator=(other);
+    copy(other);
+    return *this;
+}
+
+void TaskDataTransferCompleteMsg::copy(const TaskDataTransferCompleteMsg& other)
+{
+    this->userId = other.userId;
+    this->taskId = other.taskId;
+    this->computeNodeAddress = other.computeNodeAddress;
+    this->computeNodePort = other.computeNodePort;
+    this->userGatewayAddress = other.userGatewayAddress;
+    this->receiveTime = other.receiveTime;
+    this->msgType = other.msgType;
+}
+
+void TaskDataTransferCompleteMsg::parsimPack(omnetpp::cCommBuffer *b) const
+{
+    ::inet::FieldsChunk::parsimPack(b);
+    doParsimPacking(b,this->userId);
+    doParsimPacking(b,this->taskId);
+    doParsimPacking(b,this->computeNodeAddress);
+    doParsimPacking(b,this->computeNodePort);
+    doParsimPacking(b,this->userGatewayAddress);
+    doParsimPacking(b,this->receiveTime);
+    doParsimPacking(b,this->msgType);
+}
+
+void TaskDataTransferCompleteMsg::parsimUnpack(omnetpp::cCommBuffer *b)
+{
+    ::inet::FieldsChunk::parsimUnpack(b);
+    doParsimUnpacking(b,this->userId);
+    doParsimUnpacking(b,this->taskId);
+    doParsimUnpacking(b,this->computeNodeAddress);
+    doParsimUnpacking(b,this->computeNodePort);
+    doParsimUnpacking(b,this->userGatewayAddress);
+    doParsimUnpacking(b,this->receiveTime);
+    doParsimUnpacking(b,this->msgType);
+}
+
+int TaskDataTransferCompleteMsg::getUserId() const
+{
+    return this->userId;
+}
+
+void TaskDataTransferCompleteMsg::setUserId(int userId)
+{
+    handleChange();
+    this->userId = userId;
+}
+
+int TaskDataTransferCompleteMsg::getTaskId() const
+{
+    return this->taskId;
+}
+
+void TaskDataTransferCompleteMsg::setTaskId(int taskId)
+{
+    handleChange();
+    this->taskId = taskId;
+}
+
+const L3Address& TaskDataTransferCompleteMsg::getComputeNodeAddress() const
+{
+    return this->computeNodeAddress;
+}
+
+void TaskDataTransferCompleteMsg::setComputeNodeAddress(const L3Address& computeNodeAddress)
+{
+    handleChange();
+    this->computeNodeAddress = computeNodeAddress;
+}
+
+int TaskDataTransferCompleteMsg::getComputeNodePort() const
+{
+    return this->computeNodePort;
+}
+
+void TaskDataTransferCompleteMsg::setComputeNodePort(int computeNodePort)
+{
+    handleChange();
+    this->computeNodePort = computeNodePort;
+}
+
+const L3Address& TaskDataTransferCompleteMsg::getUserGatewayAddress() const
+{
+    return this->userGatewayAddress;
+}
+
+void TaskDataTransferCompleteMsg::setUserGatewayAddress(const L3Address& userGatewayAddress)
+{
+    handleChange();
+    this->userGatewayAddress = userGatewayAddress;
+}
+
+::omnetpp::simtime_t TaskDataTransferCompleteMsg::getReceiveTime() const
+{
+    return this->receiveTime;
+}
+
+void TaskDataTransferCompleteMsg::setReceiveTime(::omnetpp::simtime_t receiveTime)
+{
+    handleChange();
+    this->receiveTime = receiveTime;
+}
+
+const char * TaskDataTransferCompleteMsg::getMsgType() const
+{
+    return this->msgType.c_str();
+}
+
+void TaskDataTransferCompleteMsg::setMsgType(const char * msgType)
+{
+    handleChange();
+    this->msgType = msgType;
+}
+
+class TaskDataTransferCompleteMsgDescriptor : public omnetpp::cClassDescriptor
+{
+  private:
+    mutable const char **propertyNames;
+    enum FieldConstants {
+        FIELD_userId,
+        FIELD_taskId,
+        FIELD_computeNodeAddress,
+        FIELD_computeNodePort,
+        FIELD_userGatewayAddress,
+        FIELD_receiveTime,
+        FIELD_msgType,
+    };
+  public:
+    TaskDataTransferCompleteMsgDescriptor();
+    virtual ~TaskDataTransferCompleteMsgDescriptor();
+
+    virtual bool doesSupport(omnetpp::cObject *obj) const override;
+    virtual const char **getPropertyNames() const override;
+    virtual const char *getProperty(const char *propertyName) const override;
+    virtual int getFieldCount() const override;
+    virtual const char *getFieldName(int field) const override;
+    virtual int findField(const char *fieldName) const override;
+    virtual unsigned int getFieldTypeFlags(int field) const override;
+    virtual const char *getFieldTypeString(int field) const override;
+    virtual const char **getFieldPropertyNames(int field) const override;
+    virtual const char *getFieldProperty(int field, const char *propertyName) const override;
+    virtual int getFieldArraySize(omnetpp::any_ptr object, int field) const override;
+    virtual void setFieldArraySize(omnetpp::any_ptr object, int field, int size) const override;
+
+    virtual const char *getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual std::string getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const override;
+    virtual omnetpp::cValue getFieldValue(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const override;
+
+    virtual const char *getFieldStructName(int field) const override;
+    virtual omnetpp::any_ptr getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const override;
+    virtual void setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const override;
+};
+
+Register_ClassDescriptor(TaskDataTransferCompleteMsgDescriptor)
+
+TaskDataTransferCompleteMsgDescriptor::TaskDataTransferCompleteMsgDescriptor() : omnetpp::cClassDescriptor(omnetpp::opp_typename(typeid(inet::TaskDataTransferCompleteMsg)), "inet::FieldsChunk")
+{
+    propertyNames = nullptr;
+}
+
+TaskDataTransferCompleteMsgDescriptor::~TaskDataTransferCompleteMsgDescriptor()
+{
+    delete[] propertyNames;
+}
+
+bool TaskDataTransferCompleteMsgDescriptor::doesSupport(omnetpp::cObject *obj) const
+{
+    return dynamic_cast<TaskDataTransferCompleteMsg *>(obj)!=nullptr;
+}
+
+const char **TaskDataTransferCompleteMsgDescriptor::getPropertyNames() const
+{
+    if (!propertyNames) {
+        static const char *names[] = {  nullptr };
+        omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+        const char **baseNames = base ? base->getPropertyNames() : nullptr;
+        propertyNames = mergeLists(baseNames, names);
+    }
+    return propertyNames;
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getProperty(const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? base->getProperty(propertyName) : nullptr;
+}
+
+int TaskDataTransferCompleteMsgDescriptor::getFieldCount() const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    return base ? 7+base->getFieldCount() : 7;
+}
+
+unsigned int TaskDataTransferCompleteMsgDescriptor::getFieldTypeFlags(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeFlags(field);
+        field -= base->getFieldCount();
+    }
+    static unsigned int fieldTypeFlags[] = {
+        FD_ISEDITABLE,    // FIELD_userId
+        FD_ISEDITABLE,    // FIELD_taskId
+        0,    // FIELD_computeNodeAddress
+        FD_ISEDITABLE,    // FIELD_computeNodePort
+        0,    // FIELD_userGatewayAddress
+        FD_ISEDITABLE,    // FIELD_receiveTime
+        FD_ISEDITABLE,    // FIELD_msgType
+    };
+    return (field >= 0 && field < 7) ? fieldTypeFlags[field] : 0;
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getFieldName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldName(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldNames[] = {
+        "userId",
+        "taskId",
+        "computeNodeAddress",
+        "computeNodePort",
+        "userGatewayAddress",
+        "receiveTime",
+        "msgType",
+    };
+    return (field >= 0 && field < 7) ? fieldNames[field] : nullptr;
+}
+
+int TaskDataTransferCompleteMsgDescriptor::findField(const char *fieldName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    int baseIndex = base ? base->getFieldCount() : 0;
+    if (strcmp(fieldName, "userId") == 0) return baseIndex + 0;
+    if (strcmp(fieldName, "taskId") == 0) return baseIndex + 1;
+    if (strcmp(fieldName, "computeNodeAddress") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "computeNodePort") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "userGatewayAddress") == 0) return baseIndex + 4;
+    if (strcmp(fieldName, "receiveTime") == 0) return baseIndex + 5;
+    if (strcmp(fieldName, "msgType") == 0) return baseIndex + 6;
+    return base ? base->findField(fieldName) : -1;
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getFieldTypeString(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldTypeString(field);
+        field -= base->getFieldCount();
+    }
+    static const char *fieldTypeStrings[] = {
+        "int",    // FIELD_userId
+        "int",    // FIELD_taskId
+        "inet::L3Address",    // FIELD_computeNodeAddress
+        "int",    // FIELD_computeNodePort
+        "inet::L3Address",    // FIELD_userGatewayAddress
+        "omnetpp::simtime_t",    // FIELD_receiveTime
+        "string",    // FIELD_msgType
+    };
+    return (field >= 0 && field < 7) ? fieldTypeStrings[field] : nullptr;
+}
+
+const char **TaskDataTransferCompleteMsgDescriptor::getFieldPropertyNames(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldPropertyNames(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getFieldProperty(int field, const char *propertyName) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldProperty(field, propertyName);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+int TaskDataTransferCompleteMsgDescriptor::getFieldArraySize(omnetpp::any_ptr object, int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldArraySize(object, field);
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        default: return 0;
+    }
+}
+
+void TaskDataTransferCompleteMsgDescriptor::setFieldArraySize(omnetpp::any_ptr object, int field, int size) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldArraySize(object, field, size);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set array size of field %d of class 'TaskDataTransferCompleteMsg'", field);
+    }
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getFieldDynamicTypeString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldDynamicTypeString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        default: return nullptr;
+    }
+}
+
+std::string TaskDataTransferCompleteMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValueAsString(object,field,i);
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: return long2string(pp->getUserId());
+        case FIELD_taskId: return long2string(pp->getTaskId());
+        case FIELD_computeNodeAddress: return pp->getComputeNodeAddress().str();
+        case FIELD_computeNodePort: return long2string(pp->getComputeNodePort());
+        case FIELD_userGatewayAddress: return pp->getUserGatewayAddress().str();
+        case FIELD_receiveTime: return simtime2string(pp->getReceiveTime());
+        case FIELD_msgType: return oppstring2string(pp->getMsgType());
+        default: return "";
+    }
+}
+
+void TaskDataTransferCompleteMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, int i, const char *value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValueAsString(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: pp->setUserId(string2long(value)); break;
+        case FIELD_taskId: pp->setTaskId(string2long(value)); break;
+        case FIELD_computeNodePort: pp->setComputeNodePort(string2long(value)); break;
+        case FIELD_receiveTime: pp->setReceiveTime(string2simtime(value)); break;
+        case FIELD_msgType: pp->setMsgType((value)); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'TaskDataTransferCompleteMsg'", field);
+    }
+}
+
+omnetpp::cValue TaskDataTransferCompleteMsgDescriptor::getFieldValue(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldValue(object,field,i);
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: return pp->getUserId();
+        case FIELD_taskId: return pp->getTaskId();
+        case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->getComputeNodeAddress()); break;
+        case FIELD_computeNodePort: return pp->getComputeNodePort();
+        case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        case FIELD_receiveTime: return pp->getReceiveTime().dbl();
+        case FIELD_msgType: return pp->getMsgType();
+        default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'TaskDataTransferCompleteMsg' as cValue -- field index out of range?", field);
+    }
+}
+
+void TaskDataTransferCompleteMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, const omnetpp::cValue& value) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldValue(object, field, i, value);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        case FIELD_userId: pp->setUserId(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_taskId: pp->setTaskId(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_computeNodePort: pp->setComputeNodePort(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_receiveTime: pp->setReceiveTime(value.doubleValue()); break;
+        case FIELD_msgType: pp->setMsgType(value.stringValue()); break;
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'TaskDataTransferCompleteMsg'", field);
+    }
+}
+
+const char *TaskDataTransferCompleteMsgDescriptor::getFieldStructName(int field) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructName(field);
+        field -= base->getFieldCount();
+    }
+    switch (field) {
+        default: return nullptr;
+    };
+}
+
+omnetpp::any_ptr TaskDataTransferCompleteMsgDescriptor::getFieldStructValuePointer(omnetpp::any_ptr object, int field, int i) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount())
+            return base->getFieldStructValuePointer(object, field, i);
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        case FIELD_computeNodeAddress: return omnetpp::toAnyPtr(&pp->getComputeNodeAddress()); break;
+        case FIELD_userGatewayAddress: return omnetpp::toAnyPtr(&pp->getUserGatewayAddress()); break;
+        default: return omnetpp::any_ptr(nullptr);
+    }
+}
+
+void TaskDataTransferCompleteMsgDescriptor::setFieldStructValuePointer(omnetpp::any_ptr object, int field, int i, omnetpp::any_ptr ptr) const
+{
+    omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
+    if (base) {
+        if (field < base->getFieldCount()){
+            base->setFieldStructValuePointer(object, field, i, ptr);
+            return;
+        }
+        field -= base->getFieldCount();
+    }
+    TaskDataTransferCompleteMsg *pp = omnetpp::fromAnyPtr<TaskDataTransferCompleteMsg>(object); (void)pp;
+    switch (field) {
+        default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'TaskDataTransferCompleteMsg'", field);
+    }
+}
+
 }  // namespace inet
 
 namespace omnetpp {

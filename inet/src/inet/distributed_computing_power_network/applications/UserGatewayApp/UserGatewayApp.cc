@@ -525,7 +525,79 @@ void UserGatewayApp::processCprpConfirm(Packet *packet)
     delete packet;
 }
 
-// 转发任务数据消息
+void UserGatewayApp::processTaskDataTransferComplete(Packet *packet)
+{
+    const auto& transferComplete = packet->popAtFront<TaskDataTransferCompleteMsg>();
+    if (transferComplete == nullptr) {
+        EV_WARN << "Error: Received a Packet named '" << packet->getName()
+                << "', but it does not contain a TaskDataTransferCompleteMsg chunk. Discarding." << endl;
+        delete packet;
+        return;
+    }
+
+    int userId = transferComplete->getUserId();
+    int taskId = transferComplete->getTaskId();
+    auto selectedIt = selectedPathCache.find({userId, taskId});
+    if (selectedIt == selectedPathCache.end()) {
+        EV_WARN << "TASK_DATA_TRANSFER_COMPLETE for task (" << userId << "," << taskId
+                << ") has no selected path cache; cannot revoke route soft state." << endl;
+        delete packet;
+        return;
+    }
+
+    const ResponseCandidate& selectedCandidate = selectedIt->second;
+    if (selectedCandidate.nodeInfo.computeNodeAddress != transferComplete->getComputeNodeAddress() ||
+        selectedCandidate.nodeInfo.computeNodePort != transferComplete->getComputeNodePort()) {
+        EV_WARN << "TASK_DATA_TRANSFER_COMPLETE does not match selected compute node for task (" << userId << "," << taskId
+                << "): selected=" << selectedCandidate.nodeInfo.computeNodeAddress << ":" << selectedCandidate.nodeInfo.computeNodePort
+                << ", completion=" << transferComplete->getComputeNodeAddress() << ":" << transferComplete->getComputeNodePort() << endl;
+        delete packet;
+        return;
+    }
+
+    sendCancelForCandidate(userId, taskId, selectedCandidate, "TASK_DATA_TRANSFER_COMPLETE");
+    selectedPathCache.erase(selectedIt);
+
+    EV_INFO << "Revoked selected CPRP route soft state after TASK_DATA transfer completion for task ("
+            << userId << "," << taskId << ")" << endl;
+    delete packet;
+}
+
+void UserGatewayApp::sendCancelForCandidate(int userId, int taskId, const ResponseCandidate& candidate, const char *reason)
+{
+    if (candidate.sidPath.empty()) {
+        EV_WARN << "Cannot send CPRP_CANCEL for task (" << userId << "," << taskId
+                << "): empty SID path, reason=" << reason << endl;
+        return;
+    }
+
+    std::vector<L3Address> sentAddresses;
+    for (const auto& pathNodeAddress : candidate.sidPath) {
+        if (pathNodeAddress == candidate.nodeInfo.computeNodeAddress)
+            continue;
+        if (std::find(sentAddresses.begin(), sentAddresses.end(), pathNodeAddress) != sentAddresses.end())
+            continue;
+        sentAddresses.push_back(pathNodeAddress);
+
+        auto cancel = makeShared<CancelMsg>();
+        cancel->setUserId(userId);
+        cancel->setTaskId(taskId);
+        cancel->setComputeNodeAddress(candidate.nodeInfo.computeNodeAddress);
+        cancel->setComputeNodePort(candidate.nodeInfo.computeNodePort);
+        cancel->setSenderType(SENDER_USER_GW);
+
+        Packet *cancelPacket = new Packet("CPRP_CANCEL");
+        cancelPacket->insertAtBack(cancel);
+        socket.sendTo(cancelPacket, pathNodeAddress, computeGatewayPort);
+
+        EV_INFO << "Sent CPRP_CANCEL for task=(" << userId << "," << taskId
+                << "), computeNode=" << candidate.nodeInfo.computeNodeId << "@" << candidate.nodeInfo.computeNodeAddress
+                << ":" << candidate.nodeInfo.computeNodePort
+                << ", pathNode=" << pathNodeAddress
+                << ", reason=" << reason << endl;
+    }
+}
+
 void UserGatewayApp::cancelUnselectedCandidates(int userId, int taskId, int selectedPathIndex, const std::vector<ResponseCandidate>& candidates)
 {
     for (int i = 0; i < (int)candidates.size(); i++) {
@@ -539,28 +611,7 @@ void UserGatewayApp::cancelUnselectedCandidates(int userId, int taskId, int sele
             continue;
         }
 
-        for (const auto& pathNodeAddress : candidate.sidPath) {
-            if (pathNodeAddress == candidate.nodeInfo.computeNodeAddress)
-                continue;
-
-            auto cancel = makeShared<CancelMsg>();
-            cancel->setUserId(userId);
-            cancel->setTaskId(taskId);
-            cancel->setComputeNodeAddress(candidate.nodeInfo.computeNodeAddress);
-            cancel->setComputeNodePort(candidate.nodeInfo.computeNodePort);
-            cancel->setSenderType(SENDER_USER_GW);
-
-            Packet *cancelPacket = new Packet("CPRP_CANCEL");
-            cancelPacket->insertAtBack(cancel);
-            socket.sendTo(cancelPacket, pathNodeAddress, computeGatewayPort);
-
-            EV_INFO << "Sent CPRP_CANCEL for unselected candidate: task=(" << userId << "," << taskId
-                    << "), candidateIndex=" << i
-                    << ", computeNode=" << candidate.nodeInfo.computeNodeId << "@" << candidate.nodeInfo.computeNodeAddress
-                    << ":" << candidate.nodeInfo.computeNodePort
-                    << ", pathNode=" << pathNodeAddress
-                    << ", cancelPort=" << computeGatewayPort << endl;
-        }
+        sendCancelForCandidate(userId, taskId, candidate, "UNSELECTED_CANDIDATE");
     }
 }
 
@@ -602,6 +653,7 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
     }
 
     cancelUnselectedCandidates(userId, taskId, selectedPathIndex, *candidates);
+    selectedPathCache[{userId, taskId}] = *selectedCandidate;
 
     EV_INFO << "Selected cached CPRP path index=" << selectedPathIndex
             << " delay=" << selectedCandidate->totalDelay
@@ -665,6 +717,9 @@ void UserGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
         // 当前回滚状态下暂不维护额外软状态，因此先记录日志并释放报文。
         EV_INFO << "UserGatewayApp received CPRP_CANCEL." << endl;
         delete packet;
+    }
+    else if(strcmp(packet->getName(), "TASK_DATA_TRANSFER_COMPLETE") == 0){
+        processTaskDataTransferComplete(packet);
     }
     else{
         EV_WARN << "Unknown packet type: " << packet->getName() << endl;
