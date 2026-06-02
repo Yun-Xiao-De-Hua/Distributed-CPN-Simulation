@@ -2,6 +2,7 @@
 #define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_APPLICATIONS_USERGATEWAYAPP_USERGATEWAYAPP_H_
 
 #include <map>
+#include <set>
 #include <vector>
 #include <omnetpp.h>
 #include "inet/applications/base/ApplicationBase.h"
@@ -41,11 +42,14 @@ protected:
     int computeNodePort;
 
     L3Address localAddress;
+    simtime_t requestTimeout;
 
     std::map<int, inet::L3Address> userNodeIpMap;
     std::map<std::pair<int, int>, std::vector<ResponseCandidate>> candidateCache;
     std::map<std::pair<int, int>, ResponseCandidate> selectedPathCache;
     std::map<std::pair<int, int>, RequestContext> requestContextCache;
+    std::map<std::pair<int, int>, RespTimeoutSelfMsg *> requestTimers;
+    std::set<std::pair<int, int>> expiredRequests;
 
     UdpSocket socket;
     

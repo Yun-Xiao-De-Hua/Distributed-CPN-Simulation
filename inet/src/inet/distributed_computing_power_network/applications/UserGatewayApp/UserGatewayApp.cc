@@ -23,7 +23,9 @@ UserGatewayApp::UserGatewayApp() {
 }
 
 UserGatewayApp::~UserGatewayApp() {
-    // TODO Auto-generated destructor stub
+    for (auto& entry : requestTimers)
+        cancelAndDelete(entry.second);
+    requestTimers.clear();
 }
 
 void UserGatewayApp::initialize(int stage)
@@ -37,6 +39,7 @@ void UserGatewayApp::initialize(int stage)
        this->userNodePort = par("userNodePort");
        this->computeGatewayPort = par("computeGatewayPort");
        this->computeNodePort = par("computeNodePort");
+       this->requestTimeout = SimTime(par("requestTimeout").doubleValue());
 
        this->userNodeIpMap.clear();
 
@@ -151,6 +154,12 @@ void UserGatewayApp::handleMessageWhenUp(cMessage *msg)
             RespTimeoutSelfMsg *timer = check_and_cast<RespTimeoutSelfMsg*>(msg);
             int uid = timer->getUserId();
             int tid = timer->getTaskId();
+            auto key = std::make_pair(uid, tid);
+
+            auto timerIt = requestTimers.find(key);
+            if (timerIt != requestTimers.end() && timerIt->second == timer)
+                requestTimers.erase(timerIt);
+            expiredRequests.insert(key);
 
             EV_INFO << "Received RespTimeoutSelfMsg. Sending response summary to user node for task(" << uid << "," << tid << ").\n";
             // 发送可用算力信息至对应用户节点
@@ -216,7 +225,11 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
     requestContext.totalDelayRequirement = requestInfo->getTotalDelayRequirement();
     requestContext.budget = requestInfo->getBudget();
     requestContext.userMaxBandwidth = requestInfo->getUserMaxBandwidth();
-    requestContextCache[{requestInfo->getUserId(), requestInfo->getTaskId()}] = requestContext;
+    auto requestKey = std::make_pair(requestInfo->getUserId(), requestInfo->getTaskId());
+    requestContextCache[requestKey] = requestContext;
+    candidateCache.erase(requestKey);
+    selectedPathCache.erase(requestKey);
+    startCprpRequestTimer(requestInfo->getUserId(), requestInfo->getTaskId());
 
     std::string messageType = payload->getMsgType();
     int computingType = requestInfo->getComputingType();
@@ -262,9 +275,6 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
         EV_INFO << "Sent to group " << groupAddr 
                 << " via interfaceId=" << interfaceId << endl;
     }
-
-    // 启动算力请求计时
-    startCprpRequestTimer(payload->getUserId(),payload->getTaskId());
 
     // 清理任务请求消息
     delete packet;
@@ -334,13 +344,24 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
 // 启动算力请求计时器
 void UserGatewayApp::startCprpRequestTimer(int userId, int taskId)
 {
+    auto key = std::make_pair(userId, taskId);
+    auto existingTimer = requestTimers.find(key);
+    if (existingTimer != requestTimers.end()) {
+        cancelAndDelete(existingTimer->second);
+        requestTimers.erase(existingTimer);
+    }
+    expiredRequests.erase(key);
+
     RespTimeoutSelfMsg *timer = new RespTimeoutSelfMsg("RespTimeoutSelfMsg");
 
     timer->setUserId(userId);
     timer->setTaskId(taskId);
 
-    // 时限设置
-    scheduleAt(simTime() + 5, timer);
+    scheduleAt(simTime() + requestTimeout, timer);
+    requestTimers[key] = timer;
+
+    EV_INFO << "Started CPRP request timer for task(" << userId << "," << taskId
+            << "), timeout=" << requestTimeout << endl;
 }
 
 // 算力应答消息处理
@@ -361,6 +382,13 @@ void UserGatewayApp::processCprpResp(Packet *packet)
 
     int uid = respInfo->getUserId();
     int tid = respInfo->getTaskId();
+
+    if (expiredRequests.find({uid, tid}) != expiredRequests.end()) {
+        EV_INFO << "Dropping late CPRP_RESP for expired task(" << uid << "," << tid
+                << "); request timer has already fired." << endl;
+        delete packet;
+        return;
+    }
 
     EV_INFO << "Parsed CPRP_RESP for task(" << uid << "," << tid << "): "
             << "computeNodeId=" << respInfo->getComputeNodeId()
