@@ -180,8 +180,8 @@ Ptr<const CpnPathHeader> CprpProcessorBase::getCpnPathHeader(Packet *packet) {
         if (isValidPathHeader(pathHeader))
             return pathHeader;
     }
-    catch (const cRuntimeError& e) {
-        EV_DEBUG << "getCpnPathHeader: no typed CpnPathHeader at UDP payload front: " << e.what() << endl;
+    catch (const cRuntimeError&) {
+        // Normal probe failure: many CPRP UDP payloads start with CPRP/TASK chunks, not CpnPathHeader.
     }
 
     return nullptr;
@@ -264,7 +264,6 @@ void CprpProcessorBase::refreshSessionIfMatch(Packet *packet) {
     if (userId >= 0 && taskId >= 0 && sessionManager) {
         if (sessionManager->hasSession(userId, taskId)) {
             sessionManager->refreshSession(userId, taskId);
-            EV_INFO << "Refreshed session for task (" << userId << "," << taskId << ")" << endl;
         }
     }
 }
@@ -375,12 +374,17 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
             << " dataLength=" << packet->getDataLength() << endl;
 
     auto outIE = packet->findTag<InterfaceReq>();
+    auto reservationIE = packet->findTag<InterfaceInd>();
     if (!sessionManager) {
         EV_WARN << "processCprpResp: sessionManager is missing, skipping RESP handling." << endl;
         return ACCEPT;
     }
     if (!outIE) {
         EV_WARN << "processCprpResp: InterfaceReq tag is missing, skipping RESP handling." << endl;
+        return ACCEPT;
+    }
+    if (!reservationIE) {
+        EV_WARN << "processCprpResp: InterfaceInd tag is missing, skipping RESP bandwidth reservation." << endl;
         return ACCEPT;
     }
 
@@ -397,7 +401,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
 
     RequestSessionState newState;
     extractSessionFromResp(newState, packet);
-    newState.interfaceId = outIE->getInterfaceId();
+    newState.interfaceId = reservationIE->getInterfaceId();
 
     simtime_t now = simTime();
     simtime_t networkDelay = now - resp->getLastHopSendTime();
@@ -440,7 +444,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     RequestSessionState* existingState = sessionManager->getSessionForUpdate(userId, taskId);
     if (!existingState) return ACCEPT;
 
-    bool shouldKeep = shouldKeepNewSession(*existingState, newState, outIE->getInterfaceId());
+    bool shouldKeep = shouldKeepNewSession(*existingState, newState, reservationIE->getInterfaceId());
 
     if (shouldKeep) {
         EV_INFO << "New RESP is better, updating session, sending CANCEL to old path" << endl;
@@ -555,7 +559,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
         if (session->computeNodeAddress == computeNodeAddr &&
             session->computeNodePort == computeNodePort) {
             sessionManager->removeSession(userId, taskId);
-            EV_INFO << "Removed session for task (" << userId << "," << taskId << ")" << endl;
+            EV_INFO << "Session for task (" << userId << "," << taskId << ") has been removed" << endl;
         } else {
             EV_INFO << "CPRP_CANCEL does not match current session (current="
                     << session->computeNodeAddress << ":" << session->computeNodePort
@@ -574,9 +578,25 @@ INetfilter::IHook::Result CprpProcessorBase::processCancelMsg(Packet *packet) {
 }
 
 void CprpProcessorBase::sendPendingCancels() {
-    EV_INFO << "Sending " << pendingCancels.size() << " pending CPRP_CANCEL messages" << endl;
-
+    std::vector<PendingCancel> uniqueCancels;
     for (const auto& info : pendingCancels) {
+        bool duplicate = false;
+        for (const auto& existing : uniqueCancels) {
+            if (existing.destAddr == info.destAddr && existing.userId == info.userId &&
+                existing.taskId == info.taskId && existing.computeNodeAddress == info.computeNodeAddress &&
+                existing.computeNodePort == info.computeNodePort && existing.senderType == info.senderType) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (!duplicate)
+            uniqueCancels.push_back(info);
+    }
+
+    EV_INFO << "Sending " << uniqueCancels.size() << " pending CPRP_CANCEL messages"
+            << (uniqueCancels.size() == pendingCancels.size() ? "" : " after deduplication") << endl;
+
+    for (const auto& info : uniqueCancels) {
         sendCancelPacket(info);
     }
     pendingCancels.clear();

@@ -635,11 +635,12 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     pathReq->setTaskId(requestInfo->getTaskId());
     pathReq->setUserGatewayAddress(requestInfo->getUserGatewayAddress());
     pathReq->setRequiredBandwidth(requestInfo->getUserMaxBandwidth() * 1e6);
-    // 应用层预先写入上游路径起点：[算力节点, 算力网关]。
-    // 后续算力路由器在网络层继续向 hopAddress 末尾追加自身出口地址。
-    pathReq->setHopAddressArraySize(2);
+    // 应用层只写入算力节点。算力网关及后续路由器的出口接口IP由网络层按InterfaceReq追加。
+    pathReq->setHopAddressArraySize(1);
     pathReq->setHopAddress(0, destNodeInfo.nodeAddress);
-    pathReq->setHopAddress(1, localAddress);
+
+    auto reservationInterface = pkt->addTagIfAbsent<InterfaceInd>();
+    reservationInterface->setInterfaceId(destNodeInfo.interfaceId);
 
     socket.sendTo(pkt, requestInfo->getUserGatewayAddress(), userGatewayPort);
 

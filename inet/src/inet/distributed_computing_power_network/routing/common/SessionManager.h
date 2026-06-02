@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 #include <omnetpp.h>
 #include "inet/common/InitStages.h"
 #include "inet/networklayer/common/L3Address.h"
@@ -42,6 +43,7 @@ protected:
     
     std::map<int, double> interfaceBandwidth;
     std::map<int, double> reservedBandwidth;
+    IInterfaceTable *interfaceTable = nullptr;
     
     simtime_t sessionTimeout;
     double defaultInterfaceBandwidth;
@@ -53,6 +55,7 @@ protected:
     virtual void finish() override;
 
     virtual void initializeInterfaceBandwidths();
+    virtual std::string getInterfaceLabel(int interfaceId) const;
 
 public:
     SessionManager();

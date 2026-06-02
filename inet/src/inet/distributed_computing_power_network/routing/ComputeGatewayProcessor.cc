@@ -108,6 +108,14 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
     // 1. 处理路径头部封装 (针对本地发出的 UDP 包)
     handlePathHeader(packet);
 
+    auto pathReqTag = packet->findTag<CpnPathReq>();
+    if (pathReqTag != nullptr) {
+        int mode = pathReqTag->getMode();
+        if (mode == PATH_RECORD_MODE) {
+            processPathRecordMode(packet);
+        }
+    }
+
     auto respProbe = getCprpResp(packet);
     if (strcmp(pktName, "CPRP_RESP") == 0 || respProbe != nullptr) {
         if (strcmp(pktName, "CPRP_RESP") != 0) {
@@ -119,7 +127,6 @@ INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packe
     }
 
     // 只处理本地发出的路径使用模式，物理Header的PATH_USE_MODE由预路由阶段消费，避免重复跳转。
-    auto pathReqTag = packet->findTag<CpnPathReq>();
     if (pathReqTag != nullptr) {
         int mode = pathReqTag->getMode();
         if (mode == PATH_USE_MODE) {

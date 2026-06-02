@@ -1,6 +1,8 @@
 #include "SessionManager.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/NetworkInterface.h"
+#include "inet/networklayer/common/InterfaceTable.h"
+#include <sstream>
 
 namespace inet {
 
@@ -24,14 +26,14 @@ void SessionManager::initializeInterfaceBandwidths() {
     interfaceBandwidth.clear();
     reservedBandwidth.clear();
 
-    IInterfaceTable *ift = findModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-    if (!ift) {
+    interfaceTable = findModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+    if (!interfaceTable) {
         EV_WARN << "SessionManager cannot initialize interface bandwidths: interface table not found" << endl;
         return;
     }
 
-    for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        auto ie = ift->getInterface(i);
+    for (int i = 0; i < interfaceTable->getNumInterfaces(); i++) {
+        auto ie = interfaceTable->getInterface(i);
         if (!ie || ie->isLoopback())
             continue;
 
@@ -46,6 +48,27 @@ void SessionManager::initializeInterfaceBandwidths() {
                 << " id=" << ie->getInterfaceId()
                 << " bandwidth=" << bandwidth << " bps" << endl;
     }
+}
+
+std::string SessionManager::getInterfaceLabel(int interfaceId) const {
+    auto ie = interfaceTable == nullptr ? nullptr : interfaceTable->findInterfaceById(interfaceId);
+    if (ie == nullptr)
+        return std::string("id=") + std::to_string(interfaceId);
+
+    int gateId = ie->getNodeOutputGateId();
+    auto node = interfaceTable->getHostModule();
+    cGate *gate = node != nullptr && gateId >= 0 ? node->gate(gateId) : nullptr;
+    if (gate != nullptr) {
+        std::ostringstream os;
+        os << gate->getBaseName();
+        if (gate->isVector())
+            os << gate->getIndex();
+        return os.str();
+    }
+
+    std::ostringstream os;
+    os << ie->getInterfaceName() << "(id=" << interfaceId << ")";
+    return os.str();
 }
 
 void SessionManager::handleMessage(cMessage *msg) {
@@ -96,8 +119,8 @@ void SessionManager::createSession(const RequestSessionState& state) {
                 << ") computeNode=" << state.computeNodeAddress 
                 << ":" << state.computeNodePort << endl;
     } else {
-        EV_WARN << "Cannot create session: insufficient bandwidth on interface " 
-                << state.interfaceId << endl;
+        EV_WARN << "Cannot create session: insufficient bandwidth on interface "
+                << getInterfaceLabel(state.interfaceId) << endl;
     }
 }
 
@@ -120,7 +143,8 @@ void SessionManager::updateSession(const RequestSessionState& state) {
         if (canReserveBandwidth(state.interfaceId, state.requiredBandwidth)) {
             reserveBandwidth(state.interfaceId, state.requiredBandwidth);
         } else {
-            EV_WARN << "Cannot update session: insufficient bandwidth" << endl;
+            EV_WARN << "Cannot update session: insufficient bandwidth on interface "
+                    << getInterfaceLabel(state.interfaceId) << endl;
             reserveBandwidth(oldState.interfaceId, oldState.requiredBandwidth);
             return;
         }
@@ -152,18 +176,18 @@ void SessionManager::removeSession(int userId, int taskId) {
 
 void SessionManager::reserveBandwidth(int interfaceId, double bandwidth) {
     reservedBandwidth[interfaceId] += bandwidth;
-    EV_INFO << "Reserved " << bandwidth << " bps on interface " << interfaceId 
+    EV_INFO << "Reserved " << bandwidth << " bps on interface " << getInterfaceLabel(interfaceId)
             << ", total reserved: " << reservedBandwidth[interfaceId] << endl;
 }
 
 void SessionManager::releaseBandwidth(int interfaceId, double bandwidth) {
     if (reservedBandwidth[interfaceId] >= bandwidth) {
         reservedBandwidth[interfaceId] -= bandwidth;
-        EV_INFO << "Released " << bandwidth << " bps on interface " << interfaceId 
+        EV_INFO << "Released " << bandwidth << " bps on interface " << getInterfaceLabel(interfaceId)
                 << ", total reserved: " << reservedBandwidth[interfaceId] << endl;
     } else {
         EV_WARN << "Cannot release more bandwidth than reserved on interface " 
-                << interfaceId << endl;
+                << getInterfaceLabel(interfaceId) << endl;
     }
 }
 
