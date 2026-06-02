@@ -8,7 +8,10 @@ namespace inet {
 class UserGatewayProcessor : public CprpProcessorBase
 {
   protected:
+    virtual Result datagramPostRoutingHook(Packet *packet) override;
     virtual Result datagramLocalInHook(Packet *packet) override;
+    virtual Result processLocalCprpResp(Packet *packet);
+    virtual void cleanupCancelSession(Packet *packet);
 };
 
 } // namespace inet

@@ -16,6 +16,7 @@
 package inet.distributed_computing_power_network.node;
 import inet.distributed_computing_power_network.applications.UserGatewayApp.UserGatewayApp;
 import inet.distributed_computing_power_network.routing.UserGatewayProcessor;
+import inet.distributed_computing_power_network.routing.common.SessionManager;
 import inet.node.ospfv2.OspfRouter;
 
 module UserGateway extends OspfRouter
@@ -24,12 +25,22 @@ module UserGateway extends OspfRouter
         hasUdp = true;        
         numApps = default(1);
         app[0].typename = "UserGatewayApp";
+        bool hasSessionManager = default(true);
         bool hasUserGatewayProcessor = default(true);
+        double sessionTimeout @unit(s) = default(60s);
+        double defaultInterfaceBandwidth @unit(bps) = default(100Mbps);
 
     submodules:
+        sessionManager: SessionManager if hasSessionManager {
+            parameters:
+                sessionTimeout = parent.sessionTimeout;
+                interfaceTableModule = "^.interfaceTable";
+                defaultInterfaceBandwidth = parent.defaultInterfaceBandwidth;
+            @display("p=600,100");
+        }
         userGatewayProcessor: UserGatewayProcessor if hasUserGatewayProcessor {
             parameters:
-                sessionManagerModule = "";
+                sessionManagerModule = "^.sessionManager";
                 interfaceTableModule = "^.interfaceTable";
                 ipv4Module = "^.ipv4.ip";
             @display("p=600,150");
