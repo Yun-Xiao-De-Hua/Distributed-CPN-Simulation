@@ -1,289 +1,261 @@
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
-
 import inet.common.INETDefs;
 import inet.common.packet.chunk.Chunk;
 import inet.networklayer.common.L3Address;
 
 namespace inet;
 
-// ==============================================
-// ================== CPRP 协议 ==================
-// ==============================================
+// CPRP 协议消息
 
 class CprpRequestMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    // REQ 专用字段
-    string msgType = "CPRP_REQ";    
-	L3Address userGatewayAddress;
+    // 请求来源
+    string msgType = "CPRP_REQ";     // 消息类型
+    L3Address userGatewayAddress;    // 发起 CPRP_REQ 的用户网关地址
     L3Address userNodeAddress;       // 产生任务的用户节点地址
-    int userNodePort;                // 用户节点端口号
+    int userNodePort;                // 用户节点接收端口
  
-    // 任务数据参数
-    simtime_t generationTime;   // 任务产生的时刻
-    int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间(MB)
-    double computingAmount;     // 任务计算量(FLOPs)
-    double transferAmount;      // 任务数据量(MB)
-    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
-    double budget;              // 预算
-    double userMaxBandwidth;    // 传输带宽(Mbps)
+    // 任务资源需求
+    simtime_t generationTime;        // 任务生成时间，单位: s
+    int computingType;               // 任务所需算力类型，0 表示 CPU，1 表示 GPU
+    double requiredStorage;          // 任务所需存储空间，单位: MB
+    double computingAmount;          // 任务计算量，单位: FLOPs
+    double transferAmount;           // 任务数据量，单位: MB
+    simtime_t totalDelayRequirement; // 端到端最大时延容忍值，单位: s
+    double budget;                   // 任务预算
+    double userMaxBandwidth;         // 用户请求的最大传输带宽，单位: Mbps
     
-    chunkLength = B(32 + 40); // 在构造函数中直接赋值
+    chunkLength = B(32 + 40);       // 固定序列化长度
 }
 
 class CprpResponseMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    // RESP 专用字段
-    string msgType = "CPRP_RESP";    
+    // 候选算力节点信息
+    string msgType = "CPRP_RESP";    // 消息类型
+    L3Address computeNodeAddress;    // 算力节点地址
+    int computeNodeId;               // 算力节点 ID
+    int computeNodePort;             // 算力节点接收端口
+    int computingType;               // 算力节点类型，0 表示 CPU，1 表示 GPU
+    double computingCapacity;        // 算力节点计算能力，单位: FLOPs/s
+    double availableStorage;         // 算力节点当前可用存储，单位: MB
+    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽，单位: Mbps
+    simtime_t sendTime;              // CPRP_RESP 生成时间戳，单位: s
  
-	L3Address computeNodeAddress;	// 算力节点地址 
-	int computeNodeId;
-	int computeNodePort;			// 算力节点端口号
-    int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    double computingCapacity;	// 计算能力(FLOPs/s)
-    double availableStorage;     // 可用存储(MB)
-    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
-    simtime_t sendTime;   // 发送时间戳
-    
-    // 资源预留参数
-    double requiredBandwidth;       // 网络层预留带宽(bps)
-    simtime_t maxDelayTolerance;    // 最大时延忍耐值
-    double computeCost;             // 使用成本(￥/s)
+    // 资源约束与预留
+    double requiredBandwidth;       // 路径软状态预留带宽，单位: bps
+    simtime_t maxDelayTolerance;    // 端到端最大时延容忍值，单位: s
+    double computeCost;             // 算力节点使用成本，单位: CNY/s
     
     // 时延信息
-    simtime_t accumulatedDelay;     // RESP返回路径动态累计时延，不含用户节点到用户网关RTT
+    simtime_t accumulatedDelay;     // RESP 返回路径动态累计时延，不含用户节点到用户网关 RTT，单位: s
     
     // 路由选择相关字段
-    simtime_t lastHopSendTime;      // 上一跳发送时间戳
-    L3Address lastHopAddress;       // 上一跳IP地址
+    simtime_t lastHopSendTime;      // 上一跳发送该 RESP 的时间戳，单位: s
+    L3Address lastHopAddress;       // 上一跳出口 IP 地址
     
     chunkLength = B(32 + 72);
 }
 
 class CprpConfirmMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    // Confirm 专用字段
-    string msgType = "CPRP_CONFIRM";    
+    // 用户节点确认的候选路径
+    string msgType = "CPRP_CONFIRM"; // 消息类型
+    int selectedNodeId;              // 用户最终选定的算力节点 ID
+    L3Address selectedNodeAddress;   // 用户最终选定的算力节点地址
+    int selectedNodePort;            // 用户最终选定的算力节点端口
+    int selectedPathIndex = 0;       // 用户在 RESP_SUMMARY 中选定的候选路径索引
  
-	int selectedNodeId;	// 最终选定的算力节点
-	L3Address selectedNodeAddress;  // 选定算力节点IP
-	int selectedNodePort;           // 选定算力节点端口
-	int selectedPathIndex = 0;      // 用户选定的路径索引
-    
     chunkLength = B(28);
 }
 
 enum CancelSenderType {
-    SENDER_USER_GW = 0;
-    SENDER_COMPUTE_GW = 1;
-    SENDER_COMPUTE_ROUTER = 2;
+    SENDER_USER_GW = 0;        // CANCEL 由用户网关发起
+    SENDER_COMPUTE_GW = 1;     // CANCEL 由算力网关发起
+    SENDER_COMPUTE_ROUTER = 2; // CANCEL 由算力路由器发起
 }
 
 class CancelMsg extends inet::FieldsChunk {
-    int userId;                       // 用户ID
-    int taskId;                       // 任务ID
-    L3Address computeNodeAddress;     // 算力节点IP
-    int computeNodePort;              // 算力节点端口
-    int senderType;                   // 发送方类型 (CancelSenderType)
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
+    L3Address computeNodeAddress;     // 需要撤销软状态的算力节点地址
+    int computeNodePort;              // 需要撤销软状态的算力节点端口
+    int senderType;                   // CANCEL 发送方类型，取值见 CancelSenderType
     
-    string msgType = "CPRP_CANCEL";
+    string msgType = "CPRP_CANCEL";  // 消息类型
     chunkLength = B(20);
 }
 
-// ==============================================
-// ================= 用户节点相关 =================
-// ==============================================
+// 用户节点请求消息
 
 class TaskRequestMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    string msgType = "TASK_REQUEST";    
- 
- 	// 任务数据参数
-    simtime_t generationTime;   // 任务产生的时刻
-    int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间(MB)
-    double computingAmount;     // 任务计算量(FLOPs)
-    double transferAmount;      // 任务数据量(MB)
-    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
-    double budget;              // 预算
-    double userMaxBandwidth;    // 传输带宽(Mbps)
-    
-    chunkLength = B(12 + 40); // 在构造函数中直接赋值
+    string msgType = "TASK_REQUEST"; // 消息类型
+
+    // 任务资源需求
+    simtime_t generationTime;        // 任务生成时间，单位: s
+    int computingType;               // 任务所需算力类型，0 表示 CPU，1 表示 GPU
+    double requiredStorage;          // 任务所需存储空间，单位: MB
+    double computingAmount;          // 任务计算量，单位: FLOPs
+    double transferAmount;           // 任务数据量，单位: MB
+    simtime_t totalDelayRequirement; // 端到端最大时延容忍值，单位: s
+    double budget;                   // 任务预算
+    double userMaxBandwidth;         // 用户请求的最大传输带宽，单位: Mbps
+
+    chunkLength = B(12 + 40);       // 固定序列化长度
 }
 
-// ==============================================
-// ================= 用户网关相关 =================
-// ==============================================
+// 用户网关相关消息
 
-// 任务数据消息
 class TaskDataMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    string msgType = "TASK_DATA";    
-	L3Address userNodeAddress;    
-    int userNodePort;                // 用户节点端口号
- 
-	// 任务数据参数	
-    simtime_t generationTime;   // 任务产生的时刻
-    int computingType; 			// 任务所需算力类型，0表示CPU，1表示GPU
-    double requiredStorage;     // 任务所需存储空间(MB)
-    double computingAmount;     // 任务计算量(FLOPs)
-    double transferAmount;      // 任务数据量(MB)
-    simtime_t totalDelayRequirement; // 时延忍耐值(sec)
-    double budget;              // 预算
-    double userMaxBandwidth;    // 传输带宽(Mbps)
-    int priority = 5;           // DSCP优先级，默认EF(5)
+    // 任务来源
+    string msgType = "TASK_DATA";    // 消息类型
+    L3Address userNodeAddress;       // 产生任务的用户节点地址
+    int userNodePort;                // 用户节点接收端口
+
+    // 任务资源需求
+    simtime_t generationTime;        // 任务生成时间，单位: s
+    int computingType;               // 任务所需算力类型，0 表示 CPU，1 表示 GPU
+    double requiredStorage;          // 任务所需存储空间，单位: MB
+    double computingAmount;          // 任务计算量，单位: FLOPs
+    double transferAmount;           // 任务数据量，单位: MB
+    simtime_t totalDelayRequirement; // 端到端最大时延容忍值，单位: s
+    double budget;                   // 任务预算
+    double userMaxBandwidth;         // 用户请求的最大传输带宽，单位: Mbps
+    int priority = 5;                // DSCP 优先级，默认值 5
     
-    chunkLength = B(20 + 40); // 在构造函数中直接赋值
+    chunkLength = B(20 + 40);       // 固定序列化长度
 }
 
-// 算力应答超时自消息
-class RespTimeoutSelfMsg extends cMessage{
-    string msgType = "RESP_TIMEOUT_SELF";
-	int userId;
-	int taskId;
+class RespTimeoutSelfMsg extends cMessage {
+    string msgType = "RESP_TIMEOUT_SELF"; // 用户网关本地超时自消息类型，不经网络发送
+    int userId;                           // 用户 ID
+    int taskId;                           // 任务 ID
 }
 
-// 算力应答汇总消息
-struct computeNodeInfo{
-    L3Address computeNodeAddress;	// 算力节点IP地址
-	int computeNodeId;	
-    int computeNodePort;          // 算力节点端口号
-    int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    double computingCapacity;	// 节点计算能力(FLOPs/s)
-    double availableStorage;     // 可用存储(MB)
-    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
-    double computeCost;          // 节点使用单价(￥/s)
-    simtime_t sendTime;          // 时间戳
+struct computeNodeInfo {
+    L3Address computeNodeAddress;   // 候选算力节点地址
+    int computeNodeId;              // 候选算力节点 ID
+    int computeNodePort;            // 候选算力节点接收端口
+    int computingType;              // 候选算力节点类型，0 表示 CPU，1 表示 GPU
+    double computingCapacity;       // 候选算力节点计算能力，单位: FLOPs/s
+    double availableStorage;        // 候选算力节点当前可用存储，单位: MB
+    double computeNodeMaxBandwidth; // 候选算力节点最大可用网络带宽，单位: Mbps
+    double computeCost;             // 候选算力节点使用成本，单位: CNY/s
+    simtime_t sendTime;             // 候选信息生成时间戳，单位: s
 }
 
-struct routeInfo{
-    string sidPath;              // 用户网关到算力节点的源路由路径
-    simtime_t totalDelay;        // 候选路径总时延，不含用户节点到用户网关RTT
-    double reservedBandwidth;    // 路径预留带宽(bps)
+struct routeInfo {
+    string sidPath;              // 用户网关到算力节点方向的源路由路径
+    simtime_t totalDelay;        // 候选路径总时延，不含用户节点到用户网关 RTT，单位: s
+    double reservedBandwidth;    // 候选路径软状态预留带宽，单位: bps
 }
 
-struct computeCandidateInfo{
-    computeNodeInfo nodeInfo;
-    routeInfo pathInfo;
+struct computeCandidateInfo {
+    computeNodeInfo nodeInfo;     // 候选算力节点信息
+    routeInfo pathInfo;           // 候选路径信息
 }
 
 class RespSummaryMsg extends inet::FieldsChunk {
-    // 通用字段
-    int userId;           // 用户ID
-    int taskId;           // 任务ID
+    // 任务标识
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
 
-    string msgType = "RESP_SUMMARY";    
-    simtime_t sendTime;          // 用户网关发送候选摘要的时间戳，用于用户节点估算接入RTT
+    string msgType = "RESP_SUMMARY"; // 消息类型
+    simtime_t sendTime;              // 用户网关发送候选摘要的时间戳，用于用户节点估算接入 RTT，单位: s
  
-    computeCandidateInfo candidateInfo[];
+    computeCandidateInfo candidateInfo[]; // 用户网关收集到的候选算力路径列表
 
-    chunkLength = B(12 + 32); // 在构造函数中直接赋值
+    chunkLength = B(12 + 32);       // 基础序列化长度，不含候选数组扩展部分
 }
 
-// ==============================================
-// ================== CGMP 协议 ==================
-// ==============================================
+// CGMP 协议消息
 
 class CgmpQueryMsg extends inet::FieldsChunk {
-    string msgType = "CGMP_QUERY";    
-    simtime_t sendTime;          // 查询发送时间戳
+    string msgType = "CGMP_QUERY";  // 消息类型
+    simtime_t sendTime;             // 算力网关发送查询的时间戳，单位: s
     
-    chunkLength = B(8); // 在构造函数中直接赋值
+    chunkLength = B(8);             // 固定序列化长度
 }
 
 struct cgmpTaskState {
-    int userId;                    // 用户ID
-    int taskId;                    // 任务ID
-    simtime_t remainingExecutionTime; // 任务剩余执行时间
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
+    simtime_t remainingExecutionTime; // 任务剩余执行时间，单位: s
 }
 
 class CgmpReportMsg extends inet::FieldsChunk {
-    string msgType = "CGMP_REPORT";    
+    string msgType = "CGMP_REPORT"; // 消息类型
     
-	int computeNodeId;	
-    int computeNodePort;          // 算力节点端口号
-    int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
-    L3Address computeNodeAddress; // 算力节点IP地址
-    L3Address serviceGroupAddress; // 算力组地址
-    double computingCapacity;	// 节点计算能力(FLOPs/s)
-    double availableStorage;     // 可用存储(MB)
-    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
-    double computeCost;          // 节点使用单价(￥/s)
-    simtime_t queueingTime;      // 节点等待队列预计排队时间
-    cgmpTaskState taskState[];   // 节点当前任务剩余执行时间
-    simtime_t querySendTime;     // 查询发送时间戳
-    simtime_t sendTime;          // 时间戳
+    // 算力节点状态
+    int computeNodeId;             // 算力节点 ID
+    int computeNodePort;           // 算力节点接收端口
+    int computingType;             // 算力节点类型，0 表示 CPU，1 表示 GPU
+    L3Address computeNodeAddress;  // 算力节点地址
+    L3Address serviceGroupAddress; // 算力节点所属算力组播地址
+    double computingCapacity;      // 算力节点计算能力，单位: FLOPs/s
+    double availableStorage;       // 算力节点当前可用存储，单位: MB
+    double computeNodeMaxBandwidth; // 算力节点最大可用网络带宽，单位: Mbps
+    double computeCost;            // 算力节点使用成本，单位: CNY/s
+    simtime_t queueingTime;        // 算力节点上报的预计排队时间，单位: s
+    cgmpTaskState taskState[];     // 算力节点当前任务队列状态
+    simtime_t querySendTime;       // 对应 CGMP_QUERY 的发送时间戳，单位: s
+    simtime_t sendTime;            // CGMP_REPORT 发送时间戳，单位: s
     
-    chunkLength = B(12 + 72); // 在构造函数中直接赋值
+    chunkLength = B(12 + 72);     // 基础序列化长度，不含任务状态数组扩展部分
 }
 
 
-// ==============================================
-// ============ 任务完成通告消息 =================
-// ==============================================
+// 任务完成通告消息
 
 enum TaskFailureCode {
-    TASK_OK = 0;
-    TASK_INVALID_COMPUTING_TYPE = 1;
-    TASK_INSUFFICIENT_STORAGE = 2;
-    TASK_INSUFFICIENT_BANDWIDTH = 3;
-    TASK_INVALID_RESOURCE_REQUEST = 4;
+    TASK_OK = 0;                       // 任务成功完成
+    TASK_INVALID_COMPUTING_TYPE = 1;   // 算力类型不匹配
+    TASK_INSUFFICIENT_STORAGE = 2;     // 算力节点存储资源不足
+    TASK_INSUFFICIENT_BANDWIDTH = 3;   // 算力节点网络带宽不足
+    TASK_INVALID_RESOURCE_REQUEST = 4; // 任务资源请求参数非法
 }
 
 class TaskCompletionMsg extends inet::FieldsChunk {
-    int userId;                       // 用户ID
-    int taskId;                       // 任务ID
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
     L3Address computeNodeAddress;     // 算力节点地址
-    int computeNodePort;              // 算力节点端口
+    int computeNodePort;              // 算力节点接收端口
     L3Address userNodeAddress;        // 用户节点地址
-    simtime_t completionTime;         // 任务完成时间
+    simtime_t completionTime;         // 任务完成时间，单位: s
     bool success;                     // 任务是否成功完成
-    int failureCode = 0;              // 失败原因(TaskFailureCode)
+    int failureCode = 0;              // 失败原因码，取值见 TaskFailureCode
     string failureReason;             // 失败原因文本
-    double taskResult;                // 任务结果大小
-    double executionTime;             // 实际执行耗时(sec)
+    double taskResult;                // 任务结果大小，单位: MB
+    double executionTime;             // 实际执行耗时，单位: s
     
-    string msgType = "TASK_COMPLETION";
+    string msgType = "TASK_COMPLETION"; // 消息类型
     chunkLength = B(64);
 }
 
 class TaskDataTransferCompleteMsg extends inet::FieldsChunk {
-    int userId;                       // 用户ID
-    int taskId;                       // 任务ID
-    L3Address computeNodeAddress;     // 已接收TASK_DATA的算力节点地址
-    int computeNodePort;              // 算力节点端口
-    L3Address userGatewayAddress;     // 接收通告的用户网关地址
-    simtime_t receiveTime;            // 算力节点收到TASK_DATA的时间
+    int userId;                       // 用户 ID
+    int taskId;                       // 任务 ID
+    L3Address computeNodeAddress;     // 已接收 TASK_DATA 的算力节点地址
+    int computeNodePort;              // 算力节点接收端口
+    L3Address userGatewayAddress;     // 接收传输完成通告的用户网关地址
+    simtime_t receiveTime;            // 算力节点收到 TASK_DATA 的时间，单位: s
 
-    string msgType = "TASK_DATA_TRANSFER_COMPLETE";
+    string msgType = "TASK_DATA_TRANSFER_COMPLETE"; // 消息类型，表示 TASK_DATA 已到达算力节点，不表示任务计算完成
     chunkLength = B(56);
 }
 
