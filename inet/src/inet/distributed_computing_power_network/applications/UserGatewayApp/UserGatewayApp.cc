@@ -150,7 +150,7 @@ void UserGatewayApp::parseMulticastRoutes(const char *routesStr)
 void UserGatewayApp::handleMessageWhenUp(cMessage *msg)
 {
     if (msg->isSelfMessage()) {
-        if (strcmp(msg->getName(), "RespTimeoutSelfMsg") == 0) {
+        if (strcmp(msg->getName(), "RESP_TIMEOUT_SELF") == 0) {
             RespTimeoutSelfMsg *timer = check_and_cast<RespTimeoutSelfMsg*>(msg);
             int uid = timer->getUserId();
             int tid = timer->getTaskId();
@@ -161,7 +161,7 @@ void UserGatewayApp::handleMessageWhenUp(cMessage *msg)
                 requestTimers.erase(timerIt);
             expiredRequests.insert(key);
 
-            EV_INFO << "Received RespTimeoutSelfMsg. Sending response summary to user node for task(" << uid << "," << tid << ").\n";
+            EV_INFO << "Received RESP_TIMEOUT_SELF. Sending response summary to user node for task(" << uid << "," << tid << ").\n";
             // 发送可用算力信息至对应用户节点
             sendResponseSummary(uid, tid);
             delete msg;
@@ -183,7 +183,7 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
 
     if(requestInfo == nullptr){
         EV_WARN << "Error: Received a Packet named '" << packet->getName()
-                 << "', but it does not contain a TaskRequestMsg chunk. Discarding.";
+                 << "', but it does not contain a TASK_REQUEST payload. Discarding.";
         delete packet;
         return;
     }
@@ -271,11 +271,11 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
 
 void UserGatewayApp::sendResponseSummary(int uid, int tid)
 {
-    EV_INFO << "Preparing RespSummaryMsg for user" << uid << " task(" << uid << "," << tid << ").\n";
+    EV_INFO << "Preparing RESP_SUMMARY for user" << uid << " task(" << uid << "," << tid << ").\n";
 
     auto candidateIt = candidateCache.find({uid, tid});
     if (candidateIt == candidateCache.end()) {
-        EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
+        EV_WARN << "Cannot send RESP_SUMMARY for task(" << uid << "," << tid
                 << "): candidate cache is missing." << endl;
         return;
     }
@@ -283,7 +283,7 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
     auto& candidates = candidateIt->second;
     size_t candidateCount = candidates.size();
     if (candidateCount == 0) {
-        EV_WARN << "Cannot send RespSummaryMsg for task(" << uid << "," << tid
+        EV_WARN << "Cannot send RESP_SUMMARY for task(" << uid << "," << tid
                 << "): no candidate entries available." << endl;
         return;
     }
@@ -326,7 +326,7 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
     L3Address userAddress = userNodeIpMap.at(uid);
     socket.sendTo(pkt, userAddress, userNodePort);
 
-    EV_INFO << "UserGateway" << userGatewayId << " sent RespSummaryMsg with " << candidateCount
+    EV_INFO << "UserGateway" << userGatewayId << " sent RESP_SUMMARY with " << candidateCount
             << " candidate(s) to user" << uid << " for task(" << uid << "," << tid << ")." << std::endl;
 }
 
@@ -341,7 +341,7 @@ void UserGatewayApp::startCprpRequestTimer(int userId, int taskId)
     }
     expiredRequests.erase(key);
 
-    RespTimeoutSelfMsg *timer = new RespTimeoutSelfMsg("RespTimeoutSelfMsg");
+    RespTimeoutSelfMsg *timer = new RespTimeoutSelfMsg("RESP_TIMEOUT_SELF");
 
     timer->setUserId(userId);
     timer->setTaskId(taskId);
@@ -719,7 +719,7 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
 // UdpSocket::ICallback
 void UserGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
-    if(strcmp(packet->getName(), "TaskRequestMsg") == 0){
+    if(strcmp(packet->getName(), "TASK_REQUEST") == 0){
         sendCprpRequest(packet);
     }
     else if(strcmp(packet->getName(), "CPRP_RESP") == 0){

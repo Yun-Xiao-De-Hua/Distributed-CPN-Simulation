@@ -77,7 +77,7 @@ void ComputeGatewayApp::handleMessageWhenUp(cMessage *msg)
 {
     if (msg->isSelfMessage()) {
         if (strcmp(msg->getName(), "CibUpdateSelfMsg") == 0) {
-            EV_INFO << "Received CibUpdateSelfMsg. To Send CGMP_Query for CIB updating..." << std::endl;
+            EV_INFO << "Received CibUpdateSelfMsg. To Send CGMP_QUERY for CIB updating..." << std::endl;
             sendCgmpQuery();
 
             // 周期性轮询
@@ -100,7 +100,7 @@ void ComputeGatewayApp::handleMessageWhenUp(cMessage *msg)
 // 发送组成员查询消息
 void ComputeGatewayApp::sendCgmpQuery()
 {
-    EV_INFO << "Start Sending CGMP_Query for CIB updating..." << std::endl;
+    EV_INFO << "Start Sending CGMP_QUERY for CIB updating..." << std::endl;
 
     for(const auto& cpGroupAddress : computingPowerGroup){
         auto routeIt = multicastRoutesMap.find(cpGroupAddress);
@@ -119,7 +119,7 @@ void ComputeGatewayApp::sendCgmpQuery()
 
         const std::vector<int>& interfaceIds = routeIt->second;
 
-        EV_INFO << "Forwarding CGMP_Query to multicast group " << cpGroupAddress
+            EV_INFO << "Forwarding CGMP_QUERY to multicast group " << cpGroupAddress
                 << " via " << interfaceIds.size() << " interface(s)" << endl;
 
         for (int interfaceId : interfaceIds) {
@@ -134,7 +134,7 @@ void ComputeGatewayApp::sendCgmpQuery()
 
             socket.sendTo(pkt, cpGroupAddress, computeNodePort);
 
-            EV_INFO << "CGMP_Query sent to group " << cpGroupAddress
+            EV_INFO << "CGMP_QUERY sent to group " << cpGroupAddress
                     << " via interfaceId=" << interfaceId << endl;
         }
     }
@@ -330,7 +330,7 @@ void ComputeGatewayApp::reconcileTaskQueueWithReport(const CIB& cib, const Ptr<c
         }
 
         if (!reported && it->reportedByComputeNode) {
-            EV_INFO << "CGMP_Report indicates task has left compute node queue, removing soft state item: queueId=" << queueState.queueId
+            EV_INFO << "CGMP_REPORT indicates task has left compute node queue, removing soft state item: queueId=" << queueState.queueId
                     << ", task=(" << it->userId << "," << it->taskId << ")" << std::endl;
             it = queueState.taskQueue.erase(it);
         }
@@ -343,7 +343,7 @@ void ComputeGatewayApp::reconcileTaskQueueWithReport(const CIB& cib, const Ptr<c
     for (const auto& task : queueState.taskQueue)
         queueState.queueTotalTime += task.remainingExecutionTime;
 
-    EV_INFO << "Reconciled task queue soft state by CGMP_Report: queueId=" << queueState.queueId
+    EV_INFO << "Reconciled task queue soft state by CGMP_REPORT: queueId=" << queueState.queueId
             << ", reportedTaskCount=" << reportInfo->getTaskStateArraySize()
             << ", queueTotalTime=" << queueState.queueTotalTime << std::endl;
 }
@@ -487,7 +487,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     simtime_t querySendTime = reportInfo->getQuerySendTime();
     double networkDelayMs = 0;
     if (receiveTime < querySendTime) {
-        EV_WARN << "CGMP_Report has a future querySendTime=" << querySendTime
+        EV_WARN << "CGMP_REPORT has a future querySendTime=" << querySendTime
                 << ", receiveTime=" << receiveTime
                 << "; networkDelay is clamped to 0 ms." << std::endl;
     }
@@ -640,7 +640,7 @@ void ComputeGatewayApp::socketDataArrived(UdpSocket *socket, Packet *packet)
     if(strcmp(packet->getName(), "CPRP_REQ") == 0){
         sendCprpResponse(packet);
     }
-    else if(strcmp(packet->getName(), "CGMP_Report") == 0){
+    else if(strcmp(packet->getName(), "CGMP_REPORT") == 0){
         updateCib(packet);
     }
     else if(strcmp(packet->getName(), "CPRP_CANCEL") == 0){

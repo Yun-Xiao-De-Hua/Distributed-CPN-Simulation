@@ -468,7 +468,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CancelMsg& obj) {obj.pars
  *     int userId;           // 用户ID
  *     int taskId;           // 任务ID
  * 
- *     string msgType = "TaskRequestMsg";
+ *     string msgType = "TASK_REQUEST";
  * 
  *  	// 任务数据参数
  *     simtime_t generationTime;   // 任务产生的时刻
@@ -493,7 +493,7 @@ class INET_API TaskRequestMsg : public ::inet::FieldsChunk
   protected:
     int userId = 0;
     int taskId = 0;
-    ::omnetpp::opp_string msgType = "TaskRequestMsg";
+    ::omnetpp::opp_string msgType = "TASK_REQUEST";
     ::omnetpp::simtime_t generationTime = SIMTIME_ZERO;
     int computingType = 0;
     double requiredStorage = 0;
@@ -565,7 +565,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskRequestMsg& obj) {obj
  *     int userId;           // 用户ID
  *     int taskId;           // 任务ID
  * 
- *     string msgType = "TaskDataMsg";
+ *     string msgType = "TASK_DATA";
  *     L3Address userNodeAddress;
  *     int userNodePort;                // 用户节点端口号
  * 
@@ -589,7 +589,7 @@ class INET_API TaskDataMsg : public ::inet::FieldsChunk
   protected:
     int userId = 0;
     int taskId = 0;
-    ::omnetpp::opp_string msgType = "TaskDataMsg";
+    ::omnetpp::opp_string msgType = "TASK_DATA";
     L3Address userNodeAddress;
     int userNodePort = 0;
     ::omnetpp::simtime_t generationTime = SIMTIME_ZERO;
@@ -670,7 +670,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskDataMsg& obj) {obj.pa
  * // 算力应答超时自消息
  * class RespTimeoutSelfMsg extends cMessage
  * {
- *     string msgType = "RespTimeoutSelfMsg";
+ *     string msgType = "RESP_TIMEOUT_SELF";
  *     int userId;
  *     int taskId;
  * }
@@ -679,7 +679,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, TaskDataMsg& obj) {obj.pa
 class INET_API RespTimeoutSelfMsg : public ::omnetpp::cMessage
 {
   protected:
-    ::omnetpp::opp_string msgType = "RespTimeoutSelfMsg";
+    ::omnetpp::opp_string msgType = "RESP_TIMEOUT_SELF";
     int userId = 0;
     int taskId = 0;
 
@@ -779,7 +779,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, computeCandidateInfo& obj
  *     int userId;           // 用户ID
  *     int taskId;           // 任务ID
  * 
- *     string msgType = "RespSummaryMsg";
+ *     string msgType = "RESP_SUMMARY";
  *     simtime_t sendTime;          // 用户网关发送候选摘要的时间戳，用于用户节点估算接入RTT
  * 
  *     computeCandidateInfo candidateInfo[];
@@ -797,7 +797,7 @@ class INET_API RespSummaryMsg : public ::inet::FieldsChunk
   protected:
     int userId = 0;
     int taskId = 0;
-    ::omnetpp::opp_string msgType = "RespSummaryMsg";
+    ::omnetpp::opp_string msgType = "RESP_SUMMARY";
     ::omnetpp::simtime_t sendTime = SIMTIME_ZERO;
     computeCandidateInfo *candidateInfo = nullptr;
     size_t candidateInfo_arraysize = 0;
@@ -848,7 +848,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespSummaryMsg& obj) {obj
  * <pre>
  * class CgmpQueryMsg extends inet::FieldsChunk
  * {
- *     string msgType = "CGMP_Query";
+ *     string msgType = "CGMP_QUERY";
  *     simtime_t sendTime;          // 查询发送时间戳
  * 
  *     chunkLength = B(8); // 在构造函数中直接赋值
@@ -858,7 +858,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, RespSummaryMsg& obj) {obj
 class INET_API CgmpQueryMsg : public ::inet::FieldsChunk
 {
   protected:
-    ::omnetpp::opp_string msgType = "CGMP_Query";
+    ::omnetpp::opp_string msgType = "CGMP_QUERY";
     ::omnetpp::simtime_t sendTime = SIMTIME_ZERO;
 
   private:
@@ -909,7 +909,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, cgmpTaskState& obj) { __d
  * <pre>
  * class CgmpReportMsg extends inet::FieldsChunk
  * {
- *     string msgType = "CGMP_Report";
+ *     string msgType = "CGMP_REPORT";
  * 
  *     int computeNodeId;
  *     int computeNodePort;          // 算力节点端口号
@@ -937,7 +937,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, cgmpTaskState& obj) { __d
 class INET_API CgmpReportMsg : public ::inet::FieldsChunk
 {
   protected:
-    ::omnetpp::opp_string msgType = "CGMP_Report";
+    ::omnetpp::opp_string msgType = "CGMP_REPORT";
     int computeNodeId = 0;
     int computeNodePort = 0;
     int computingType = 0;

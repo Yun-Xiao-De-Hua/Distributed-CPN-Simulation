@@ -121,7 +121,7 @@ class TaskRequestMsg extends inet::FieldsChunk {
     int userId;           // 用户ID
     int taskId;           // 任务ID
 
-    string msgType = "TaskRequestMsg";    
+    string msgType = "TASK_REQUEST";    
  
  	// 任务数据参数
     simtime_t generationTime;   // 任务产生的时刻
@@ -146,7 +146,7 @@ class TaskDataMsg extends inet::FieldsChunk {
     int userId;           // 用户ID
     int taskId;           // 任务ID
 
-    string msgType = "TaskDataMsg";    
+    string msgType = "TASK_DATA";    
 	L3Address userNodeAddress;    
     int userNodePort;                // 用户节点端口号
  
@@ -166,7 +166,7 @@ class TaskDataMsg extends inet::FieldsChunk {
 
 // 算力应答超时自消息
 class RespTimeoutSelfMsg extends cMessage{
-    string msgType = "RespTimeoutSelfMsg";
+    string msgType = "RESP_TIMEOUT_SELF";
 	int userId;
 	int taskId;
 }
@@ -200,7 +200,7 @@ class RespSummaryMsg extends inet::FieldsChunk {
     int userId;           // 用户ID
     int taskId;           // 任务ID
 
-    string msgType = "RespSummaryMsg";    
+    string msgType = "RESP_SUMMARY";    
     simtime_t sendTime;          // 用户网关发送候选摘要的时间戳，用于用户节点估算接入RTT
  
     computeCandidateInfo candidateInfo[];
@@ -213,7 +213,7 @@ class RespSummaryMsg extends inet::FieldsChunk {
 // ==============================================
 
 class CgmpQueryMsg extends inet::FieldsChunk {
-    string msgType = "CGMP_Query";    
+    string msgType = "CGMP_QUERY";    
     simtime_t sendTime;          // 查询发送时间戳
     
     chunkLength = B(8); // 在构造函数中直接赋值
@@ -226,7 +226,7 @@ struct cgmpTaskState {
 }
 
 class CgmpReportMsg extends inet::FieldsChunk {
-    string msgType = "CGMP_Report";    
+    string msgType = "CGMP_REPORT";    
     
 	int computeNodeId;	
     int computeNodePort;          // 算力节点端口号

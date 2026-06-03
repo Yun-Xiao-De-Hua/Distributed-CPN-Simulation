@@ -66,7 +66,7 @@ void UserNodeApp::handleMessageWhenUp(cMessage *msg)
 
 void UserNodeApp::sendTaskRequest()
 {
-    EV_INFO << "User" << userNodeId << " is to send TaskRequestMsg...\n";
+    EV_INFO << "User" << userNodeId << " is to send TASK_REQUEST...\n";
 
     auto payload = makeShared<TaskRequestMsg>();
     // 当前示例场景仅生成一条任务，请求字段需要与后续 CPRP_CONFIRM/TASK_DATA 保持一致。
@@ -98,7 +98,7 @@ void UserNodeApp::sendTaskRequest()
 
     socket.sendTo(pkt, userGatewayAddress, userGatewayPort);
 
-    EV_INFO << "User" << this->userNodeId << " has sent TaskRequestMsg for task(" << this->userNodeId << "-" << payload->getTaskId() << ")\n";
+    EV_INFO << "User" << this->userNodeId << " has sent TASK_REQUEST for task(" << this->userNodeId << "-" << payload->getTaskId() << ")\n";
 }
 
 void UserNodeApp::sendCprpConfirm(Packet *packet)
@@ -110,13 +110,13 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     if(sumInfo == nullptr){
         EV_WARN << "Error: Received a Packet named '" << packet->getName()
-                 << "', but it does not contain a RespSummaryMsg chunk. Discarding.";
+                 << "', but it does not contain a RESP_SUMMARY payload. Discarding.";
         delete packet;
         return;
     }
 
     if (sumInfo->getCandidateInfoArraySize() == 0) {
-        EV_WARN << "RespSummaryMsg contains no candidate information." << std::endl;
+        EV_WARN << "RESP_SUMMARY contains no candidate information." << std::endl;
         delete packet;
         return;
     }
@@ -130,7 +130,7 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
 
     simtime_t userAccessOneWayDelay = simTime() - sumInfo->getSendTime();
     if (userAccessOneWayDelay < SIMTIME_ZERO) {
-        EV_WARN << "RespSummaryMsg sendTime is later than UserNode receive time; user access RTT is clamped to 0." << endl;
+        EV_WARN << "RESP_SUMMARY sendTime is later than UserNode receive time; user access RTT is clamped to 0." << endl;
         userAccessOneWayDelay = SIMTIME_ZERO;
     }
     simtime_t userAccessRtt = userAccessOneWayDelay * 2;
@@ -163,14 +163,14 @@ void UserNodeApp::sendCprpConfirm(Packet *packet)
     }
 
     if (selectedCandidate == nullptr) {
-        EV_WARN << "RespSummaryMsg candidate selection failed: no candidate satisfies end-to-end delay tolerance." << std::endl;
+        EV_WARN << "RESP_SUMMARY candidate selection failed: no candidate satisfies end-to-end delay tolerance." << std::endl;
         delete packet;
         return;
     }
 
     const auto& selectedNode = selectedCandidate->nodeInfo;
 
-    EV_INFO << "User" << userNodeId << " selected CPRP route from RespSummaryMsg: selectedPathIndex="
+    EV_INFO << "User" << userNodeId << " selected CPRP route from RESP_SUMMARY: selectedPathIndex="
             << selectedPathIndex
             << ", nodeId="
             << selectedNode.computeNodeId
@@ -241,7 +241,7 @@ void UserNodeApp::processTaskCompletion(Packet *packet)
 // UdpSocket::ICallback
 void UserNodeApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
-    if(strcmp(packet->getName(), "RespSummaryMsg") == 0){
+    if(strcmp(packet->getName(), "RESP_SUMMARY") == 0){
         sendCprpConfirm(packet);
     }
     else if(strcmp(packet->getName(), "TASK_COMPLETION") == 0){

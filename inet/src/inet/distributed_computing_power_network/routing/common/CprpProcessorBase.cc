@@ -126,7 +126,7 @@ bool CprpProcessorBase::isCprpPacket(Packet *packet) {
     }
 
     // CGMP 报文同样走 UDP 5000 端口，但不属于 CPRP 业务流，必须显式排除。
-    if (strcmp(name, "CGMP_Query") == 0 || strcmp(name, "CGMP_Report") == 0) {
+    if (strcmp(name, "CGMP_QUERY") == 0 || strcmp(name, "CGMP_REPORT") == 0) {
         return false;
     }
     

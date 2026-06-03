@@ -61,7 +61,7 @@ void ComputeNodeApp::initialize(int stage)
 // 发送组成员报告
 void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
 {
-    EV_INFO << "Start sending CGMP_Report...\n";
+    EV_INFO << "Start sending CGMP_REPORT...\n";
 
     simtime_t queueingTime = computeQueueingTime();
 
@@ -109,14 +109,14 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
     Packet *pkt = new Packet(messageType.c_str());
     pkt->insertAtBack(payload);
 
-    // CGMP_Report 只应在本地接入域内传播，不应穿越上游算力路由器，
+    // CGMP_REPORT 只应在本地接入域内传播，不应穿越上游算力路由器，
     // 因此显式限制 HopLimit 为 1。
     auto hopLimitReq = pkt->addTagIfAbsent<HopLimitReq>();
     hopLimitReq->setHopLimit(1);
 
     socket.sendTo(pkt, multicastAddress, computeGatewayPort);
 
-    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_Report (TTL=1) to computeGateway" << computeGatewayId
+    EV_INFO << "ComputeNode" << computeNodeId << " has sent CGMP_REPORT (TTL=1) to computeGateway" << computeGatewayId
             << ": address=" << localAddress
             << ", port=" << localPort
             << ", serviceGroupAddress=" << multicastAddress
@@ -190,18 +190,18 @@ void ComputeNodeApp::handleMessageWhenUp(cMessage *msg)
 // UdpSocket::ICallback
 void ComputeNodeApp::socketDataArrived(UdpSocket *socket, Packet *packet)
 {
-    if (std::strcmp(packet->getName(), "CGMP_Query") == 0) {
-        EV_INFO << "Received CGMP_Query. To send CGMP_Report...\n";
+    if (std::strcmp(packet->getName(), "CGMP_QUERY") == 0) {
+        EV_INFO << "Received CGMP_QUERY. To send CGMP_REPORT...\n";
         const auto& queryInfo = packet->popAtFront<CgmpQueryMsg>();
         if (queryInfo == nullptr) {
-            EV_WARN << "ComputeNode" << computeNodeId << " received CGMP_Query without CgmpQueryMsg payload." << endl;
+            EV_WARN << "ComputeNode" << computeNodeId << " received CGMP_QUERY without CgmpQueryMsg payload." << endl;
             delete packet;
             return;
         }
         sendCgmpReport(queryInfo->getSendTime());
         delete packet;
     }
-    else if (std::strcmp(packet->getName(), "TASK_DATA") == 0 || std::strcmp(packet->getName(), "TaskDataMsg") == 0) {
+    else if (std::strcmp(packet->getName(), "TASK_DATA") == 0) {
         processTaskData(packet);
     }
     else {
