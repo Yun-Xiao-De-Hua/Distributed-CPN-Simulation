@@ -61,7 +61,7 @@ class CprpResponseMsg extends inet::FieldsChunk {
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     double computingCapacity;	// 计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
-    double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
+    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
     simtime_t sendTime;   // 发送时间戳
     
     // 资源预留参数
@@ -179,7 +179,7 @@ struct computeNodeInfo{
     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
     double computingCapacity;	// 节点计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
-    double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
     double computeCost;          // 节点使用单价(￥/s)
     simtime_t sendTime;          // 时间戳
 }
@@ -235,7 +235,7 @@ class CgmpReportMsg extends inet::FieldsChunk {
     L3Address serviceGroupAddress; // 算力组地址
     double computingCapacity;	// 节点计算能力(FLOPs/s)
     double availableStorage;     // 可用存储(MB)
-    double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+    double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
     double computeCost;          // 节点使用单价(￥/s)
     simtime_t queueingTime;      // 节点等待队列预计排队时间
     cgmpTaskState taskState[];   // 节点当前任务剩余执行时间

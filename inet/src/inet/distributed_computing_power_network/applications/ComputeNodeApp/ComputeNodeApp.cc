@@ -36,7 +36,7 @@ void ComputeNodeApp::initialize(int stage)
        this->computingType = par("computingType");
        this->computingCapacity = par("computingCapacity");
        this->storageCapacity = par("storageCapacity");
-       this->maxNetworkBandwidth = par("maxNetworkBandwidth");
+       this->computeNodeMaxBandwidth = par("computeNodeMaxBandwidth");
        this->computeCost = par("computeCost");
        // availableStorage 表示当前可用容量，由任务入队执行和完成释放动态维护。
        this->availableStorage = this->storageCapacity;
@@ -73,7 +73,7 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
     payload->setServiceGroupAddress(multicastAddress);
     payload->setComputingCapacity(computingCapacity);
     payload->setAvailableStorage(availableStorage);
-    payload->setMaxNetworkBandwidth(maxNetworkBandwidth);
+    payload->setComputeNodeMaxBandwidth(computeNodeMaxBandwidth);
     payload->setComputeCost(computeCost);
     payload->setQueueingTime(queueingTime);
 
@@ -123,7 +123,7 @@ void ComputeNodeApp::sendCgmpReport(simtime_t querySendTime)
             << ", computingCapacity=" << computingCapacity << " FLOPs/s"
             << ", computeCost=" << computeCost << " CNY/s"
             << ", availableStorage=" << availableStorage << " MB"
-            << ", maxNetworkBandwidth=" << maxNetworkBandwidth << " Mbps"
+            << ", computeNodeMaxBandwidth=" << computeNodeMaxBandwidth << " Mbps"
             << ", queueingTime=" << queueingTime
             << ", taskStateCount=" << taskStateCount
             << ", querySendTime=" << querySendTime
@@ -317,9 +317,9 @@ bool ComputeNodeApp::validateTask(const QueuedTask& task, int& failureCode, std:
         failureReason = "available storage is insufficient";
         return false;
     }
-    if (task.userMaxBandwidth > maxNetworkBandwidth) {
+    if (task.userMaxBandwidth > computeNodeMaxBandwidth) {
         failureCode = TASK_INSUFFICIENT_BANDWIDTH;
-        failureReason = "requested transmission bandwidth exceeds node network bandwidth";
+        failureReason = "requested transmission bandwidth exceeds compute node max available network bandwidth";
         return false;
     }
     return true;

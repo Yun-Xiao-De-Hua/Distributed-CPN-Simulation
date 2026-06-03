@@ -386,7 +386,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
             << ", computingType=" << respInfo->getComputingType()
             << ", computingCapacity=" << respInfo->getComputingCapacity() << " FLOPs/s"
             << ", availableStorage=" << respInfo->getAvailableStorage() << " MB"
-            << ", maxNetworkBandwidth=" << respInfo->getMaxNetworkBandwidth() << " Mbps"
+            << ", computeNodeMaxBandwidth=" << respInfo->getComputeNodeMaxBandwidth() << " Mbps"
             << ", computeCost=" << respInfo->getComputeCost() << " CNY/s"
             << ", requiredBandwidth=" << respInfo->getRequiredBandwidth() << " bps"
             << ", maxDelayTolerance=" << respInfo->getMaxDelayTolerance()
@@ -402,7 +402,7 @@ void UserGatewayApp::processCprpResp(Packet *packet)
     candidate.nodeInfo.computingType = respInfo->getComputingType();
     candidate.nodeInfo.computingCapacity = respInfo->getComputingCapacity();
     candidate.nodeInfo.availableStorage = respInfo->getAvailableStorage();
-    candidate.nodeInfo.maxNetworkBandwidth = respInfo->getMaxNetworkBandwidth();
+    candidate.nodeInfo.computeNodeMaxBandwidth = respInfo->getComputeNodeMaxBandwidth();
     candidate.nodeInfo.computeCost = respInfo->getComputeCost();
     candidate.nodeInfo.sendTime = respInfo->getSendTime();
 

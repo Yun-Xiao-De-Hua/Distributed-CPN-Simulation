@@ -29,7 +29,7 @@ simple ComputeNodeApp like IApp
         int computingType = default(0);                     // 算力类型，0 表示 CPU，1 表示 GPU
         double computingCapacity = default(1e10);           // 计算能力(FLOPs/s)
         double storageCapacity = default(0);                // 存储资源(MB)
-        double maxNetworkBandwidth = default(100);          // 最大可用网络带宽(Mbps)
+        double computeNodeMaxBandwidth = default(100);          // 算力节点最大可用网络带宽(Mbps)
         double computeCost = default(0);                    // 使用成本(￥/s)
         string multicastAddress = default("");             // 算力节点组播组地址
 

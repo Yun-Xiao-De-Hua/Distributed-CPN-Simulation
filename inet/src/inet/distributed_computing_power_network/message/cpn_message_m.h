@@ -186,7 +186,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, CprpRequestMsg& obj) {obj
  *     int computingType; 			// 节点算力类型，0表示CPU，1表示GPU    
  *     double computingCapacity;	// 计算能力(FLOPs/s)
  *     double availableStorage;     // 可用存储(MB)
- *     double maxNetworkBandwidth;  // 最大可用网络带宽(Mbps)
+ *     double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
  *     simtime_t sendTime;   // 发送时间戳
  * 
  *     // 资源预留参数
@@ -217,7 +217,7 @@ class INET_API CprpResponseMsg : public ::inet::FieldsChunk
     int computingType = 0;
     double computingCapacity = 0;
     double availableStorage = 0;
-    double maxNetworkBandwidth = 0;
+    double computeNodeMaxBandwidth = 0;
     ::omnetpp::simtime_t sendTime = SIMTIME_ZERO;
     double requiredBandwidth = 0;
     ::omnetpp::simtime_t maxDelayTolerance = SIMTIME_ZERO;
@@ -269,8 +269,8 @@ class INET_API CprpResponseMsg : public ::inet::FieldsChunk
     virtual double getAvailableStorage() const;
     virtual void setAvailableStorage(double availableStorage);
 
-    virtual double getMaxNetworkBandwidth() const;
-    virtual void setMaxNetworkBandwidth(double maxNetworkBandwidth);
+    virtual double getComputeNodeMaxBandwidth() const;
+    virtual void setComputeNodeMaxBandwidth(double computeNodeMaxBandwidth);
 
     virtual ::omnetpp::simtime_t getSendTime() const;
     virtual void setSendTime(::omnetpp::simtime_t sendTime);
@@ -723,7 +723,7 @@ struct INET_API computeNodeInfo
     int computingType = 0;
     double computingCapacity = 0;
     double availableStorage = 0;
-    double maxNetworkBandwidth = 0;
+    double computeNodeMaxBandwidth = 0;
     double computeCost = 0;
     ::omnetpp::simtime_t sendTime = SIMTIME_ZERO;
 };
@@ -918,7 +918,7 @@ inline void doParsimUnpacking(omnetpp::cCommBuffer *b, cgmpTaskState& obj) { __d
  *     L3Address serviceGroupAddress; // 算力组地址
  *     double computingCapacity;	// 节点计算能力(FLOPs/s)
  *     double availableStorage;     // 可用存储(MB)
- *     double maxNetworkBandwidth;  // 可用网络带宽(Mbps)
+ *     double computeNodeMaxBandwidth;  // 算力节点最大可用网络带宽(Mbps)
  *     double computeCost;          // 节点使用单价(￥/s)
  *     simtime_t queueingTime;      // 节点等待队列预计排队时间
  *     cgmpTaskState taskState[];   // 节点当前任务剩余执行时间
@@ -945,7 +945,7 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
     L3Address serviceGroupAddress;
     double computingCapacity = 0;
     double availableStorage = 0;
-    double maxNetworkBandwidth = 0;
+    double computeNodeMaxBandwidth = 0;
     double computeCost = 0;
     ::omnetpp::simtime_t queueingTime = SIMTIME_ZERO;
     cgmpTaskState *taskState = nullptr;
@@ -994,8 +994,8 @@ class INET_API CgmpReportMsg : public ::inet::FieldsChunk
     virtual double getAvailableStorage() const;
     virtual void setAvailableStorage(double availableStorage);
 
-    virtual double getMaxNetworkBandwidth() const;
-    virtual void setMaxNetworkBandwidth(double maxNetworkBandwidth);
+    virtual double getComputeNodeMaxBandwidth() const;
+    virtual void setComputeNodeMaxBandwidth(double computeNodeMaxBandwidth);
 
     virtual double getComputeCost() const;
     virtual void setComputeCost(double computeCost);

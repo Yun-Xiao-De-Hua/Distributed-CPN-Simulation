@@ -57,7 +57,7 @@ protected:
     double computingCapacity;
     double storageCapacity;
     double availableStorage;
-    double maxNetworkBandwidth;
+    double computeNodeMaxBandwidth;
     double computeCost;
 
     std::queue<QueuedTask> taskQueue;

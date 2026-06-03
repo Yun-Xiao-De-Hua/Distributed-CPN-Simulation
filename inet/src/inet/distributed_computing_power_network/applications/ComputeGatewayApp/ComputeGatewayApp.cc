@@ -173,7 +173,7 @@ void ComputeGatewayApp::logCurrentCib() const
                     << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
                     << ", computeCost=" << cib.computeCost << " CNY/s"
                     << ", availableStorage=" << cib.availableStorage << " MB"
-                    << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                    << ", computeNodeMaxBandwidth=" << cib.computeNodeMaxBandwidth << " Mbps"
                     << ", queueingTime=" << cib.queueingTime
                     << ", querySendTime=" << cib.querySendTime
                     << ", reportSendTime=" << cib.reportSendTime
@@ -402,7 +402,7 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
             evaluation.rejectReason = "gateway link bandwidth is unavailable";
         else if (gatewayLinkBandwidthMbps < userMaxBandwidthMbps)
             evaluation.rejectReason = "gateway link bandwidth is lower than user maximum bandwidth";
-        else if (cib.maxNetworkBandwidth < userMaxBandwidthMbps)
+        else if (cib.computeNodeMaxBandwidth < userMaxBandwidthMbps)
             evaluation.rejectReason = "compute node network bandwidth is lower than user maximum bandwidth";
         else if (evaluation.totalDelay >= requestInfo.getTotalDelayRequirement().dbl())
             evaluation.rejectReason = "total delay exceeds user delay tolerance";
@@ -422,7 +422,7 @@ std::vector<ComputeGatewayApp::CandidateEvaluation> ComputeGatewayApp::evaluateC
                 << ", softStateQueueingTime=" << queueingDelay << " s"
                 << ", computeCost=" << cib.computeCost << " CNY/s"
                 << ", availableStorage=" << cib.availableStorage << " MB"
-                << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+                << ", computeNodeMaxBandwidth=" << cib.computeNodeMaxBandwidth << " Mbps"
                 << ", gatewayLinkBandwidth=" << gatewayLinkBandwidthMbps << " Mbps"
                 << ", computeGatewayToComputeNodeRtt=" << cib.networkDelayMs << " ms"
                 << ", transmissionDelay=" << transmissionDelay << " s"
@@ -507,7 +507,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
     cib.interfaceId = interfaceInd != nullptr ? interfaceInd->getInterfaceId() : -1;
     cib.computingCapacity = reportInfo->getComputingCapacity();
     cib.availableStorage = reportInfo->getAvailableStorage();
-    cib.maxNetworkBandwidth = reportInfo->getMaxNetworkBandwidth();
+    cib.computeNodeMaxBandwidth = reportInfo->getComputeNodeMaxBandwidth();
     cib.computeCost = reportInfo->getComputeCost();
     cib.queueingTime = reportInfo->getQueueingTime();
     cib.querySendTime = querySendTime;
@@ -524,7 +524,7 @@ void ComputeGatewayApp::updateCib(Packet *packet)
             << ", computingCapacity=" << cib.computingCapacity << " FLOPs/s"
             << ", computeCost=" << cib.computeCost << " CNY/s"
             << ", availableStorage=" << cib.availableStorage << " MB"
-            << ", maxNetworkBandwidth=" << cib.maxNetworkBandwidth << " Mbps"
+            << ", computeNodeMaxBandwidth=" << cib.computeNodeMaxBandwidth << " Mbps"
             << ", queueingTime=" << cib.queueingTime
             << ", networkDelay=" << cib.networkDelayMs << " ms"
             << ", updateTime=" << cib.updateTime << std::endl;
@@ -596,7 +596,7 @@ void ComputeGatewayApp::sendCprpResponse(Packet *packet)
     payload->setComputingType(destNodeInfo.computingType);
     payload->setComputingCapacity(destNodeInfo.computingCapacity);
     payload->setAvailableStorage(destNodeInfo.availableStorage);
-    payload->setMaxNetworkBandwidth(destNodeInfo.maxNetworkBandwidth);
+    payload->setComputeNodeMaxBandwidth(destNodeInfo.computeNodeMaxBandwidth);
     payload->setSendTime(simTime());
 
     payload->setRequiredBandwidth(requestInfo->getUserMaxBandwidth() * 1e6);

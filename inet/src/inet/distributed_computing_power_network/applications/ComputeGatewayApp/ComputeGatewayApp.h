@@ -23,7 +23,7 @@ protected:
         L3Address serviceGroupAddress;
         double computingCapacity;
         double availableStorage;
-        double maxNetworkBandwidth;
+        double computeNodeMaxBandwidth;
         double computeCost;
         simtime_t queueingTime;
         simtime_t querySendTime;
