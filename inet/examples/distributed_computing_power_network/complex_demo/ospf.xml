@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<OSPFASConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="OSPF.xsd">
+  <Area id="0.0.0.0">
+    <AddressRange address="10.1.0.0" mask="255.255.0.0"/>
+  </Area>
+
+  <Router name="userGateway1" RFC1583Compatible="true">
+    <HostInterface ifName="ppp0" areaID="0.0.0.0" attachedHost="10.1.1.1" linkCost="1"/>
+    <HostInterface ifName="ppp1" areaID="0.0.0.0" attachedHost="10.1.2.1" linkCost="1"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.3.1" linkCost="1"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="2"/>
+  </Router>
+
+  <Router name="userGateway2" RFC1583Compatible="true">
+    <HostInterface ifName="ppp0" areaID="0.0.0.0" attachedHost="10.1.4.1" linkCost="1"/>
+    <HostInterface ifName="ppp1" areaID="0.0.0.0" attachedHost="10.1.5.1" linkCost="1"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.6.1" linkCost="1"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="2"/>
+  </Router>
+
+  <Router name="router1" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="3"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="4"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp5" areaID="0.0.0.0" interfaceOutputCost="2"/>
+  </Router>
+
+  <Router name="router2" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp5" areaID="0.0.0.0" interfaceOutputCost="1"/>
+  </Router>
+
+  <Router name="router3" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="4"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp5" areaID="0.0.0.0" interfaceOutputCost="1"/>
+  </Router>
+
+  <Router name="router4" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp2" areaID="0.0.0.0" interfaceOutputCost="3"/>
+    <PointToPointInterface ifName="ppp3" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp4" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <PointToPointInterface ifName="ppp5" areaID="0.0.0.0" interfaceOutputCost="1"/>
+  </Router>
+
+  <Router name="computeGateway1" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.40.2" linkCost="1"/>
+    <HostInterface ifName="ppp3" areaID="0.0.0.0" attachedHost="10.1.41.2" linkCost="1"/>
+    <HostInterface ifName="ppp4" areaID="0.0.0.0" attachedHost="10.1.42.2" linkCost="1"/>
+  </Router>
+
+  <Router name="computeGateway2" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.43.2" linkCost="1"/>
+    <HostInterface ifName="ppp3" areaID="0.0.0.0" attachedHost="10.1.44.2" linkCost="1"/>
+    <HostInterface ifName="ppp4" areaID="0.0.0.0" attachedHost="10.1.45.2" linkCost="1"/>
+  </Router>
+
+  <Router name="computeGateway3" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.46.2" linkCost="1"/>
+    <HostInterface ifName="ppp3" areaID="0.0.0.0" attachedHost="10.1.47.2" linkCost="1"/>
+    <HostInterface ifName="ppp4" areaID="0.0.0.0" attachedHost="10.1.48.2" linkCost="1"/>
+  </Router>
+
+  <Router name="computeGateway4" RFC1583Compatible="true">
+    <PointToPointInterface ifName="ppp0" areaID="0.0.0.0" interfaceOutputCost="1"/>
+    <PointToPointInterface ifName="ppp1" areaID="0.0.0.0" interfaceOutputCost="2"/>
+    <HostInterface ifName="ppp2" areaID="0.0.0.0" attachedHost="10.1.49.2" linkCost="1"/>
+    <HostInterface ifName="ppp3" areaID="0.0.0.0" attachedHost="10.1.50.2" linkCost="1"/>
+    <HostInterface ifName="ppp4" areaID="0.0.0.0" attachedHost="10.1.51.2" linkCost="1"/>
+  </Router>
+</OSPFASConfig>

@@ -4,6 +4,7 @@
 #include <limits>
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/common/InterfaceTable.h"
 #include "inet/networklayer/common/DscpTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
@@ -42,8 +43,6 @@ void UserGatewayApp::initialize(int stage)
        this->requestTimeout = SimTime(par("requestTimeout").doubleValue());
 
        this->userNodeIpMap.clear();
-
-       userNodeIpMap[1] = L3AddressResolver().resolve("10.0.0.1");  // test，暂时硬编码
     }
 
     else if (stage == INITSTAGE_APPLICATION_LAYER) {
@@ -188,8 +187,21 @@ void UserGatewayApp::sendCprpRequest(Packet *packet)
         return;
     }
 
+    auto addressInd = packet->findTag<L3AddressInd>();
+    L3Address userNodeAddress = addressInd != nullptr ? addressInd->getSrcAddress() : L3Address();
+    if (userNodeAddress.isUnspecified()) {
+        auto userIt = userNodeIpMap.find(requestInfo->getUserId());
+        if (userIt != userNodeIpMap.end())
+            userNodeAddress = userIt->second;
+    }
+    if (userNodeAddress.isUnspecified()) {
+        EV_ERROR << "Cannot resolve user node address for userId=" << requestInfo->getUserId()
+                 << "; TASK_REQUEST has no L3AddressInd source address." << endl;
+        delete packet;
+        return;
+    }
+
     // 创建算力请求载荷
-    L3Address userNodeAddress = userNodeIpMap.at(requestInfo->getUserId());
     auto payload = makeShared<CprpRequestMsg>();
     payload->setUserId(requestInfo->getUserId());
     payload->setTaskId(requestInfo->getTaskId());
@@ -323,7 +335,22 @@ void UserGatewayApp::sendResponseSummary(int uid, int tid)
     Packet *pkt = new Packet(messageType.c_str());
     pkt->insertAtBack(payload);
 
-    L3Address userAddress = userNodeIpMap.at(uid);
+    L3Address userAddress;
+    auto requestIt = requestContextCache.find({uid, tid});
+    if (requestIt != requestContextCache.end())
+        userAddress = requestIt->second.userNodeAddress;
+    else {
+        auto userIt = userNodeIpMap.find(uid);
+        if (userIt != userNodeIpMap.end())
+            userAddress = userIt->second;
+    }
+    if (userAddress.isUnspecified()) {
+        EV_ERROR << "Cannot send RESP_SUMMARY for task(" << uid << "," << tid
+                 << "): user node address is unknown." << endl;
+        delete pkt;
+        return;
+    }
+
     socket.sendTo(pkt, userAddress, userNodePort);
 
     EV_INFO << "UserGateway" << userGatewayId << " sent RESP_SUMMARY with " << candidateCount
