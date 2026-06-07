@@ -67,7 +67,7 @@ public:
     const RequestSessionState* getSession(int userId, int taskId);
     RequestSessionState* getSessionForUpdate(int userId, int taskId);
     
-    void createSession(const RequestSessionState& state);
+    bool createSession(const RequestSessionState& state);
     void updateSession(const RequestSessionState& state);
     void removeSession(int userId, int taskId);
     

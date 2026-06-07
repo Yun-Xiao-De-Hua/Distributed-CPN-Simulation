@@ -62,6 +62,8 @@ protected:
 
     virtual void sendPendingCancels();
     virtual void sendCancelPacket(const PendingCancel& info);
+    virtual void enqueueCancelsForRejectedPath(const RequestSessionState& rejectedState, int senderType);
+    virtual void handleSessionCreateFailure(const RequestSessionState& rejectedState);
 
     virtual void refreshSessionIfMatch(Packet *packet);
 

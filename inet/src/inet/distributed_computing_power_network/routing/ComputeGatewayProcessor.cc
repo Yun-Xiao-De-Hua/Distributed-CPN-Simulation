@@ -96,6 +96,25 @@ INetfilter::IHook::Result ComputeGatewayProcessor::processCancelMsg(Packet *pack
     return result;
 }
 
+void ComputeGatewayProcessor::handleSessionCreateFailure(const RequestSessionState& rejectedState) {
+    CprpProcessorBase::handleSessionCreateFailure(rejectedState);
+
+    auto cancel = makeShared<CancelMsg>();
+    cancel->setUserId(rejectedState.userId);
+    cancel->setTaskId(rejectedState.taskId);
+    cancel->setComputeNodeAddress(rejectedState.computeNodeAddress);
+    cancel->setComputeNodePort(rejectedState.computeNodePort);
+    cancel->setSenderType(SENDER_COMPUTE_GW);
+    cancel->setChunkLength(B(20));
+
+    Packet *appPacket = new Packet("CPRP_CANCEL");
+    appPacket->insertAtBack(cancel);
+    send(appPacket, "cancelOut");
+
+    EV_INFO << "ComputeGatewayProcessor notified ComputeGatewayApp to release queue soft state after session creation failure for task ("
+            << rejectedState.userId << "," << rejectedState.taskId << ")" << endl;
+}
+
 INetfilter::IHook::Result ComputeGatewayProcessor::datagramPostRoutingHook(Packet *packet){
     Enter_Method("datagramPostRoutingHook");
     if (!enabled) return ACCEPT;

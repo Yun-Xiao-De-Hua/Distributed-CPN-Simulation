@@ -436,7 +436,14 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
             << " accumulatedDelay=" << accumulatedDelay << endl;
 
     if (!sessionManager->hasSession(userId, taskId)) {
-        sessionManager->createSession(newState);
+        if (!sessionManager->createSession(newState)) {
+            EV_WARN << "First RESP for task (" << userId << "," << taskId
+                    << ") cannot create session; rejecting path and sending CPRP_CANCEL" << endl;
+            handleSessionCreateFailure(newState);
+            if (!pendingCancels.empty() && !sendCancelsMsg->isScheduled())
+                scheduleAt(simTime(), sendCancelsMsg);
+            return DROP;
+        }
         EV_INFO << "First RESP for task (" << userId << "," << taskId << "), created session" << endl;
         return ACCEPT;
     }
@@ -477,23 +484,7 @@ INetfilter::IHook::Result CprpProcessorBase::processCprpResp(Packet *packet) {
     else {
         EV_INFO << "Existing session is better, dropping new RESP, sending CANCEL to new path" << endl;
 
-        auto upstreamNodes = getUpstreamNodes(newState.sidPath);
-        for (const auto& addr : upstreamNodes) {
-            if (addr == newState.computeNodeAddress) {
-                EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
-                        << " for task (" << newState.userId << "," << newState.taskId << ")" << endl;
-                continue;
-            }
-
-            PendingCancel pc;
-            pc.destAddr = addr;
-            pc.userId = newState.userId;
-            pc.taskId = newState.taskId;
-            pc.computeNodeAddress = newState.computeNodeAddress;
-            pc.computeNodePort = newState.computeNodePort;
-            pc.senderType = SENDER_COMPUTE_ROUTER;
-            pendingCancels.push_back(pc);
-        }
+        enqueueCancelsForRejectedPath(newState, SENDER_COMPUTE_ROUTER);
 
         if (!pendingCancels.empty() && !sendCancelsMsg->isScheduled()) {
             scheduleAt(simTime(), sendCancelsMsg);
@@ -600,6 +591,30 @@ void CprpProcessorBase::sendPendingCancels() {
         sendCancelPacket(info);
     }
     pendingCancels.clear();
+}
+
+void CprpProcessorBase::enqueueCancelsForRejectedPath(const RequestSessionState& rejectedState, int senderType) {
+    auto upstreamNodes = getUpstreamNodes(rejectedState.sidPath);
+    for (const auto& addr : upstreamNodes) {
+        if (addr == rejectedState.computeNodeAddress) {
+            EV_INFO << "Skipping CPRP_CANCEL to compute node " << addr
+                    << " for task (" << rejectedState.userId << "," << rejectedState.taskId << ")" << endl;
+            continue;
+        }
+
+        PendingCancel pc;
+        pc.destAddr = addr;
+        pc.userId = rejectedState.userId;
+        pc.taskId = rejectedState.taskId;
+        pc.computeNodeAddress = rejectedState.computeNodeAddress;
+        pc.computeNodePort = rejectedState.computeNodePort;
+        pc.senderType = senderType;
+        pendingCancels.push_back(pc);
+    }
+}
+
+void CprpProcessorBase::handleSessionCreateFailure(const RequestSessionState& rejectedState) {
+    enqueueCancelsForRejectedPath(rejectedState, SENDER_COMPUTE_ROUTER);
 }
 
 void CprpProcessorBase::sendCancelPacket(const PendingCancel& info) {

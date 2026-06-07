@@ -24,6 +24,7 @@ protected:
     virtual void extractSessionFromResp(RequestSessionState& state, Packet *packet) override;
     virtual Result processCancelMsg(Packet *packet) override;
     virtual Result datagramPostRoutingHook(Packet *packet) override;
+    virtual void handleSessionCreateFailure(const RequestSessionState& rejectedState) override;
 
     virtual void limitLocalCprpReqMulticast(Packet *packet);
 

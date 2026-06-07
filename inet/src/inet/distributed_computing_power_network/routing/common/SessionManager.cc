@@ -109,13 +109,13 @@ RequestSessionState* SessionManager::getSessionForUpdate(int userId, int taskId)
     return nullptr;
 }
 
-void SessionManager::createSession(const RequestSessionState& state) {
+bool SessionManager::createSession(const RequestSessionState& state) {
     auto key = std::make_pair(state.userId, state.taskId);
     
     if (hasSession(state.userId, state.taskId)) {
         EV_WARN << "Session already exists for task (" << state.userId 
                 << "," << state.taskId << "), use updateSession instead" << endl;
-        return;
+        return false;
     }
     
     if (canReserveBandwidth(state.interfaceId, state.requiredBandwidth)) {
@@ -129,9 +129,11 @@ void SessionManager::createSession(const RequestSessionState& state) {
                 << ") computeNode=" << state.computeNodeAddress 
                 << ":" << state.computeNodePort << endl;
         scheduleNextExpirationCheck();
+        return true;
     } else {
         EV_WARN << "Cannot create session: insufficient bandwidth on interface "
                 << getInterfaceLabel(state.interfaceId) << endl;
+        return false;
     }
 }
 

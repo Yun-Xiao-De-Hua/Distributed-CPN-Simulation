@@ -103,9 +103,14 @@ INetfilter::IHook::Result UserGatewayProcessor::processLocalCprpResp(Packet *pac
     }
 
     if (!sessionManager->hasSession(userId, taskId)) {
-        sessionManager->createSession(newState);
-        EV_INFO << "UserGatewayProcessor: created ingress session for CPRP_RESP task ("
-                << userId << "," << taskId << ") on interface " << ingressInterfaceId << endl;
+        if (sessionManager->createSession(newState)) {
+            EV_INFO << "UserGatewayProcessor: created ingress session for CPRP_RESP task ("
+                    << userId << "," << taskId << ") on interface " << ingressInterfaceId << endl;
+        }
+        else {
+            EV_WARN << "UserGatewayProcessor: failed to create ingress session for CPRP_RESP task ("
+                    << userId << "," << taskId << ") on interface " << ingressInterfaceId << endl;
+        }
         return ACCEPT;
     }
 
