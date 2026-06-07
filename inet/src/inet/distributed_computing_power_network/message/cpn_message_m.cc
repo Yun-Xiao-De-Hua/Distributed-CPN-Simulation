@@ -3077,7 +3077,7 @@ Register_Class(TaskDataMsg)
 
 TaskDataMsg::TaskDataMsg() : ::inet::FieldsChunk()
 {
-    this->setChunkLength(B(20 + 40));
+    this->setChunkLength(B(20 + 40 + 24));
 
 }
 
@@ -3114,6 +3114,10 @@ void TaskDataMsg::copy(const TaskDataMsg& other)
     this->budget = other.budget;
     this->userMaxBandwidth = other.userMaxBandwidth;
     this->priority = other.priority;
+    this->segmentIndex = other.segmentIndex;
+    this->totalSegments = other.totalSegments;
+    this->totalTransferBytes = other.totalTransferBytes;
+    this->segmentPayloadBytes = other.segmentPayloadBytes;
 }
 
 void TaskDataMsg::parsimPack(omnetpp::cCommBuffer *b) const
@@ -3133,6 +3137,10 @@ void TaskDataMsg::parsimPack(omnetpp::cCommBuffer *b) const
     doParsimPacking(b,this->budget);
     doParsimPacking(b,this->userMaxBandwidth);
     doParsimPacking(b,this->priority);
+    doParsimPacking(b,this->segmentIndex);
+    doParsimPacking(b,this->totalSegments);
+    doParsimPacking(b,this->totalTransferBytes);
+    doParsimPacking(b,this->segmentPayloadBytes);
 }
 
 void TaskDataMsg::parsimUnpack(omnetpp::cCommBuffer *b)
@@ -3152,6 +3160,10 @@ void TaskDataMsg::parsimUnpack(omnetpp::cCommBuffer *b)
     doParsimUnpacking(b,this->budget);
     doParsimUnpacking(b,this->userMaxBandwidth);
     doParsimUnpacking(b,this->priority);
+    doParsimUnpacking(b,this->segmentIndex);
+    doParsimUnpacking(b,this->totalSegments);
+    doParsimUnpacking(b,this->totalTransferBytes);
+    doParsimUnpacking(b,this->segmentPayloadBytes);
 }
 
 int TaskDataMsg::getUserId() const
@@ -3308,6 +3320,50 @@ void TaskDataMsg::setPriority(int priority)
     this->priority = priority;
 }
 
+int TaskDataMsg::getSegmentIndex() const
+{
+    return this->segmentIndex;
+}
+
+void TaskDataMsg::setSegmentIndex(int segmentIndex)
+{
+    handleChange();
+    this->segmentIndex = segmentIndex;
+}
+
+int TaskDataMsg::getTotalSegments() const
+{
+    return this->totalSegments;
+}
+
+void TaskDataMsg::setTotalSegments(int totalSegments)
+{
+    handleChange();
+    this->totalSegments = totalSegments;
+}
+
+double TaskDataMsg::getTotalTransferBytes() const
+{
+    return this->totalTransferBytes;
+}
+
+void TaskDataMsg::setTotalTransferBytes(double totalTransferBytes)
+{
+    handleChange();
+    this->totalTransferBytes = totalTransferBytes;
+}
+
+double TaskDataMsg::getSegmentPayloadBytes() const
+{
+    return this->segmentPayloadBytes;
+}
+
+void TaskDataMsg::setSegmentPayloadBytes(double segmentPayloadBytes)
+{
+    handleChange();
+    this->segmentPayloadBytes = segmentPayloadBytes;
+}
+
 class TaskDataMsgDescriptor : public omnetpp::cClassDescriptor
 {
   private:
@@ -3327,6 +3383,10 @@ class TaskDataMsgDescriptor : public omnetpp::cClassDescriptor
         FIELD_budget,
         FIELD_userMaxBandwidth,
         FIELD_priority,
+        FIELD_segmentIndex,
+        FIELD_totalSegments,
+        FIELD_totalTransferBytes,
+        FIELD_segmentPayloadBytes,
     };
   public:
     TaskDataMsgDescriptor();
@@ -3393,7 +3453,7 @@ const char *TaskDataMsgDescriptor::getProperty(const char *propertyName) const
 int TaskDataMsgDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 14+base->getFieldCount() : 14;
+    return base ? 18+base->getFieldCount() : 18;
 }
 
 unsigned int TaskDataMsgDescriptor::getFieldTypeFlags(int field) const
@@ -3419,8 +3479,12 @@ unsigned int TaskDataMsgDescriptor::getFieldTypeFlags(int field) const
         FD_ISEDITABLE,    // FIELD_budget
         FD_ISEDITABLE,    // FIELD_userMaxBandwidth
         FD_ISEDITABLE,    // FIELD_priority
+        FD_ISEDITABLE,    // FIELD_segmentIndex
+        FD_ISEDITABLE,    // FIELD_totalSegments
+        FD_ISEDITABLE,    // FIELD_totalTransferBytes
+        FD_ISEDITABLE,    // FIELD_segmentPayloadBytes
     };
-    return (field >= 0 && field < 14) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 18) ? fieldTypeFlags[field] : 0;
 }
 
 const char *TaskDataMsgDescriptor::getFieldName(int field) const
@@ -3446,8 +3510,12 @@ const char *TaskDataMsgDescriptor::getFieldName(int field) const
         "budget",
         "userMaxBandwidth",
         "priority",
+        "segmentIndex",
+        "totalSegments",
+        "totalTransferBytes",
+        "segmentPayloadBytes",
     };
-    return (field >= 0 && field < 14) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 18) ? fieldNames[field] : nullptr;
 }
 
 int TaskDataMsgDescriptor::findField(const char *fieldName) const
@@ -3468,6 +3536,10 @@ int TaskDataMsgDescriptor::findField(const char *fieldName) const
     if (strcmp(fieldName, "budget") == 0) return baseIndex + 11;
     if (strcmp(fieldName, "userMaxBandwidth") == 0) return baseIndex + 12;
     if (strcmp(fieldName, "priority") == 0) return baseIndex + 13;
+    if (strcmp(fieldName, "segmentIndex") == 0) return baseIndex + 14;
+    if (strcmp(fieldName, "totalSegments") == 0) return baseIndex + 15;
+    if (strcmp(fieldName, "totalTransferBytes") == 0) return baseIndex + 16;
+    if (strcmp(fieldName, "segmentPayloadBytes") == 0) return baseIndex + 17;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -3494,8 +3566,12 @@ const char *TaskDataMsgDescriptor::getFieldTypeString(int field) const
         "double",    // FIELD_budget
         "double",    // FIELD_userMaxBandwidth
         "int",    // FIELD_priority
+        "int",    // FIELD_segmentIndex
+        "int",    // FIELD_totalSegments
+        "double",    // FIELD_totalTransferBytes
+        "double",    // FIELD_segmentPayloadBytes
     };
-    return (field >= 0 && field < 14) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 18) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **TaskDataMsgDescriptor::getFieldPropertyNames(int field) const
@@ -3592,6 +3668,10 @@ std::string TaskDataMsgDescriptor::getFieldValueAsString(omnetpp::any_ptr object
         case FIELD_budget: return double2string(pp->getBudget());
         case FIELD_userMaxBandwidth: return double2string(pp->getUserMaxBandwidth());
         case FIELD_priority: return long2string(pp->getPriority());
+        case FIELD_segmentIndex: return long2string(pp->getSegmentIndex());
+        case FIELD_totalSegments: return long2string(pp->getTotalSegments());
+        case FIELD_totalTransferBytes: return double2string(pp->getTotalTransferBytes());
+        case FIELD_segmentPayloadBytes: return double2string(pp->getSegmentPayloadBytes());
         default: return "";
     }
 }
@@ -3621,6 +3701,10 @@ void TaskDataMsgDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int f
         case FIELD_budget: pp->setBudget(string2double(value)); break;
         case FIELD_userMaxBandwidth: pp->setUserMaxBandwidth(string2double(value)); break;
         case FIELD_priority: pp->setPriority(string2long(value)); break;
+        case FIELD_segmentIndex: pp->setSegmentIndex(string2long(value)); break;
+        case FIELD_totalSegments: pp->setTotalSegments(string2long(value)); break;
+        case FIELD_totalTransferBytes: pp->setTotalTransferBytes(string2double(value)); break;
+        case FIELD_segmentPayloadBytes: pp->setSegmentPayloadBytes(string2double(value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'TaskDataMsg'", field);
     }
 }
@@ -3649,6 +3733,10 @@ omnetpp::cValue TaskDataMsgDescriptor::getFieldValue(omnetpp::any_ptr object, in
         case FIELD_budget: return pp->getBudget();
         case FIELD_userMaxBandwidth: return pp->getUserMaxBandwidth();
         case FIELD_priority: return pp->getPriority();
+        case FIELD_segmentIndex: return pp->getSegmentIndex();
+        case FIELD_totalSegments: return pp->getTotalSegments();
+        case FIELD_totalTransferBytes: return pp->getTotalTransferBytes();
+        case FIELD_segmentPayloadBytes: return pp->getSegmentPayloadBytes();
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'TaskDataMsg' as cValue -- field index out of range?", field);
     }
 }
@@ -3678,6 +3766,10 @@ void TaskDataMsgDescriptor::setFieldValue(omnetpp::any_ptr object, int field, in
         case FIELD_budget: pp->setBudget(value.doubleValue()); break;
         case FIELD_userMaxBandwidth: pp->setUserMaxBandwidth(value.doubleValue()); break;
         case FIELD_priority: pp->setPriority(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_segmentIndex: pp->setSegmentIndex(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_totalSegments: pp->setTotalSegments(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_totalTransferBytes: pp->setTotalTransferBytes(value.doubleValue()); break;
+        case FIELD_segmentPayloadBytes: pp->setSegmentPayloadBytes(value.doubleValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'TaskDataMsg'", field);
     }
 }

@@ -17,7 +17,10 @@
 #define INET_DISTRIBUTED_COMPUTING_POWER_NETWORK_APPLICATIONS_COMPUTENODEAPP_COMPUTENODEAPP_H_
 
 #include <omnetpp.h>
+#include <cstdint>
+#include <map>
 #include <queue>
+#include <set>
 #include <string>
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -43,6 +46,18 @@ protected:
         simtime_t executionStartTime = SIMTIME_ZERO;
     };
 
+    struct TaskDataReceiveState {
+        QueuedTask task;
+        L3Address userGatewayAddress;
+        int userGatewayPort = -1;
+        int totalSegments = 0;
+        int64_t totalTransferBytes = 0;
+        int64_t receivedBytes = 0;
+        std::set<int> receivedSegments;
+        simtime_t firstSegmentReceiveTime = SIMTIME_ZERO;
+        simtime_t lastSegmentReceiveTime = SIMTIME_ZERO;
+    };
+
     int computeNodeId;
     int computeGatewayId;
 
@@ -61,6 +76,7 @@ protected:
     double computeCost;
 
     std::queue<QueuedTask> taskQueue;
+    std::map<std::pair<int, int>, TaskDataReceiveState> taskDataReceiveStates;
     QueuedTask activeTask;
     bool busy = false;
     cMessage *taskCompletionEvent = nullptr;
@@ -87,7 +103,8 @@ protected:
     simtime_t getTaskExecutionTime(const QueuedTask& task) const;
     simtime_t getTaskRemainingExecutionTime(const QueuedTask& task) const;
     void processTaskData(Packet *packet);
-    void enqueueTask(const Ptr<const TaskDataMsg>& taskData);
+    QueuedTask makeQueuedTask(const Ptr<const TaskDataMsg>& taskData) const;
+    void enqueueTask(const QueuedTask& task);
     void sendTaskDataTransferComplete(const Ptr<const TaskDataMsg>& taskData, const L3Address& userGatewayAddress, int userGatewayPort);
     void tryStartNextTask();
     bool validateTask(const QueuedTask& task, int& failureCode, std::string& failureReason) const;

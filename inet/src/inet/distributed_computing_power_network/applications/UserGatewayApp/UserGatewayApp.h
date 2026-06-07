@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <cstdint>
 #include <omnetpp.h>
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -31,6 +32,18 @@ struct RequestContext {
     double userMaxBandwidth;
 };
 
+struct TaskDataSendContext {
+    Packet *packet = nullptr;
+    L3Address firstHop;
+    int destPort = -1;
+    int userId = -1;
+    int taskId = -1;
+    int segmentIndex = 0;
+    int totalSegments = 1;
+    int64_t segmentPayloadBytes = 0;
+    int64_t totalTransferBytes = 0;
+};
+
 class UserGatewayApp: public ApplicationBase, public UdpSocket::ICallback{
 protected:
     int userGatewayId;
@@ -39,6 +52,7 @@ protected:
     int userNodePort;
     int computeGatewayPort;
     int computeNodePort;
+    int taskDataSegmentBytes;
 
     L3Address localAddress;
     simtime_t requestTimeout;
@@ -48,6 +62,7 @@ protected:
     std::map<std::pair<int, int>, ResponseCandidate> selectedPathCache;
     std::map<std::pair<int, int>, RequestContext> requestContextCache;
     std::map<std::pair<int, int>, RespTimeoutSelfMsg *> requestTimers;
+    std::map<cMessage *, TaskDataSendContext> taskDataSendContexts;
     std::set<std::pair<int, int>> expiredRequests;
 
     UdpSocket socket;
@@ -78,6 +93,7 @@ protected:
     void cancelUnselectedCandidates(int userId, int taskId, int selectedPathIndex, const std::vector<ResponseCandidate>& candidates);
     void sendCancelForCandidate(int userId, int taskId, const ResponseCandidate& candidate, const char *reason);
     void forwardTaskData(int userId, int taskId, int selectedNodeId, const L3Address& selectedNodeAddress, int selectedNodePort, int selectedPathIndex);
+    void sendScheduledTaskDataSegment(cMessage *msg);
     void parseMulticastGroup(const char *groupStr, int computingType);
     void parseMulticastRoutes(const char *routesStr);
 

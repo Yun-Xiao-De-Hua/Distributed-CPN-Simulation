@@ -137,8 +137,12 @@ class TaskDataMsg extends inet::FieldsChunk {
     double budget;                   // 任务预算
     double userMaxBandwidth;         // 用户请求的最大传输带宽，单位: Mbps
     int priority = 5;                // DSCP 优先级，默认值 5
+    int segmentIndex = 0;            // TASK_DATA 分片序号，从 0 开始
+    int totalSegments = 1;           // TASK_DATA 总分片数
+    double totalTransferBytes = 0;   // 任务数据总字节数，按 transferAmount 换算
+    double segmentPayloadBytes = 0;  // 当前分片承载的真实负载字节数
     
-    chunkLength = B(20 + 40);       // 固定序列化长度
+    chunkLength = B(20 + 40 + 24);  // 固定序列化长度，不含 ByteCountChunk 真实负载
 }
 
 class RespTimeoutSelfMsg extends cMessage {

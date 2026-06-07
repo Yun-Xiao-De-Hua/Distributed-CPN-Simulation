@@ -27,6 +27,7 @@ simple UserGatewayApp like IApp
         int computeNodePort = default(5000);
         string localAddress = default("");
         double requestTimeout @unit(s) = default(5s);
+        int taskDataSegmentBytes @unit(B) = default(1200B);
         string interfaceTableModule = default("^.interfaceTable");
 
         // 按算力类型配置组播组地址 (每种算力类型只对应一个组播组地址)

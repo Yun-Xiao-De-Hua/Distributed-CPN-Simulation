@@ -1,8 +1,11 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <limits>
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/packet/chunk/ByteCountChunk.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/common/InterfaceTable.h"
@@ -27,6 +30,11 @@ UserGatewayApp::~UserGatewayApp() {
     for (auto& entry : requestTimers)
         cancelAndDelete(entry.second);
     requestTimers.clear();
+    for (auto& entry : taskDataSendContexts) {
+        cancelAndDelete(entry.first);
+        delete entry.second.packet;
+    }
+    taskDataSendContexts.clear();
 }
 
 void UserGatewayApp::initialize(int stage)
@@ -41,6 +49,9 @@ void UserGatewayApp::initialize(int stage)
        this->computeGatewayPort = par("computeGatewayPort");
        this->computeNodePort = par("computeNodePort");
        this->requestTimeout = SimTime(par("requestTimeout").doubleValue());
+       this->taskDataSegmentBytes = par("taskDataSegmentBytes").intValue();
+       if (this->taskDataSegmentBytes <= 0)
+           throw cRuntimeError("taskDataSegmentBytes must be positive");
 
        this->userNodeIpMap.clear();
     }
@@ -163,6 +174,13 @@ void UserGatewayApp::handleMessageWhenUp(cMessage *msg)
             EV_INFO << "Received RESP_TIMEOUT_SELF. Sending response summary to user node for task(" << uid << "," << tid << ").\n";
             // 发送可用算力信息至对应用户节点
             sendResponseSummary(uid, tid);
+            delete msg;
+        }
+        else if (strcmp(msg->getName(), "TASK_DATA_SEND_SELF") == 0) {
+            sendScheduledTaskDataSegment(msg);
+        }
+        else {
+            EV_WARN << "UserGatewayApp received unknown self message: " << msg->getName() << endl;
             delete msg;
         }
     }
@@ -702,44 +720,117 @@ void UserGatewayApp::forwardTaskData(int userId, int taskId, int selectedNodeId,
             << " delay=" << selectedCandidate->totalDelay
             << " hops=" << selectedCandidate->sidPath.size() << endl;
 
-    auto taskData = makeShared<TaskDataMsg>();
-    taskData->setUserId(userId);
-    taskData->setTaskId(taskId);
-    taskData->setUserNodeAddress(requestContext.userNodeAddress);
-    taskData->setUserNodePort(requestContext.userNodePort);
-    taskData->setGenerationTime(requestContext.generationTime);
-    taskData->setComputingType(requestContext.computingType);
-    taskData->setRequiredStorage(requestContext.requiredStorage);
-    taskData->setComputingAmount(requestContext.computingAmount);
-    taskData->setTransferAmount(requestContext.transferAmount);
-    taskData->setTotalDelayRequirement(requestContext.totalDelayRequirement);
-    taskData->setBudget(requestContext.budget);
-    taskData->setUserMaxBandwidth(requestContext.userMaxBandwidth);
-    taskData->setPriority(5);
-
-    Packet *pkt = new Packet("TASK_DATA");
-    pkt->insertAtBack(taskData);
-
-    auto pathReq = pkt->addTagIfAbsent<CpnPathReq>();
-    pathReq->setMode(PATH_USE_MODE);
-    pathReq->setUserId(userId);
-    pathReq->setTaskId(taskId);
-    pathReq->setSidListArraySize(selectedCandidate->sidPath.size());
-    for (size_t i = 0; i < selectedCandidate->sidPath.size(); i++) {
-        pathReq->setSidList(i, selectedCandidate->sidPath[i]);
-    }
-    pathReq->setCurrentHopIndex(0);
-
-    pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
-
     L3Address firstHop = selectedCandidate->sidPath[0];
-    // 数据包通过源路由逐跳转发到目标算力节点，因此这里的 UDP 目的端口必须与目标节点监听端口一致。
-    socket.sendTo(pkt, firstHop, selectedNodePort > 0 ? selectedNodePort : selectedCandidate->nodeInfo.computeNodePort);
+    int destPort = selectedNodePort > 0 ? selectedNodePort : selectedCandidate->nodeInfo.computeNodePort;
+    int64_t totalTransferBytes = std::max<int64_t>(0, (int64_t)std::ceil(requestContext.transferAmount * 1000000.0));
+    int totalSegments = totalTransferBytes == 0 ? 1 : (int)std::ceil((double)totalTransferBytes / taskDataSegmentBytes);
+    int64_t remainingBytes = totalTransferBytes;
+    double pacingBps = requestContext.userMaxBandwidth * 1000000.0;
+    bool pacingEnabled = pacingBps > 0;
+    simtime_t cumulativeSendDelay = SIMTIME_ZERO;
 
-    EV_INFO << "Forwarding TASK_DATA via selected path to " << firstHop << endl;
+    EV_INFO << "Forwarding TASK_DATA for task(" << userId << "," << taskId
+            << ") as " << totalSegments << " segment(s), totalTransferBytes=" << totalTransferBytes
+            << ", segmentBytes=" << taskDataSegmentBytes
+            << ", userMaxBandwidth=" << requestContext.userMaxBandwidth << " Mbps"
+            << ", firstHop=" << firstHop << endl;
+
+    for (int segmentIndex = 0; segmentIndex < totalSegments; segmentIndex++) {
+        int64_t segmentPayloadBytes = totalTransferBytes == 0 ? 0 : std::min<int64_t>(taskDataSegmentBytes, remainingBytes);
+        remainingBytes -= segmentPayloadBytes;
+
+        auto taskData = makeShared<TaskDataMsg>();
+        taskData->setUserId(userId);
+        taskData->setTaskId(taskId);
+        taskData->setUserNodeAddress(requestContext.userNodeAddress);
+        taskData->setUserNodePort(requestContext.userNodePort);
+        taskData->setGenerationTime(requestContext.generationTime);
+        taskData->setComputingType(requestContext.computingType);
+        taskData->setRequiredStorage(requestContext.requiredStorage);
+        taskData->setComputingAmount(requestContext.computingAmount);
+        taskData->setTransferAmount(requestContext.transferAmount);
+        taskData->setTotalDelayRequirement(requestContext.totalDelayRequirement);
+        taskData->setBudget(requestContext.budget);
+        taskData->setUserMaxBandwidth(requestContext.userMaxBandwidth);
+        taskData->setPriority(5);
+        taskData->setSegmentIndex(segmentIndex);
+        taskData->setTotalSegments(totalSegments);
+        taskData->setTotalTransferBytes((double)totalTransferBytes);
+        taskData->setSegmentPayloadBytes((double)segmentPayloadBytes);
+
+        Packet *pkt = new Packet("TASK_DATA");
+        pkt->insertAtBack(taskData);
+        if (segmentPayloadBytes > 0)
+            pkt->insertAtBack(makeShared<ByteCountChunk>(B(segmentPayloadBytes)));
+
+        auto pathReq = pkt->addTagIfAbsent<CpnPathReq>();
+        pathReq->setMode(PATH_USE_MODE);
+        pathReq->setUserId(userId);
+        pathReq->setTaskId(taskId);
+        pathReq->setSidListArraySize(selectedCandidate->sidPath.size());
+        for (size_t i = 0; i < selectedCandidate->sidPath.size(); i++) {
+            pathReq->setSidList(i, selectedCandidate->sidPath[i]);
+        }
+        pathReq->setCurrentHopIndex(0);
+
+        pkt->addTagIfAbsent<DscpReq>()->setDifferentiatedServicesCodePoint(5);
+
+        cMessage *sendEvent = new cMessage("TASK_DATA_SEND_SELF");
+        TaskDataSendContext sendContext;
+        sendContext.packet = pkt;
+        sendContext.firstHop = firstHop;
+        sendContext.destPort = destPort;
+        sendContext.userId = userId;
+        sendContext.taskId = taskId;
+        sendContext.segmentIndex = segmentIndex;
+        sendContext.totalSegments = totalSegments;
+        sendContext.segmentPayloadBytes = segmentPayloadBytes;
+        sendContext.totalTransferBytes = totalTransferBytes;
+        taskDataSendContexts[sendEvent] = sendContext;
+
+        scheduleAt(simTime() + cumulativeSendDelay, sendEvent);
+
+        EV_INFO << "TASK_DATA_SEGMENT scheduled task=(" << userId << "," << taskId << ")"
+                << " segment=" << (segmentIndex + 1) << "/" << totalSegments
+                << " payloadBytes=" << segmentPayloadBytes
+                << " totalTransferBytes=" << totalTransferBytes
+                << " sendAt=" << (simTime() + cumulativeSendDelay)
+                << " firstHop=" << firstHop << endl;
+
+        if (pacingEnabled && segmentPayloadBytes > 0)
+            cumulativeSendDelay += SimTime((segmentPayloadBytes * 8.0) / pacingBps);
+    }
 
     candidateCache.erase({userId, taskId});
     requestContextCache.erase({userId, taskId});
+}
+
+void UserGatewayApp::sendScheduledTaskDataSegment(cMessage *msg)
+{
+    auto contextIt = taskDataSendContexts.find(msg);
+    if (contextIt == taskDataSendContexts.end()) {
+        EV_WARN << "TASK_DATA_SEND_SELF has no send context; dropping self message." << endl;
+        delete msg;
+        return;
+    }
+
+    TaskDataSendContext context = contextIt->second;
+    taskDataSendContexts.erase(contextIt);
+    delete msg;
+
+    if (context.packet == nullptr) {
+        EV_WARN << "TASK_DATA_SEND_SELF has null packet for task=(" << context.userId << "," << context.taskId << ")." << endl;
+        return;
+    }
+
+    // 数据包通过源路由逐跳转发到目标算力节点，因此这里的 UDP 目的端口必须与目标节点监听端口一致。
+    socket.sendTo(context.packet, context.firstHop, context.destPort);
+
+    EV_INFO << "TASK_DATA_SEGMENT sent task=(" << context.userId << "," << context.taskId << ")"
+            << " segment=" << (context.segmentIndex + 1) << "/" << context.totalSegments
+            << " payloadBytes=" << context.segmentPayloadBytes
+            << " totalTransferBytes=" << context.totalTransferBytes
+            << " firstHop=" << context.firstHop << endl;
 }
 
 

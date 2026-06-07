@@ -1,4 +1,6 @@
 #include<cstring>
+#include <cmath>
+#include <cstdint>
 #include "ComputeNodeApp.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
@@ -226,13 +228,56 @@ void ComputeNodeApp::processTaskData(Packet *packet)
         return;
     }
 
-    sendTaskDataTransferComplete(taskData, userGatewayAddress, userGatewayPort);
-    enqueueTask(taskData);
+    int segmentIndex = taskData->getSegmentIndex();
+    int totalSegments = taskData->getTotalSegments();
+    int64_t totalTransferBytes = std::max<int64_t>(0, (int64_t)std::ceil(taskData->getTotalTransferBytes()));
+    int64_t segmentPayloadBytes = std::max<int64_t>(0, (int64_t)std::ceil(taskData->getSegmentPayloadBytes()));
+    if (totalTransferBytes == 0 && taskData->getTransferAmount() > 0)
+        totalTransferBytes = std::max<int64_t>(0, (int64_t)std::ceil(taskData->getTransferAmount() * 1000000.0));
+    if (totalSegments <= 0)
+        totalSegments = 1;
+
+    auto key = std::make_pair(taskData->getUserId(), taskData->getTaskId());
+    TaskDataReceiveState& state = taskDataReceiveStates[key];
+    if (state.receivedSegments.empty()) {
+        state.task = makeQueuedTask(taskData);
+        state.userGatewayAddress = userGatewayAddress;
+        state.userGatewayPort = userGatewayPort;
+        state.totalSegments = totalSegments;
+        state.totalTransferBytes = totalTransferBytes;
+        state.firstSegmentReceiveTime = simTime();
+    }
+
+    state.lastSegmentReceiveTime = simTime();
+    if (state.receivedSegments.insert(segmentIndex).second)
+        state.receivedBytes += segmentPayloadBytes;
+
+    EV_INFO << "TASK_DATA_SEGMENT received task=(" << taskData->getUserId() << "," << taskData->getTaskId() << ")"
+            << " segment=" << (segmentIndex + 1) << "/" << totalSegments
+            << " payloadBytes=" << segmentPayloadBytes
+            << " receivedBytes=" << state.receivedBytes << "/" << state.totalTransferBytes
+            << " receivedSegments=" << state.receivedSegments.size() << "/" << state.totalSegments << endl;
+
+    bool allSegmentsReceived = (int)state.receivedSegments.size() >= state.totalSegments;
+    bool allBytesReceived = state.receivedBytes >= state.totalTransferBytes;
+    if (allSegmentsReceived || allBytesReceived) {
+        simtime_t transferDuration = state.lastSegmentReceiveTime - state.firstSegmentReceiveTime;
+        EV_INFO << "TASK_DATA transfer complete at ComputeNode" << computeNodeId
+                << " for task (" << taskData->getUserId() << "," << taskData->getTaskId() << ")"
+                << ", totalBytes=" << state.receivedBytes
+                << ", totalSegments=" << state.receivedSegments.size()
+                << ", transferDuration=" << transferDuration << endl;
+
+        sendTaskDataTransferComplete(taskData, state.userGatewayAddress, state.userGatewayPort);
+        enqueueTask(state.task);
+        taskDataReceiveStates.erase(key);
+        tryStartNextTask();
+    }
+
     delete packet;
-    tryStartNextTask();
 }
 
-void ComputeNodeApp::enqueueTask(const Ptr<const TaskDataMsg>& taskData)
+ComputeNodeApp::QueuedTask ComputeNodeApp::makeQueuedTask(const Ptr<const TaskDataMsg>& taskData) const
 {
     QueuedTask task;
     task.userId = taskData->getUserId();
@@ -247,7 +292,11 @@ void ComputeNodeApp::enqueueTask(const Ptr<const TaskDataMsg>& taskData)
     task.totalDelayRequirement = taskData->getTotalDelayRequirement();
     task.budget = taskData->getBudget();
     task.userMaxBandwidth = taskData->getUserMaxBandwidth();
+    return task;
+}
 
+void ComputeNodeApp::enqueueTask(const QueuedTask& task)
+{
     taskQueue.push(task);
     EV_INFO << "ComputeNode" << computeNodeId << " enqueued task (" << task.userId << "," << task.taskId
             << "), queueLength=" << taskQueue.size() << endl;
