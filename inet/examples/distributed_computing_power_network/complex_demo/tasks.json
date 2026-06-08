@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "scenario": "complex_demo",
+  "users": [
+    {
+      "userId": 1,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 0,
+          "requiredStorage": 100,
+          "dataSize": 1,
+          "computingAmount": 1000,
+          "delayTolerance": 2.0,
+          "budget": 100
+        }
+      ]
+    },
+    {
+      "userId": 2,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 1,
+          "requiredStorage": 200,
+          "dataSize": 2,
+          "computingAmount": 1500,
+          "delayTolerance": 2.0,
+          "budget": 140
+        }
+      ]
+    },
+    {
+      "userId": 3,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 0,
+          "requiredStorage": 300,
+          "dataSize": 1.5,
+          "computingAmount": 2500,
+          "delayTolerance": 2.5,
+          "budget": 120
+        }
+      ]
+    },
+    {
+      "userId": 4,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 1,
+          "requiredStorage": 100,
+          "dataSize": 2.5,
+          "computingAmount": 2000,
+          "delayTolerance": 2.0,
+          "budget": 160
+        }
+      ]
+    },
+    {
+      "userId": 5,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 0,
+          "requiredStorage": 500,
+          "dataSize": 3,
+          "computingAmount": 3000,
+          "delayTolerance": 2.5,
+          "budget": 180
+        }
+      ]
+    },
+    {
+      "userId": 6,
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "computingType": 1,
+          "requiredStorage": 300,
+          "dataSize": 1.5,
+          "computingAmount": 2200,
+          "delayTolerance": 2.5,
+          "budget": 150
+        }
+      ]
+    }
+  ]
+}

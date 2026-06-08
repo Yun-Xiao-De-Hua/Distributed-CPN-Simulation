@@ -3,6 +3,8 @@
 
 #include <omnetpp.h>
 #include <map>
+#include <string>
+#include <vector>
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
 #include "inet/distributed_computing_power_network/message/cpn_message_m.h"
@@ -22,6 +24,17 @@ struct UserTaskContext {
     double userMaxBandwidth;
 };
 
+struct UserTaskSpec {
+    int taskId = -1;
+    simtime_t requestTime = SIMTIME_ZERO;
+    int computingType = 0;
+    double requiredStorage = 0;
+    double dataSize = 0;
+    double computingAmount = 0;
+    simtime_t delayTolerance = SIMTIME_ZERO;
+    double budget = 0;
+};
+
 class UserNodeApp: public ApplicationBase, public UdpSocket::ICallback {
 protected:
     int userNodeId;
@@ -31,18 +44,13 @@ protected:
     L3Address userGatewayAddress;
     int userGatewayPort;
     double maxTransmissionBandwidth;  // 用户最大传输带宽
+    std::string taskFile;
 
-    int taskId;
-    int taskComputingType;
-    double taskRequiredStorage;
-    double taskDataSize;
-    double taskComputingAmount;
-    simtime_t taskDelayTolerance;
-    double taskBudget;
-
+    std::vector<UserTaskSpec> pendingTasks;
     std::map<int, UserTaskContext> taskContextCache;
 
-    cMessage *selfTaskCreationEvent = nullptr;    // 自消息触发任务请求消息生成
+    std::vector<cMessage *> taskCreationEvents;    // 自消息触发任务请求消息生成
+    std::map<cMessage *, int> taskTimerIndexByMessage;
     UdpSocket socket;
 
 protected:
@@ -58,7 +66,11 @@ protected:
   virtual void socketErrorArrived(UdpSocket *socket, Indication *indication) override;
   virtual void socketClosed(UdpSocket *socket) override;
 
-  void sendTaskRequest();
+  void loadTaskSpecs();
+  void loadTaskSpecsFromJson(const char *fileName);
+  void validateTaskSpec(const UserTaskSpec& task, const char *source) const;
+  void scheduleTaskRequests();
+  void sendTaskRequest(const UserTaskSpec& task);
   void sendCprpConfirm(Packet *packet);
   void processTaskCompletion(Packet *packet);
 
