@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "scenario": "complex_demo",
+  "users": [
+    {
+      "userId": 1,
+      "defaults": {
+        "computingType": 0,
+        "requiredStorage": 100,
+        "delayTolerance": 2.0,
+        "budget": 100
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 1.0,
+          "computingAmount": 1000
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "dataSize": 0.8,
+          "computingAmount": 1200
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "computingType": 1,
+          "requiredStorage": 150,
+          "dataSize": 1.2,
+          "computingAmount": 1400,
+          "delayTolerance": 2.2,
+          "budget": 130
+        }
+      ]
+    },
+    {
+      "userId": 2,
+      "defaults": {
+        "computingType": 1,
+        "requiredStorage": 200,
+        "delayTolerance": 2.0,
+        "budget": 140
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 1.6,
+          "computingAmount": 1500
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "dataSize": 1.2,
+          "computingAmount": 1700,
+          "delayTolerance": 2.2,
+          "budget": 150
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "computingType": 0,
+          "requiredStorage": 180,
+          "dataSize": 1.0,
+          "computingAmount": 1600,
+          "delayTolerance": 2.3,
+          "budget": 135
+        }
+      ]
+    },
+    {
+      "userId": 3,
+      "defaults": {
+        "computingType": 0,
+        "requiredStorage": 300,
+        "delayTolerance": 2.5,
+        "budget": 120
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 1.2,
+          "computingAmount": 2500
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "computingType": 1,
+          "requiredStorage": 250,
+          "dataSize": 1.0,
+          "computingAmount": 2200,
+          "delayTolerance": 2.4,
+          "budget": 135
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "dataSize": 1.4,
+          "computingAmount": 2800,
+          "budget": 145
+        }
+      ]
+    },
+    {
+      "userId": 4,
+      "defaults": {
+        "computingType": 1,
+        "requiredStorage": 100,
+        "delayTolerance": 2.0,
+        "budget": 160
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 1.8,
+          "computingAmount": 2000
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "dataSize": 1.4,
+          "computingAmount": 2200,
+          "delayTolerance": 2.2,
+          "budget": 170
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "computingType": 0,
+          "requiredStorage": 150,
+          "dataSize": 1.1,
+          "computingAmount": 1800,
+          "delayTolerance": 2.3,
+          "budget": 145
+        }
+      ]
+    },
+    {
+      "userId": 5,
+      "defaults": {
+        "computingType": 0,
+        "requiredStorage": 500,
+        "delayTolerance": 2.5,
+        "budget": 180
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 2.0,
+          "computingAmount": 3000
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "dataSize": 1.5,
+          "computingAmount": 2800,
+          "budget": 170
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "computingType": 1,
+          "requiredStorage": 450,
+          "dataSize": 1.3,
+          "computingAmount": 2600,
+          "delayTolerance": 2.6,
+          "budget": 190
+        }
+      ]
+    },
+    {
+      "userId": 6,
+      "defaults": {
+        "computingType": 1,
+        "requiredStorage": 300,
+        "delayTolerance": 2.5,
+        "budget": 150
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "requestTime": 50.0,
+          "dataSize": 1.2,
+          "computingAmount": 2200
+        },
+        {
+          "taskId": 2,
+          "requestTime": 58.0,
+          "computingType": 0,
+          "requiredStorage": 350,
+          "dataSize": 1.0,
+          "computingAmount": 2000,
+          "delayTolerance": 2.4,
+          "budget": 140
+        },
+        {
+          "taskId": 3,
+          "requestTime": 66.0,
+          "dataSize": 1.4,
+          "computingAmount": 2400,
+          "delayTolerance": 2.6,
+          "budget": 165
+        }
+      ]
+    }
+  ]
+}

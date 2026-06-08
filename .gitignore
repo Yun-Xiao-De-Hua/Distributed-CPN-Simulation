@@ -16,6 +16,9 @@ inet/examples/*
 
 inet/examples/distributed_computing_power_network/*/results
 inet/examples/distributed_computing_power_network/*/.qtenvrc
+inet/examples/distributed_computing_power_network/**/workloads/*.json
+!inet/examples/distributed_computing_power_network/**/workloads/*.example.json
+!inet/examples/distributed_computing_power_network/**/workloads/.gitkeep
 
 inet/src/inet/*
 

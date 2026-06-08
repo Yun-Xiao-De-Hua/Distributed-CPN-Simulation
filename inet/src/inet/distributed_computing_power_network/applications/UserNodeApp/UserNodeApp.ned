@@ -12,6 +12,7 @@ simple UserNodeApp like IApp
        int userGatewayPort = default(5000);
        double maxTransmissionBandwidth @unit(bps) = default(100Mbps);  // 用户最大传输带宽
        string taskFile = default("");                  // 场景级任务JSON文件，任务参数必须从该文件加载
+       double routingWarmupTime @unit(s) = default(0s); // 路由协议收敛保护时间，任务requestTime不得早于该时间
 
 	gates:	
 	    input socketIn;

@@ -82,6 +82,7 @@ void UserNodeApp::initialize(int stage)
        this->userGatewayPort = par("userGatewayPort");
        this->maxTransmissionBandwidth = par("maxTransmissionBandwidth");
        this->taskFile = par("taskFile").stdstringValue();
+       this->routingWarmupTime = SimTime(par("routingWarmupTime").doubleValue());
 
        loadTaskSpecs();
     }
@@ -253,6 +254,8 @@ void UserNodeApp::validateTaskSpec(const UserTaskSpec& task, const char *source)
         throw cRuntimeError("Invalid taskId=%d in %s", task.taskId, source);
     if (task.requestTime < SIMTIME_ZERO)
         throw cRuntimeError("Invalid requestTime=%s for taskId=%d in %s", task.requestTime.str().c_str(), task.taskId, source);
+    if (task.requestTime < routingWarmupTime)
+        throw cRuntimeError("Task requestTime=%s for taskId=%d in %s is earlier than routingWarmupTime=%s; adjust the JSON workload or scenario warmup setting", task.requestTime.str().c_str(), task.taskId, source, routingWarmupTime.str().c_str());
     if (task.computingType != 0 && task.computingType != 1)
         throw cRuntimeError("Invalid computingType=%d for taskId=%d in %s", task.computingType, task.taskId, source);
     if (task.requiredStorage < 0)
@@ -279,7 +282,8 @@ void UserNodeApp::scheduleTaskRequests()
         taskTimerIndexByMessage[event] = i;
         scheduleAt(task.requestTime, event);
         EV_INFO << "User" << userNodeId << " scheduled TASK_REQUEST for task(" << userNodeId << "," << task.taskId
-                << ") at " << task.requestTime << ", dataSize=" << task.dataSize
+                << ") at " << task.requestTime << ", routingWarmupTime=" << routingWarmupTime
+                << ", dataSize=" << task.dataSize
                 << " MB, computingType=" << task.computingType << endl;
     }
 }

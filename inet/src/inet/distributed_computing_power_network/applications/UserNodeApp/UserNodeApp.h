@@ -45,6 +45,7 @@ protected:
     int userGatewayPort;
     double maxTransmissionBandwidth;  // 用户最大传输带宽
     std::string taskFile;
+    simtime_t routingWarmupTime;
 
     std::vector<UserTaskSpec> pendingTasks;
     std::map<int, UserTaskContext> taskContextCache;
